@@ -1,0 +1,18 @@
+obj-m := kvm.o kvm-intel.o kvm-amd.o
+kvm-objs := kvm_main.o x86.o mmu.o emulate.o irq.o i8259.o pmu.o \
+	 lapic.o ioapic.o preempt.o i8254.o coalesced_mmio.o irq_comm.o \
+	 timer.o eventfd.o assigned-dev.o compat-x86.o async_pf.o cpuid.o irqchip.o \
+	 ../external-module-compat.o hyperv.o mtrr.o kvm_ft.o shared_pages_array.o \
+	 diff_req.o test_dev.o
+ifeq ($(CONFIG_IOMMU_API)$(CONFIG_PCI),yy)
+kvm-objs += assigned-dev.o iommu.o
+endif
+ifeq ($(CONFIG_KVM_VFIO),y)
+kvm-objs += vfio.o
+endif
+kvm-intel-objs := vmx.o pmu_intel.o
+kvm-amd-objs := svm.o pmu_amd.o
+
+kvm-objs += ../srcu.o
+
+CFLAGS_kvm_main.o = -DKVM_MAIN

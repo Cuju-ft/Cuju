@@ -1,0 +1,3 @@
+[submodule "linux"]
+	path = linux
+	url = http://git.kernel.org/pub/scm/virt/kvm/kvm.git
