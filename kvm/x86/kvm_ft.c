@@ -727,8 +727,9 @@ int kvm_shm_flip_sharing(struct kvm *kvm, __u32 cur_index, __u32 run_serial)
     struct kvmft_context *ctx = &kvm->ft_context;
     struct kvmft_master_slave_conn_info *info =
         &ctx->master_slave_info[cur_index];
-
+	#ifdef ft_debug_mode_enable
 	printk("kvm_shm_flip_sharing cur_index = %x\n", cur_index);
+	#endif
     //kvmft_protect_all_gva_spcl_pages(kvm, ctx->cur_index);
 	confirm_prev_dirty_bitmap_clear(kvm, cur_index);
 
