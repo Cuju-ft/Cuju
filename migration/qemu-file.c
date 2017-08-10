@@ -144,6 +144,7 @@ void qemu_fflush(QEMUFile *f)
             }
 
             f->buf_index = 0;
+            f->iovcnt = 0;
         }
         return;
     }

@@ -2540,7 +2540,7 @@ static void *migration_thread(void *opaque)
     end_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
 
     if(enable_cuju) {
-	
+
 		printf("start cuju process\n");
 		ft_setup_migrate_state(s, 0);
         ft_setup_migrate_state(s2, 1);
@@ -2556,10 +2556,10 @@ static void *migration_thread(void *opaque)
         cuju_ft_trans_init_buf_desc(&ft_mutex, &ft_cond);
         cuju_ft_trans_set_buffer_mode(1);
 
-		//TODO blk_server support 
+		//TODO blk_server support
         //if (kvm_blk_session)
         //	kvm_blk_notify_ft(kvm_blk_session);
-            
+
 		//memory_global_dirty_log_start();  //For debug
         kvm_shmem_start_ft();
 
@@ -2573,7 +2573,7 @@ static void *migration_thread(void *opaque)
 
         assert(!kvmft_set_master_slave_sockets(s, ft_ram_conn_count));
         assert(!kvmft_set_master_slave_sockets(s2, ft_ram_conn_count));
-		
+
 		return NULL;
     }
     else {
@@ -2665,6 +2665,7 @@ PostcopyState postcopy_state_set(PostcopyState new_state)
 }
 
 // called when qemu_file buffer is full
+/*
 static int cuju_ft_dev_put_buffer(void *opaque, uint8_t *data, int64_t pos, int size)
 {
     MigrationState *s = opaque;
@@ -2681,9 +2682,34 @@ static int cuju_ft_dev_put_buffer(void *opaque, uint8_t *data, int64_t pos, int 
 
     return size;
 }
+*/
+
+static ssize_t cuju_ft_dev_writev_buffer(void *opaque, struct iovec *iov, int iovcnt,
+                                   int64_t pos)
+{
+    MigrationState *s = opaque;
+    ssize_t done = 0;
+
+    for(int i = 0; i < iovcnt; i++) {
+        size_t len = iov[i].iov_len;
+        uint8_t *data = iov[i].iov_base;
+
+        assert((len + s->ft_dev->ft_dev_put_off) <= CUJU_FT_DEV_INIT_BUF);
+
+        memcpy(s->ft_dev->ft_dev_buf + s->ft_dev->ft_dev_put_off, data, len);
+        s->ft_dev->ft_dev_put_off += len;
+
+        if (s->ft_dev->ft_dev_file->free_buf_on_flush)
+            g_free((void *)data);
+
+        done += len;
+    }
+    return done;
+}
 
 static const QEMUFileOps cuju_ft_dev_output_ops = {
-    .put_buffer = cuju_ft_dev_put_buffer,
+    //.put_buffer = cuju_ft_dev_put_buffer,
+    .writev_buffer = cuju_ft_dev_writev_buffer,
 };
 
 void alloc_ft_dev(MigrationState *s)
@@ -2779,7 +2805,7 @@ void *cuju_process_incoming_thread(void *opaque)
 	// need to wait sender to setup
 	// send ack
     int ret;
-    do { 
+    do {
         ret = qemu_ft_trans_begin(f);
     } while (ret == -EAGAIN);
     printf("%s qemu_ft_trans_begin returns %d\n", __func__, ret);
@@ -2793,7 +2819,7 @@ void *cuju_process_incoming_thread(void *opaque)
 
     cuju_ft_trans_set(0, f->opaque);
     cuju_ft_trans_set(1, f2->opaque);
-	
+
 	return NULL;
 
 out:
@@ -2886,12 +2912,12 @@ static void migrate_timer(void *opaque)
     s->time_buf_off += sprintf(s->time_buf+s->time_buf_off, "\t%.4lf", (s->snapshot_start_time-s->run_real_start_time)*1000);
 
     assert(kvm_shmem_collect_trackable_dirty() >= 0);
-    //assert(!migrate_save_device_states_to_memory_advanced(s, 0));
+    assert(!migrate_save_device_states_to_memory_advanced(s, 0));
     s->virtio_blk_temp_list = virtio_blk_get_temp_list();
     kvm_shmem_trackable_dirty_reset();
-    //migrate_ft_trans_send_device_state_header(s->ft_dev, s->file);
-    //qemu_put_buffer(s->file, s->ft_dev->ft_dev_buf, s->ft_dev->ft_dev_put_off);
-    //printf("device len: %d\n", s->ft_dev->ft_dev_put_off);
+    migrate_ft_trans_send_device_state_header(s->ft_dev, s->file);
+    qemu_put_buffer(s->file, s->ft_dev->ft_dev_buf, s->ft_dev->ft_dev_put_off);
+    printf("device len: %d\n", s->ft_dev->ft_dev_put_off);
 
     s->ft_dev->ft_dev_put_off = 0;
 
