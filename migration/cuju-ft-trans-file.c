@@ -391,18 +391,6 @@ static int cuju_ft_trans_put_buffer(void *opaque, uint8_t *buf, int64_t pos, int
         s->has_error = CUJU_FT_TRANS_ERR_SEND_PAYLOAD;
         goto out;
     }
-    //printf("%s %d\n", __func__, __LINE__);
-    ret = cuju_ft_trans_send_header(s, CUJU_QEMU_VM_TRANSACTION_CONTINUE, size);
-    if (ret < 0)
-        goto out;
-
-    //printf("%s %d\n", __func__, __LINE__);
-    ret = cuju_ft_trans_put(s, (uint8_t *)buf, size);
-    if (ret < 0) {
-        error_report("send payload failed\n");
-        s->has_error = CUJU_FT_TRANS_ERR_SEND_PAYLOAD;
-        goto out;
-    }
 
     cuju_ft_trans_flush_buf_desc(s->file);
 
