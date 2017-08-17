@@ -533,10 +533,10 @@ static void cuju_ft_trans_load(CujuQEMUFileFtTrans *s)
     printf("%s take time(ms) %lf\n", __func__, (TIMEVAL_TO_DOUBLE(etime) - TIMEVAL_TO_DOUBLE(stime))*1000);
 #endif
 
-	// TODO 
+	// TODO
 	// check protocol in qemu_loadvm_state()
 	// qemu_loadvm_state(s->file, 1);
-    //qemu_loadvm_state(s->file, 1);
+    qemu_loadvm_state(s->file, 1);
 
     cuju_ft_trans_clean_buf(s);
 
@@ -697,8 +697,8 @@ static ssize_t cuju_ft_trans_get_buffer(void *opaque, uint8_t *buf,
         trace_cuju_ft_trans_get_ready();
         s->freeze_input = 0;
 
-        // sender should be waiting for ACK 
-        // after successfully receiving ACK, ft_mode = FT_INIT, s->state = ACK 
+        // sender should be waiting for ACK
+        // after successfully receiving ACK, ft_mode = FT_INIT, s->state = ACK
         if (s->is_sender) {
 
             goto newver;
@@ -725,7 +725,7 @@ static ssize_t cuju_ft_trans_get_buffer(void *opaque, uint8_t *buf,
             trace_cuju_ft_trans_cb(s->get_ready);
 
 newver:
-            // notify sender that we received ACK from backup 
+            // notify sender that we received ACK from backup
             ret = s->get_ready(s->opaque);
             if (ret < 0)
                 goto out;
@@ -778,7 +778,7 @@ static int cuju_ft_trans_close(void *opaque)
 
         if (s != last_cuju_ft_trans)
             return 0;
- 
+
         //qemu_aio_flush()  is deprecated
         bdrv_drain_all();
         bdrv_invalidate_cache_all(&local_err);
@@ -1209,6 +1209,12 @@ QEMUFile *cuju_qemu_fopen_ops_ft_trans(void *opaque,
 
     if (!s->is_sender) {
         s->buf_max_size = 0;
+        static const QEMUFileOps cuju_ops = {
+            .get_buffer = cuju_ft_trans_get_buffer,
+            .close = cuju_ft_trans_close,
+        };
+        s->file = qemu_fopen_ops(s, &cuju_ops);
+        return s->file;
     }
 
     //assert(!kvm_shm_tick_alloc(1, 30, &s->time_trace));

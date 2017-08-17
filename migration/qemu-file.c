@@ -304,7 +304,9 @@ int qemu_fclose(QEMUFile *f)
     if (f->last_error) {
         ret = f->last_error;
     }
-    g_free(f);
+    // TODO (CUJU)
+    // We need to free it but it would cause SIGSEGV when failed over(CUJU)
+    //g_free(f);
     trace_qemu_file_fclose();
     return ret;
 }
