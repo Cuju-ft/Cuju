@@ -575,6 +575,7 @@ static void process_incoming_migration_co(void *opaque)
              cuju_process_incoming_thread, mis, QEMU_THREAD_JOINABLE);
 
         qemu_coroutine_yield();
+		qemu_thread_join(&mis->cuju_incoming_thread);
     }
 
     qemu_fclose(f);
