@@ -2923,10 +2923,11 @@ static void migrate_timer(void *opaque)
 
     //qemu_fflush(s->file);
     //ft_trans_flush_buf_desc(s->file);
-    qemu_bh_schedule(s->flush_bh);
-    s->snapshot_finish_time = time_in_double();
 
     migrate_set_ft_state(s, CUJU_FT_TRANSACTION_TRANSFER);
+
+    qemu_bh_schedule(s->flush_bh);
+    s->snapshot_finish_time = time_in_double();
 
     migrate_token_owner = migrate_get_next(s);
     migrate_token_owner->run_sched_time = time_in_double();
