@@ -24,7 +24,7 @@
 #include "qemu/coroutine_int.h"
 #include "io/channel-socket.h"
 
-#define CUJU_FT_DEV_INIT_BUF (1*1024*1024)
+#define CUJU_FT_DEV_INIT_BUF (8*1024*1024)
 #define CUJU_FT_DEV_STATE_ENTRY_SIZE 50
 
 struct CUJUFTDev
