@@ -2766,29 +2766,54 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
 
     ftdev->state_entry_num = 0;
 	QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
-        //int dirty;
+        int dirty;
 
         if (se->is_ram) {
             continue;
         }
-        if ((!se->ops || !se->ops->save_state) && !se->vmsd) {
-            continue;
-        }
-        if (se->vmsd && !vmstate_save_needed(se->vmsd, se->opaque)) {
-            trace_savevm_section_skip(se->idstr, se->section_id);
-            continue;
-        }
+        dirty = kvm_shmem_trackable_dirty_test(se->opaque);
+        //dirty = 1;
+        /*
         if (!strncmp(se->idstr, "0000:00:03.0/virtio-net", 23)){
-            continue;
+            dirty = 0;
         }
         if (!strncmp(se->idstr, "0000:00:04.0/virtio-blk", 23)){
-            continue;
+            dirty = 0;
         }
+        */
+        if (!strncmp(se->idstr, "kvmclock", 8))
+            dirty = 1;
+        if (!strncmp(se->idstr, "mc146818rtc", 11))
+            dirty = 1;
+        if (!dirty)
+            continue;
+
+        //if (strncmp(se->idstr, "event-tap", 8))
+        //printf("%s - %s\n", __func__, se->idstr);
+
+        assert(ftdev->state_entry_num < CUJU_FT_DEV_STATE_ENTRY_SIZE);
+        ftdev->state_entries[ftdev->state_entry_num] = se;
+        ftdev->state_entry_begins[ftdev->state_entry_num] = ftdev->ft_dev_put_off;
+
+        trace_savevm_section_start(se->idstr, se->section_id);
+
+        json_start_object(vmdesc, NULL);
+        json_prop_str(vmdesc, "name", se->idstr);
+        json_prop_int(vmdesc, "instance_id", se->instance_id);
+
         save_section_header(f, se, QEMU_VM_SECTION_FULL);
-
-        vmstate_save(f, se, NULL);
-
+        printf("%s complete precopy %s %p\n", __func__, se->idstr, se->opaque);
+        vmstate_save(f, se, vmdesc);
+        trace_savevm_section_end(se->idstr, se->section_id, 0);
         save_section_footer(f, se);
+
+        json_end_object(vmdesc);
+
+        qemu_fflush(f);
+        ftdev->state_entry_lens[ftdev->state_entry_num] = ftdev->ft_dev_put_off - ftdev->state_entry_begins[ftdev->state_entry_num];
+        ftdev->state_entry_num++;
+       // ft_dev_report_size(f->opaque);
+        printf("%s %s %d %p\n", __func__, se->idstr, ftdev->state_entry_lens[ftdev->state_entry_num-1], &ftdev->state_entry_lens[ftdev->state_entry_num-1]);
     }
 
     if (!more)
