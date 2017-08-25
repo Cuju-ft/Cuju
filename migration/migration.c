@@ -2837,6 +2837,7 @@ static void migrate_run(MigrationState *s)
     if (migrate_token_owner != s || s->ft_state != CUJU_FT_TRANSACTION_PRE_RUN) {
         FTPRINTF("%s cant run own != s ? %d ft_state == %d\n", __func__,
             migrate_token_owner != s, s->ft_state);
+        qemu_mutex_unlock_iothread();
         return;
     }
 
