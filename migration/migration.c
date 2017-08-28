@@ -2837,7 +2837,6 @@ static void migrate_run(MigrationState *s)
     if (migrate_token_owner != s || s->ft_state != CUJU_FT_TRANSACTION_PRE_RUN) {
         FTPRINTF("%s cant run own != s ? %d ft_state == %d\n", __func__,
             migrate_token_owner != s, s->ft_state);
-        qemu_mutex_unlock_iothread();
         return;
     }
 
@@ -2856,7 +2855,6 @@ static void migrate_run(MigrationState *s)
 
     qemu_iohandler_ft_pause(false);
     vm_start_mig();
-    qemu_mutex_unlock_iothread();
 
     s->run_real_start_time = time_in_double();
 
@@ -2935,6 +2933,7 @@ static void migrate_timer(void *opaque)
     migrate_token_owner->run_sched_time = time_in_double();
     FTPRINTF("%s invoke migrate_run\n", __func__);
     migrate_run(migrate_token_owner);
+    qemu_mutex_unlock_iothread();
 }
 
 static void ft_tick_func(void)
