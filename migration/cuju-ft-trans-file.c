@@ -876,6 +876,7 @@ int cuju_ft_trans_begin(void *opaque)
         }
 
         ret = cuju_ft_trans_send_header(s, CUJU_QEMU_VM_TRANSACTION_ACK, 0);
+        last_cuju_ft_trans = s;
         if (ret != sizeof(CujuFtTransHdr))
             ret = -EAGAIN;
 
