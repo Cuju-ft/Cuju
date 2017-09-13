@@ -2621,7 +2621,7 @@ static MemTxResult address_space_write_continue(AddressSpace *as, hwaddr addr,
             ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
             // for CUJU-FT
-            kvm_shmem_mark_page_dirty(ptr, addr >> TARGET_PAGE_BITS);
+            kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
 
             memcpy(ptr, buf, l);
             invalidate_and_set_dirty(mr, addr1, l);
@@ -3401,7 +3401,7 @@ void address_space_stl_notdirty(AddressSpace *as, hwaddr addr, uint32_t val,
     } else {
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
         // for CUJU-FT
-        kvm_shmem_mark_page_dirty(ptr, addr >> TARGET_PAGE_BITS);
+        kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
 
         stl_p(ptr, val);
 
@@ -3462,7 +3462,7 @@ static inline void address_space_stl_internal(AddressSpace *as,
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
         // for CUJU-FT
-        kvm_shmem_mark_page_dirty(ptr, addr >> TARGET_PAGE_BITS);
+        kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
 
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
@@ -3575,7 +3575,7 @@ static inline void address_space_stw_internal(AddressSpace *as,
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
         // for CUJU-FT
-        kvm_shmem_mark_page_dirty(ptr, addr >> TARGET_PAGE_BITS);
+        kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
 
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
