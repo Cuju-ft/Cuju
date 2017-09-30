@@ -2500,6 +2500,12 @@ int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
 static void invalidate_and_set_dirty(MemoryRegion *mr, hwaddr addr,
                                      hwaddr length)
 {
+
+	// for CUJU-FT
+	uint8_t *ptr;
+	ptr = qemu_map_ram_ptr(mr->ram_block, addr);
+	kvm_shmem_mark_page_dirty(ptr, addr >> TARGET_PAGE_BITS);
+
     uint8_t dirty_log_mask = memory_region_get_dirty_log_mask(mr);
     addr += memory_region_get_ram_addr(mr);
 
