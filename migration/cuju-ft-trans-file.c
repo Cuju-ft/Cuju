@@ -789,7 +789,8 @@ static int cuju_ft_trans_close(void *opaque)
 		}
 
         s->has_error = 0;
-		qemu_loadvm_state(s->file, 1);
+		s->file->last_error = 0;
+		qemu_loadvm_dev(s->file);
 
         bdrv_drain_all();
 
