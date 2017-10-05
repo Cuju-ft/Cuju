@@ -2500,11 +2500,26 @@ int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
 static void invalidate_and_set_dirty(MemoryRegion *mr, hwaddr addr,
                                      hwaddr length)
 {
-
 	// for CUJU-FT
 	uint8_t *ptr;
-	ptr = qemu_map_ram_ptr(mr->ram_block, addr);
-	kvm_shmem_mark_page_dirty(ptr, addr >> TARGET_PAGE_BITS);
+	hwaddr endaddr;
+	hwaddr nextaddr;
+	endaddr = addr + length - 1;
+	nextaddr = addr;
+
+	while (nextaddr < endaddr){
+		ptr = qemu_map_ram_ptr(mr->ram_block, nextaddr);
+		kvm_shmem_mark_page_dirty(ptr, nextaddr >> TARGET_PAGE_BITS);
+		//printf("%s %"PRIu64" gfn = %lu ptr = %"PRIu64"\n", __func__, nextaddr, nextaddr >> TARGET_PAGE_BITS, (hwaddr)ptr);
+		nextaddr = nextaddr + TARGET_PAGE_SIZE;
+	}
+	if (TARGET_PAGE_ALIGN(endaddr) != TARGET_PAGE_ALIGN(addr)){
+		//printf("%s start and end not in same page\n", __func__);
+		ptr = qemu_map_ram_ptr(mr->ram_block, endaddr);
+		kvm_shmem_mark_page_dirty(ptr, endaddr >> TARGET_PAGE_BITS);
+	}
+	//printf("%s end addr = %"PRIu64"\n", __func__, endaddr);
+	//printf("%s lengeth = %"PRIu64"\n", __func__, length);
 
     uint8_t dirty_log_mask = memory_region_get_dirty_log_mask(mr);
     addr += memory_region_get_ram_addr(mr);
@@ -2627,7 +2642,7 @@ static MemTxResult address_space_write_continue(AddressSpace *as, hwaddr addr,
             ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
             // for CUJU-FT
-            kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
+            //kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
 
             memcpy(ptr, buf, l);
             invalidate_and_set_dirty(mr, addr1, l);
@@ -3468,7 +3483,7 @@ static inline void address_space_stl_internal(AddressSpace *as,
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
         // for CUJU-FT
-        kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
+        //kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
 
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
@@ -3581,7 +3596,7 @@ static inline void address_space_stw_internal(AddressSpace *as,
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
         // for CUJU-FT
-        kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
+        //kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
 
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
