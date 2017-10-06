@@ -1055,6 +1055,27 @@ int kvm_shm_clear_dirty_bitmap(int cur_index)
     return r;
 }
 
+int kvm_shmem_mark_page_dirty_range(MemoryRegion *mr, hwaddr addr,hwaddr length)
+{
+	if (kvmft_started()) {
+		addr += memory_region_get_ram_addr(mr);
+		uint8_t *ptr;
+		hwaddr endaddr = addr + length - 1;
+		hwaddr nextaddr = addr;
+//		printf("%s addr = %"PRIu64" \n", __func__, addr);
+
+		while (nextaddr <= endaddr){
+			ptr = qemu_map_ram_ptr(NULL, nextaddr);
+			kvm_shmem_mark_page_dirty(ptr, nextaddr >> TARGET_PAGE_BITS);
+//			printf("%s %"PRIu64" gfn = %lu ptr = %"PRIu64"\n", __func__, nextaddr, nextaddr >> TARGET_PAGE_BITS, (hwaddr)ptr);
+			nextaddr = nextaddr + TARGET_PAGE_SIZE;
+		}
+//		printf("%s end addr = %"PRIu64"\n", __func__, endaddr);
+//		printf("%s lengeth = %"PRIu64"\n", __func__, length);
+	}
+	return 0;
+}
+
 int kvm_shmem_mark_page_dirty(void *ptr, unsigned long gfn)
 {
     if (kvmft_started()) {

@@ -41,6 +41,7 @@ int kvmft_write_protect_dirty_pages(int cur_index);
 int kvm_shm_clear_dirty_bitmap(int cur_index);
 int kvmft_set_master_slave_sockets(MigrationState *s, int nsocks);
 
+int kvm_shmem_mark_page_dirty_range(MemoryRegion *mr, hwaddr addr, hwaddr length);
 int kvm_shmem_mark_page_dirty(void *ptr, unsigned long gfn);
 void kvm_shmem_send_dirty_kernel(MigrationState *s);
 void kvm_shmem_start_timer(void);

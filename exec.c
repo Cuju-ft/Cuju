@@ -1533,6 +1533,7 @@ int qemu_ram_resize(RAMBlock *block, ram_addr_t newsize, Error **errp)
     block->used_length = newsize;
     cpu_physical_memory_set_dirty_range(block->offset, block->used_length,
                                         DIRTY_CLIENTS_ALL);
+	kvm_shmem_mark_page_dirty_range(block->mr, block->offset, block->used_length);
     memory_region_set_size(block->mr, newsize);
     if (block->resized) {
         block->resized(block->idstr, newsize, block->host);
@@ -1645,6 +1646,9 @@ static void ram_block_add(RAMBlock *new_block, Error **errp)
     smp_wmb();
     ram_list.version++;
     qemu_mutex_unlock_ramlist();
+
+	// for CUJU-FT
+	kvm_shmem_mark_page_dirty_range(new_block->mr, new_block->offset, new_block->used_length);
 
     cpu_physical_memory_set_dirty_range(new_block->offset,
                                         new_block->used_length,
@@ -2018,8 +2022,7 @@ static void notdirty_mem_write(void *opaque, hwaddr ram_addr,
         tb_invalidate_phys_page_fast(ram_addr, size);
     }
     // for CUJU-FT
-    kvm_shmem_mark_page_dirty(qemu_map_ram_ptr(NULL, ram_addr),
-                              ram_addr >> TARGET_PAGE_BITS);
+	kvm_shmem_mark_page_dirty_range(NULL, ram_addr, size);
 
     switch (size) {
     case 1:
@@ -2500,28 +2503,7 @@ int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
 static void invalidate_and_set_dirty(MemoryRegion *mr, hwaddr addr,
                                      hwaddr length)
 {
-	// for CUJU-FT
-	uint8_t *ptr;
-	hwaddr endaddr;
-	hwaddr nextaddr;
-	endaddr = addr + length - 1;
-	nextaddr = addr;
-
-	while (nextaddr < endaddr){
-		ptr = qemu_map_ram_ptr(mr->ram_block, nextaddr);
-		kvm_shmem_mark_page_dirty(ptr, nextaddr >> TARGET_PAGE_BITS);
-		//printf("%s %"PRIu64" gfn = %lu ptr = %"PRIu64"\n", __func__, nextaddr, nextaddr >> TARGET_PAGE_BITS, (hwaddr)ptr);
-		nextaddr = nextaddr + TARGET_PAGE_SIZE;
-	}
-	if (TARGET_PAGE_ALIGN(endaddr) != TARGET_PAGE_ALIGN(addr)){
-		//printf("%s start and end not in same page\n", __func__);
-		ptr = qemu_map_ram_ptr(mr->ram_block, endaddr);
-		kvm_shmem_mark_page_dirty(ptr, endaddr >> TARGET_PAGE_BITS);
-	}
-	//printf("%s end addr = %"PRIu64"\n", __func__, endaddr);
-	//printf("%s lengeth = %"PRIu64"\n", __func__, length);
-
-    uint8_t dirty_log_mask = memory_region_get_dirty_log_mask(mr);
+	uint8_t dirty_log_mask = memory_region_get_dirty_log_mask(mr);
     addr += memory_region_get_ram_addr(mr);
 
     /* No early return if dirty_log_mask is or becomes 0, because
@@ -2642,7 +2624,7 @@ static MemTxResult address_space_write_continue(AddressSpace *as, hwaddr addr,
             ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
             // for CUJU-FT
-            //kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
+			kvm_shmem_mark_page_dirty_range(mr, addr1, l);
 
             memcpy(ptr, buf, l);
             invalidate_and_set_dirty(mr, addr1, l);
@@ -2821,6 +2803,9 @@ static inline void cpu_physical_memory_write_rom_internal(AddressSpace *as,
             ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
             switch (type) {
             case WRITE_DATA:
+				// for CUJU-FT
+				kvm_shmem_mark_page_dirty_range(mr, addr1, l);
+
                 memcpy(ptr, buf, l);
                 invalidate_and_set_dirty(mr, addr1, l);
                 break;
@@ -3068,6 +3053,9 @@ void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
         mr = memory_region_from_host(buffer, &addr1);
         assert(mr != NULL);
         if (is_write) {
+			// for CUJU-FT
+			kvm_shmem_mark_page_dirty_range(mr, addr1, access_len);
+
             invalidate_and_set_dirty(mr, addr1, access_len);
         }
         if (xen_enabled()) {
@@ -3422,7 +3410,7 @@ void address_space_stl_notdirty(AddressSpace *as, hwaddr addr, uint32_t val,
     } else {
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
         // for CUJU-FT
-        kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
+		kvm_shmem_mark_page_dirty_range(mr, addr1, 4);
 
         stl_p(ptr, val);
 
@@ -3482,8 +3470,8 @@ static inline void address_space_stl_internal(AddressSpace *as,
         /* RAM case */
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
-        // for CUJU-FT
-        //kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
+		// for CUJU-FT
+		kvm_shmem_mark_page_dirty_range(mr, addr1, 4);
 
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
@@ -3595,8 +3583,8 @@ static inline void address_space_stw_internal(AddressSpace *as,
         /* RAM case */
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
-        // for CUJU-FT
-        //kvm_shmem_mark_page_dirty(ptr, addr1 >> TARGET_PAGE_BITS);
+		// for CUJU-FT
+		kvm_shmem_mark_page_dirty_range(mr, addr1, 2);
 
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
