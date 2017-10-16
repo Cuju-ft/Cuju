@@ -130,7 +130,7 @@ typedef QTAILQ_HEAD(, EventTapLog) QueueEventTapLog;
 typedef struct EventTapLogList {
 	unsigned int head;
 	unsigned int tail;
-	EventTapLog *logs[1024];
+	EventTapLog *logs[10240];
 } EventTapLogList;
 
 static EventTapLogList **event_tap_log_list;
