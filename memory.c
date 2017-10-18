@@ -1698,6 +1698,7 @@ void memory_region_set_dirty(MemoryRegion *mr, hwaddr addr,
                              hwaddr size)
 {
     assert(mr->ram_block);
+	kvm_shmem_mark_page_dirty_range(mr, addr, size);  //TODO memory_region_get_ram_addr(mr) + addr has error
     cpu_physical_memory_set_dirty_range(memory_region_get_ram_addr(mr) + addr,
                                         size,
                                         memory_region_get_dirty_log_mask(mr));
