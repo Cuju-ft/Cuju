@@ -70,12 +70,12 @@
 #include <linux/srcu.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
-#include <linux/kvm_ft.h>
 
 #include <asm/page.h>
 #include <asm/cmpxchg.h>
 #include <asm/io.h>
 #include <asm/vmx.h>
+#include <linux/kvm_ft.h>
 
 /*
  * When setting this variable to true it enables Two-Dimensional-Paging
@@ -561,7 +561,7 @@ static bool spte_is_bit_changed(u64 old_spte, u64 new_spte, u64 bit_mask)
  */
 static void mmu_spte_set(u64 *sptep, u64 new_spte)
 {
-//	WARN_ON(is_shadow_present_pte(*sptep));
+	WARN_ON(is_shadow_present_pte(*sptep));
 	__set_spte(sptep, new_spte);
 }
 
@@ -1481,7 +1481,7 @@ static bool kvm_zap_rmapp(struct kvm *kvm, unsigned long *rmapp)
 	bool flush = false;
 
 	while ((sptep = rmap_get_first(*rmapp, &iter))) {
-		//BUG_ON(!(*sptep & PT_PRESENT_MASK));
+		BUG_ON(!(*sptep & PT_PRESENT_MASK));
 		rmap_printk("%s: spte %p %llx.\n", __func__, sptep, *sptep);
 
 		drop_spte(kvm, sptep);
@@ -1510,7 +1510,6 @@ static int kvm_set_pte_rmapp(struct kvm *kvm, unsigned long *rmapp,
 	pfn_t new_pfn;
 
 	WARN_ON(pte_huge(*ptep));
-	BUG_ON(pte_huge(*ptep));
 	new_pfn = pte_pfn(*ptep);
 
 restart:
@@ -2673,12 +2672,18 @@ static int set_spte(struct kvm_vcpu *vcpu, u64 *sptep,
 	}
 
 	if (pte_access & ACC_WRITE_MASK) {
-	    unsigned long hva = gfn_to_hva(vcpu->kvm, gfn);
-            if (kvm_is_error_hva(hva)) {
-                printk("%s error hva for %lx\n", __func__, (long)gfn);
-            } else {
-                kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
-            }
+		unsigned long hva;
+
+		kvm_vcpu_mark_page_dirty(vcpu, gfn);
+		spte |= shadow_dirty_mask;
+
+		hva = gfn_to_hva(vcpu->kvm, gfn);
+		if (kvm_is_error_hva(hva)) {
+			printk("%s error hva for %lx\n", __func__, (long)gfn);
+		} 
+		else {
+			kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
+		}
 	}
 
 set_pte:
@@ -2983,22 +2988,23 @@ static bool page_fault_can_be_fast(u32 error_code)
 	return true;
 }
 
-extern uint64_t rdtsc(void);
 static bool
 fast_pf_fix_direct_spte(struct kvm_vcpu *vcpu, struct kvm_mmu_page *sp,
 			u64 *sptep, u64 spte)
 {
+	gfn_t gfn;
 	unsigned long hva;
-        gfn_t gfn;
-        sp = page_header(__pa(sptep));
 
 	WARN_ON(!sp->role.direct);
 
-    gfn = kvm_mmu_page_get_gfn(sp, sptep - sp->spt);
+	/*
+	 * The gfn of direct spte is stable since it is calculated
+	 * by sp->gfn.
+	 */
+	gfn = kvm_mmu_page_get_gfn(sp, sptep - sp->spt);
 
-    hva = gfn_to_hva(vcpu->kvm, gfn);
-
-    if (kvm_is_error_hva(hva)) {
+	hva = gfn_to_hva(vcpu->kvm, gfn);
+	if (kvm_is_error_hva(hva)) {
         printk("%s error hva for gfn %lx\n", __func__, (long)gfn);
     } else {
         // tlb not flushed yet, so should be safe.
@@ -3006,22 +3012,6 @@ fast_pf_fix_direct_spte(struct kvm_vcpu *vcpu, struct kvm_mmu_page *sp,
         kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
     }
 
-    if (cmpxchg64(sptep, spte, spte | PT_WRITABLE_MASK) == spte) {
-        #ifdef DEBUG_SWAP_PTE
-        if (replacer_pfn != -1)
-            printk("%s cmpxchg ok\n", __func__);
-        #endif
-
-	/*
-	 * The gfn of direct spte is stable since it is calculated
-	 * by sp->gfn.
-	 */
-	//gfn = kvm_mmu_page_get_gfn(sp, sptep - sp->spt);
-	} else {
-        #ifdef DEBUG_SWAP_PTE
-        printk("%s spte %lx *sptep %lx\n", __func__, spte, *sptep);
-        #endif
-    }
 	/*
 	 * Theoretically we could also set dirty bit (and flush TLB) here in
 	 * order to eliminate unnecessary PML logging. See comments in
@@ -3034,8 +3024,8 @@ fast_pf_fix_direct_spte(struct kvm_vcpu *vcpu, struct kvm_mmu_page *sp,
 	 *
 	 * Compare with set_spte where instead shadow_dirty_mask is set.
 	 */
-	//if (cmpxchg64(sptep, spte, spte | PT_WRITABLE_MASK) == spte)
-	//	kvm_vcpu_mark_page_dirty(vcpu, gfn);
+	if (cmpxchg64(sptep, spte, spte | PT_WRITABLE_MASK) == spte)
+		kvm_vcpu_mark_page_dirty(vcpu, gfn);
 
 	return true;
 }
@@ -3696,7 +3686,7 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
         // otherwise, unprotect it and just let guest write. if guest actually wrote it,
         // we need to make a copy in snapshot stage (postponed backup) and 
         // transfer the whole page since we don't have a backup
-		return 0;
+ 		return 0;
 	}
 
 	mmu_seq = vcpu->kvm->mmu_notifier_seq;

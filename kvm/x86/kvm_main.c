@@ -818,10 +818,14 @@ static int kvm_vm_release(struct inode *inode, struct file *filp)
  */
 static int kvm_create_dirty_bitmap(struct kvm_memory_slot *memslot)
 {
-
 #ifndef CONFIG_S390
-    unsigned long dirty_bytes = 2 * kvm_dirty_bitmap_bytes(memslot);
-    unsigned long gfn_to_put_off_bytes = memslot->npages * sizeof(uint16_t);
+	unsigned long dirty_bytes = 2 * kvm_dirty_bitmap_bytes(memslot);
+
+	memslot->dirty_bitmap = kvm_kvzalloc(dirty_bytes);
+	if (!memslot->dirty_bitmap)
+		return -ENOMEM;
+
+	    unsigned long gfn_to_put_off_bytes = memslot->npages * sizeof(uint16_t);
     size_t array_size;
     int ret;
 
@@ -862,15 +866,17 @@ static int kvm_create_dirty_bitmap(struct kvm_memory_slot *memslot)
         goto nomem;
     }
 
-    memslot->bitmap_count = KVM_DIRTY_BITMAP_INIT_COUNT;
+	memslot->bitmap_count = KVM_DIRTY_BITMAP_INIT_COUNT;
 
 #endif /* !CONFIG_S390 */
-    return 0;
+
+	return 0;
 
 nomem:
     kvm_destroy_dirty_bitmap_init(memslot);
 
-    return -ENOMEM;
+return -ENOMEM;
+
 }
 
 static int kvm_extend_dirty_bitmap(struct kvm_memory_slot *memslot)
