@@ -2459,8 +2459,8 @@ static void *migration_thread(void *opaque)
 
     // For CUJU-FT
     // Stop VM first and do completion
-    migration_completion(s, current_active_state,
-                 &old_vm_running, &start_time);
+//    migration_completion(s, current_active_state,
+//                 &old_vm_running, &start_time);
 
     while (s->state == MIGRATION_STATUS_ACTIVE ||
            s->state == MIGRATION_STATUS_POSTCOPY_ACTIVE) {
@@ -2578,6 +2578,7 @@ static void *migration_thread(void *opaque)
 		return NULL;
     }
     else {
+		qemu_mutex_lock_iothread();
         /*
          * The resource has been allocated by migration will be reused in COLO
          * process, so don't release them.
@@ -2614,11 +2615,12 @@ static void *migration_thread(void *opaque)
                 }
             }
         }
-    }
-    qemu_bh_schedule(s->cleanup_bh);
-    qemu_mutex_unlock_iothread();
+	    qemu_bh_schedule(s->cleanup_bh);
+	    qemu_mutex_unlock_iothread();
 
-    rcu_unregister_thread();
+    	rcu_unregister_thread();
+    }
+
     return NULL;
 }
 
