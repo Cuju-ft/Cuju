@@ -596,6 +596,9 @@ static void kvm_destroy_dirty_bitmap(struct kvm_memory_slot *memslot)
 
 static void kvm_destroy_dirty_bitmap_init(struct kvm_memory_slot *memslot)
 {
+    if (!memslot->dirty_bitmap)
+		return;
+
     shared_pages_array_free(&memslot->epoch_dirty_bitmaps);
     shared_pages_array_free(&memslot->epoch_gfn_to_put_offs);
 
@@ -825,12 +828,9 @@ static int kvm_create_dirty_bitmap(struct kvm_memory_slot *memslot)
 	if (!memslot->dirty_bitmap)
 		return -ENOMEM;
 
-	    unsigned long gfn_to_put_off_bytes = memslot->npages * sizeof(uint16_t);
+	unsigned long gfn_to_put_off_bytes = memslot->npages * sizeof(uint16_t);
     size_t array_size;
     int ret;
-
-    if (memslot->dirty_bitmap)
-        return 0;
 
     ret = shared_pages_array_init(&memslot->epoch_dirty_bitmaps,
                                   KVM_DIRTY_BITMAP_INIT_COUNT,
@@ -2187,7 +2187,7 @@ int clear_page_dirty_in_slot(struct kvm *kvm, struct kvm_memory_slot *memslot,
 	if (memslot && memslot->dirty_bitmap) {
 		unsigned long rel_gfn = gfn - memslot->base_gfn;
 
-		//set_bit_le(rel_gfn, memslot->dirty_bitmap);
+		set_bit_le(rel_gfn, memslot->dirty_bitmap);
         	return test_and_clear_bit(rel_gfn, memslot->dirty_bitmap);
     	}
 	return 0;
