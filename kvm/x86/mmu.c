@@ -561,7 +561,7 @@ static bool spte_is_bit_changed(u64 old_spte, u64 new_spte, u64 bit_mask)
  */
 static void mmu_spte_set(u64 *sptep, u64 new_spte)
 {
-	WARN_ON(is_shadow_present_pte(*sptep));
+	//WARN_ON(is_shadow_present_pte(*sptep));
 	__set_spte(sptep, new_spte);
 }
 

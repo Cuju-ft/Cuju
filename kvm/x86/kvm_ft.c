@@ -268,7 +268,7 @@ int kvm_shm_extend(struct kvm *kvm, struct kvm_shmem_extend *ext)
     if (ctx->page_nums_snapshot_k == NULL) {
         return -ENOMEM;
     }
-    
+
     ctx->page_nums_snapshot_page = krealloc(ctx->page_nums_snapshot_page,
                                            sizeof(struct page *)
                                            * (ctx->max_desc_count + 1),
@@ -322,7 +322,7 @@ struct page *kvm_shm_alloc_page(struct kvm *kvm,
             __free_pages(page, param->order);
             return NULL;
         }
-        ctx->shared_pages_snapshot_k[param->index1][param->index2] = 
+        ctx->shared_pages_snapshot_k[param->index1][param->index2] =
             pfn_to_virt(page_to_pfn(page));
         ctx->shared_pages_snapshot_pages[param->index1][param->index2] = page;
     }
@@ -1055,12 +1055,12 @@ static int unmap_process_vmas(struct mm_struct *mm,
     // Maps maybed splitted or deleted during.
     for (i = 0; i < maps_len; ++i) {
         for (mpnt = mm->mmap; mpnt; mpnt = mpnt->vm_next) {
-           if (mpnt->vm_start <= (unsigned long)maps_starts[i] && 
+           if (mpnt->vm_start <= (unsigned long)maps_starts[i] &&
                    mpnt->vm_end >= (unsigned long)maps_ends[i]) {
                unsigned long size = (unsigned long)maps_ends[i]
                    - (unsigned long)maps_starts[i];
                ret = zap_page_range(mpnt, (unsigned long)maps_starts[i], size, NULL);
-               printk("%s [%lx:%lx] %x\n", __func__, 
+               printk("%s [%lx:%lx] %x\n", __func__,
                        (long)mpnt->vm_start, (long)mpnt->vm_end, ret);
                break;
            }
@@ -1247,9 +1247,9 @@ int kvm_shm_collect_trackable_dirty(struct kvm *kvm,
 	bytes = kvm->trackable_list_len / 8;
 	if (kvm->trackable_list_len % 8)
 		++bytes;
-	
+
 	i = copy_to_user(bitmap, bm, bytes);
-	
+
 	if (i < 0)
 		return i;
 	return count;
@@ -1273,7 +1273,7 @@ int kvm_vm_ioctl_get_dirty_log_batch(struct kvm *kvm, __u32 cur_index)
     //printk("%s cindex %d putoff %d\n", __func__, cur_index, dlist->put_off);
 
 	//mutex_lock(&kvm->slots_lock);
-    
+
 	slots = kvm_memslots(kvm);
 
 	kvm_for_each_memslot(memslot, slots) {
@@ -1453,7 +1453,7 @@ int kvm_vm_ioctl_ft_write_protect_dirty(struct kvm *kvm, __u32 cur_index)
 	#endif
 
 	//mutex_lock(&kvm->slots_lock);
-    
+
 	spin_lock(&kvm->mmu_lock);
     for (i = 0; i < count; i++) {
         gfn_t gfn = dlist->pages[i];
@@ -1496,7 +1496,7 @@ int kvm_vm_ioctl_adjust_dirty_tracking(struct kvm* kvm, int diff)
 {
     struct kvmft_context *ctx = &kvm->ft_context;
     int new_watermark = ctx->shared_watermark;
-    
+
     if (diff > 0)
         new_watermark -= 10;
     else
@@ -1521,7 +1521,7 @@ int kvm_vm_ioctl_adjust_epoch(struct kvm* kvm, unsigned long newepoch)
 ssize_t do_tcp_sendpage_frag3(struct sock *sk, struct page *page, int *offsets,
              int fcount, size_t fsize, int flags);
 
-int ktcp_send(struct socket *sock, char *buf, int len) 
+int ktcp_send(struct socket *sock, char *buf, int len)
 {
     struct msghdr msg;
     struct iovec iov;
@@ -1828,7 +1828,7 @@ static inline int transfer_16x8_page_with_offs(struct socket *psock,
 //    page2->net_priv = arg;
 
     //printk("%s %d %lx\n", __func__, trans_index, gfn);
-    
+
     do {
         err = do_tcp_sendpage_frag3(psock->sk, page2, offsets, offsets_off, 32, flags);
     } while (err == -EAGAIN);
@@ -1884,7 +1884,7 @@ retry:
         if (check_modify && (page2 = find_later_backup(kvm, gfn, trans_index, run_serial))) {
             check_modify = false;
             goto retry;
-        } else 
+        } else
             transfer_finish_callback(kvm, gfn, trans_index);
         return 0;
     }
@@ -2103,7 +2103,7 @@ static void clear_backup_transfer_bitmap(struct kvm *kvm, unsigned long gfn)
     clear_bit(gfn - slot->base_gfn, slot->backup_transfer_bitmap);
 }
 
-#if 0 
+#if 0
 static void kvm_shm_tcp_put_callback(struct page *page)
 {
     struct zerocopy_callback_arg *arg = page->net_priv;
@@ -2128,7 +2128,7 @@ static void kvm_shm_tcp_put_callback(struct page *page)
                                            arg->trans_index,
                                            arg->run_serial);
             }
-#else       
+#else
             backup = find_later_backup(arg->kvm,
                                        arg->gfn,
                                        arg->trans_index,
@@ -2200,7 +2200,7 @@ static inline int zerocopy_send_one_page_diff(struct socket *psock,
 
     page1 = ctx->shared_pages_snapshot_pages[trans_index][index];
     page2 = find_later_backup(kvm, gfn, trans_index, run_serial);
-    
+
     if (page2 == NULL) {
 #ifdef ENABLE_SWAP_PTE
         struct kvm_memory_slot *slot;
@@ -2401,6 +2401,13 @@ static int __diff_to_buf(unsigned long gfn, struct page *page1,
         }
     }
 
+    if (block == buf + sizeof(*header)) {
+        printk("warning: not found diff page\n");
+        memset(header->h, 0xff, 16 * sizeof(__u8));
+        memcpy(block, page, 4096);
+        block += 4096;
+    }
+
     kernel_fpu_end();
 
     kunmap_atomic(backup);
@@ -2539,7 +2546,7 @@ static int kvmft_transfer_list_old(struct kvm *kvm, struct socket *sock,
                                           trans_index,
                                           run_serial,
                                           i < end - 1);
-        if (ret < 0) 
+        if (ret < 0)
             return ret;
         len += ret;
     }
@@ -2928,7 +2935,7 @@ int kvm_start_kernel_transfer(struct kvm *kvm,
     }
 
     sock = info->socks[conn_index];
-    
+
     if (conn_index == 0) {
         ram_len = diff_and_transfer_all(kvm, trans_index, max_conn);
         if (ram_len < 0) {
@@ -3135,7 +3142,7 @@ void kvm_shm_exit(struct kvm *kvm)
             ctx->shared_pages_snapshot_k[j] = NULL;
         }
     }
-    
+
     kfree(ctx->page_nums_snapshot_k);
     kfree(ctx->page_nums_snapshot_page);
     kfree(ctx->shared_pages_snapshot_k);
@@ -3247,7 +3254,7 @@ int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
     // java program, webjbb
     // sacrifice one core,
     // DMA engine -- william
-	
+
 //	net_set_tcp_zero_copy_callbacks(kvm_shm_tcp_get_callback, kvm_shm_tcp_put_callback);
 
 #ifdef ENABLE_PRE_DIFF
@@ -3285,7 +3292,7 @@ int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
     ret = xmit_kthread_create(kvm);
     if (ret)
         goto err_free;
-    
+
 	//init_waitqueue_head(&kvm->trans_queue_event);
 	init_waitqueue_head(&kvm->mdt_event);
 
