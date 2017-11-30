@@ -2768,28 +2768,18 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
 	QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
         int dirty;
 
-        if (se->is_ram) {
-            continue;
-        }
-        dirty = kvm_shmem_trackable_dirty_test(se->opaque);
-        //dirty = 1;
-        /*
-        if (!strncmp(se->idstr, "0000:00:03.0/virtio-net", 23)){
-            dirty = 0;
-        }
-        if (!strncmp(se->idstr, "0000:00:04.0/virtio-blk", 23)){
-            dirty = 0;
-        }
-        */
-        if (!strncmp(se->idstr, "kvmclock", 8))
-            dirty = 1;
-        if (!strncmp(se->idstr, "mc146818rtc", 11))
-            dirty = 1;
-        if (!dirty)
+        if (se->is_ram)
             continue;
 
-        //if (strncmp(se->idstr, "event-tap", 8))
-        //printf("%s - %s\n", __func__, se->idstr);
+        dirty = kvm_shmem_trackable_dirty_test(se->opaque);
+			
+		if ((strstr(se->idstr, "virtio-net"))||
+			(!strncmp(se->idstr, "kvmclock", 8))||
+			(!strncmp(se->idstr, "mc146818rtc", 11)))
+        	dirty = 1;
+
+		if (!dirty)
+            continue;
 
         assert(ftdev->state_entry_num < CUJU_FT_DEV_STATE_ENTRY_SIZE);
         ftdev->state_entries[ftdev->state_entry_num] = se;
