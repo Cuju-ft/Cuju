@@ -81,7 +81,6 @@ struct KVMState
 {
     AccelState parent_obj;
 
-    KVMSlot slots[32];
     int nr_slots;
     int fd;
     int vmfd;
@@ -113,7 +112,6 @@ struct KVMState
     KVMMemoryListener memory_listener;
     QLIST_HEAD(, KVMParkedVcpu) kvm_parked_vcpus;
 
-    int migration_log;
     int bitmap_count;
 };
 
@@ -276,108 +274,7 @@ static int kvm_set_user_memory_region(KVMMemoryListener *kml, KVMSlot *slot)
         kvm_vm_ioctl(s, KVM_SET_USER_MEMORY_REGION, &mem);
     }
     mem.memory_size = slot->memory_size;
-
-    int i, r;
-    if (s->migration_log) {
-        mem.flags |= KVM_MEM_LOG_DIRTY_PAGES;
-        if (slot->memory_size > 0) {
-            if (!slot->epoch_gfn_to_put_off) {
-                slot->epoch_gfn_to_put_off = g_malloc0(sizeof(void *) *
-                                                       KVM_DIRTY_BITMAP_INIT_COUNT);
-            }
-            for (i = 0; i < KVM_DIRTY_BITMAP_INIT_COUNT; ++i) {
-                if (slot->epoch_gfn_to_put_off[i] == 0) {
-                    slot->epoch_gfn_to_put_off[i] = memalign(
-                        4, slot->memory_size / 1024
-                    );
-                    if (!slot->epoch_gfn_to_put_off[i]) {
-                        printf("%s: allocate epoch_gfn_to_put_off failed.", __func__);
-                        return -ENOMEM;
-                    }
-                    if ((r = mlock(slot->epoch_gfn_to_put_off[i], slot->memory_size / 1024)) != 0) {
-                        printf("%s mlock epoch_gfn_to_put_off failed: %d\n", __func__, r);
-                        return -errno;
-                    }
-                }
-            }
-        }
-    }
-
-    /* unmap here, kvm will free the pages. */
-    if (mem.memory_size == 0 && slot->dirty_bitmap) {
-        for (i = 0; i < slot->bitmap_count; ++i) {
-            kvm_shmem_unmap_pfn(slot->epoch_dirty_bitmaps[i],
-                    slot->epoch_dirty_bitmap_plen);
-            slot->epoch_dirty_bitmap_pfn[i] = 0;
-            slot->epoch_dirty_bitmaps[i] = NULL;
-        }
-        g_free(slot->epoch_dirty_bitmaps);
-        slot->epoch_dirty_bitmaps = NULL;
-        g_free(slot->epoch_dirty_bitmap_pfn);
-        slot->epoch_dirty_bitmap_pfn = NULL;
-        slot->epoch_dirty_bitmap_plen = 0;
-        slot->dirty_bitmap = NULL;
-    }
-    if (mem.memory_size == 0) {
-        if (slot->epoch_gfn_to_put_off) {
-            for (i = 0; i < KVM_DIRTY_BITMAP_INIT_COUNT; ++i) {
-                if (slot->epoch_gfn_to_put_off[i] != 0) {
-                    free(slot->epoch_gfn_to_put_off[i]);
-                    slot->epoch_gfn_to_put_off[i] = 0;
-                }
-            }
-            g_free(slot->epoch_gfn_to_put_off);
-            slot->epoch_gfn_to_put_off = NULL;
-        }
-    }
-
-    // make sure this is only called before FT starts.
-    assert(s->bitmap_count == KVM_DIRTY_BITMAP_INIT_COUNT);
-
-    mem.dirty_bitmap_pfn[0] = 0;
-    mem.dirty_bitmap_pfn[1] = 0;
-    mem.dirty_bitmap_plen = 0;
-    if (slot->epoch_gfn_to_put_off) {
-        mem.gfn_to_put_off[0] = (__u64)slot->epoch_gfn_to_put_off[0];
-        mem.gfn_to_put_off[1] = (__u64)slot->epoch_gfn_to_put_off[1];
-    }
-
-    r = kvm_vm_ioctl(s, KVM_SET_USER_MEMORY_REGION, &mem);
-
-    if (!r) {
-        if (mem.dirty_bitmap_plen) {
-            /* kvm allocated a new bitmap, it had already freed the old pages. */
-            if (slot->epoch_dirty_bitmap_plen) {
-                int i;
-                for (i = 0; i < KVM_DIRTY_BITMAP_INIT_COUNT; ++i) {
-                    kvm_shmem_unmap_pfn(slot->epoch_dirty_bitmaps[i],
-                            slot->epoch_dirty_bitmap_plen*4096);
-                    printf("%s unmap %p %08x\n", __func__, slot->epoch_dirty_bitmaps[i], (int)slot->start_addr);
-                    slot->epoch_dirty_bitmaps[i] = NULL;
-                    slot->epoch_dirty_bitmap_pfn[i] = 0;
-                }
-                g_free(slot->epoch_dirty_bitmaps);
-                slot->epoch_dirty_bitmaps = NULL;
-                g_free(slot->epoch_dirty_bitmap_pfn);
-                slot->epoch_dirty_bitmap_pfn = NULL;
-                slot->epoch_dirty_bitmap_plen = 0;
-                slot->dirty_bitmap = NULL;
-            }
-            /* map the new pages. */
-            slot->epoch_dirty_bitmap_plen = mem.dirty_bitmap_plen;
-            slot->bitmap_count = s->bitmap_count;
-            slot->epoch_dirty_bitmaps = g_malloc0(sizeof(void *) * s->bitmap_count);
-            slot->epoch_dirty_bitmap_pfn = g_malloc0(sizeof(__u64) * s->bitmap_count);
-            for (i = 0; i < s->bitmap_count; ++i) {
-                slot->epoch_dirty_bitmap_pfn[i] = mem.dirty_bitmap_pfn[i];
-                slot->epoch_dirty_bitmaps[i] = kvm_shmem_map_pfn(mem.dirty_bitmap_pfn[i],
-                        mem.dirty_bitmap_plen*4096);
-            }
-            slot->dirty_bitmap = slot->epoch_dirty_bitmaps[KVM_SHM_INIT_INDEX];
-        }
-    }
-
-    return r;
+    return kvm_vm_ioctl(s, KVM_SET_USER_MEMORY_REGION, &mem);
 }
 
 int kvm_destroy_vcpu(CPUState *cpu)
@@ -629,54 +526,6 @@ static int kvm_physical_sync_dirty_bitmap(KVMMemoryListener *kml,
 
     return ret;
 }
-
-static int kvm_physical_sync_dirty_bitmap_ft(KVMMemoryListener *kml,
-                                          MemoryRegionSection *section)
-{
-    KVMState *s = kvm_state;
-    struct kvm_dirty_log d = {};
-    KVMSlot *mem;
-    int ret = 0;
-    hwaddr start_addr = section->offset_within_address_space;
-    hwaddr end_addr = start_addr + int128_get64(section->size);
-
-    d.dirty_bitmap = NULL;
-    while (start_addr < end_addr) {
-        mem = kvm_lookup_overlapping_slot(kml, start_addr, end_addr);
-        if (mem == NULL) {
-            break;
-        }
-
-        if (mem->log_sync_mark == 1) {
-            goto ADDRPUT;
-        }
-
-        d.slot = mem->slot;
-        d.dirty_bitmap = NULL;
-
-        d.flags |= KVM_DIRTY_LOG_FLAG_SWAP;
-        d.flags |= KVM_DIRTY_LOG_FLAG_NOCLEAN;
-
-        if (kvm_vm_ioctl(s, KVM_GET_DIRTY_LOG, &d) == -1) {
-            DPRINTF("ioctl failed %d\n", errno);
-            ret = -1;
-            break;
-        }
-
-        mem->log_sync_mark = 1;
-
-        if (mem->dirty_bitmap == mem->epoch_dirty_bitmaps[0])
-            mem->dirty_bitmap = mem->epoch_dirty_bitmaps[1];
-        else
-            mem->dirty_bitmap = mem->epoch_dirty_bitmaps[0];
-ADDRPUT:
-        start_addr = mem->start_addr + mem->memory_size;
-    }
-
-    return ret;
-}
-
-
 
 static void kvm_coalesce_mmio_region(MemoryListener *listener,
                                      MemoryRegionSection *secion,
@@ -1051,11 +900,8 @@ static void kvm_log_sync(MemoryListener *listener,
     KVMMemoryListener *kml = container_of(listener, KVMMemoryListener, listener);
     int r;
 
-    if(kvmft_started())
-        r = kvm_physical_sync_dirty_bitmap_ft(kml, section);
+    r = kvm_physical_sync_dirty_bitmap(kml, section);
 
-    else
-        r = kvm_physical_sync_dirty_bitmap(kml, section);
     if (r < 0) {
         abort();
     }
