@@ -568,37 +568,15 @@ static struct kvm_memslots *kvm_alloc_memslots(void)
 
 static void kvm_destroy_dirty_bitmap(struct kvm_memory_slot *memslot)
 {
-	if (!memslot->dirty_bitmap)
-		return;
+    if (!memslot->dirty_bitmap)
+        return;
 
-	//kvfree(memslot->dirty_bitmap);
-	//memslot->dirty_bitmap = NULL;
-    shared_pages_array_free(&memslot->epoch_dirty_bitmaps);
-    shared_pages_array_free(&memslot->epoch_gfn_to_put_offs);
-
-    if (memslot->lock_dirty_bitmap) {
-        kvm_kvfree(memslot->lock_dirty_bitmap);
-        memslot->lock_dirty_bitmap = NULL;
-    }
-
-    if (memslot->backup_transfer_bitmap) {
-        kvm_kvfree(memslot->backup_transfer_bitmap);
-        memslot->backup_transfer_bitmap = NULL;
-    }
-
-    if (memslot->epoch_gfn_to_put_off) {
-        kfree(memslot->epoch_gfn_to_put_off);
-        memslot->epoch_gfn_to_put_off = NULL;
-    }
-
+    kvfree(memslot->dirty_bitmap);
     memslot->dirty_bitmap = NULL;
 }
 
 static void kvm_destroy_dirty_bitmap_init(struct kvm_memory_slot *memslot)
 {
-    if (!memslot->dirty_bitmap)
-		return;
-
     shared_pages_array_free(&memslot->epoch_dirty_bitmaps);
     shared_pages_array_free(&memslot->epoch_gfn_to_put_offs);
 
@@ -617,8 +595,11 @@ static void kvm_destroy_dirty_bitmap_init(struct kvm_memory_slot *memslot)
         memslot->epoch_gfn_to_put_off = NULL;
     }
 
-    memslot->dirty_bitmap = NULL;
+    if (!memslot->dirty_bitmap)
+        return;
 
+    kvfree(memslot->dirty_bitmap);
+    memslot->dirty_bitmap = NULL;
 }
 
 /*
