@@ -1196,7 +1196,7 @@ void qemu_savevm_state_begin(QEMUFile *f,
         }
         if (se->ops && se->ops->is_active) {
             if (!se->ops->is_active(se->opaque)) {
-				#ifdef ft_debug_mode_enabl
+				#ifdef ft_debug_mode_enable
                 printf("not active %s\n", se->idstr);
 				#endif
                 continue;
@@ -1225,7 +1225,7 @@ int qemu_savevm_state_iterate(QEMUFile *f, bool postcopy)
 {
     SaveStateEntry *se;
     int ret = 1;
-
+	
     trace_savevm_state_iterate();
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
         if (!se->ops || !se->ops->save_live_iterate) {
@@ -1233,7 +1233,9 @@ int qemu_savevm_state_iterate(QEMUFile *f, bool postcopy)
         }
         if (se->ops && se->ops->is_active) {
             if (!se->ops->is_active(se->opaque)) {
+				#ifdef ft_debug_mode_enable
                 printf("not active %s\n", se->idstr);
+				#endif
                 continue;
             }
         }
@@ -1252,7 +1254,9 @@ int qemu_savevm_state_iterate(QEMUFile *f, bool postcopy)
         trace_savevm_section_start(se->idstr, se->section_id);
 
         save_section_header(f, se, QEMU_VM_SECTION_PART);
+		#ifdef ft_debug_mode_enable
         printf("live_iterate %s\n", se->idstr);
+		#endif
 
         ret = se->ops->save_live_iterate(f, se->opaque);
         trace_savevm_section_end(se->idstr, se->section_id, ret);
@@ -1435,7 +1439,9 @@ void qemu_savevm_state_pending(QEMUFile *f, uint64_t max_size,
                 continue;
             }
         }
+		#ifdef ft_debug_mode_enable
         printf("pending %s\n", se->idstr);
+		#endif
         se->ops->save_live_pending(f, se->opaque, max_size,
                                    res_non_postcopiable, res_postcopiable);
     }
@@ -2126,7 +2132,9 @@ qemu_loadvm_section_part_end(QEMUFile *f, MigrationIncomingState *mis)
         return -EINVAL;
     }
 
+	#ifdef ft_debug_mode_enable
     printf("part_end %s\n", le->se->idstr);
+	#endif
     ret = vmstate_load(f, le->se, le->version_id);
     if (ret < 0) {
         error_report("error while loading state section id %d(%s)",
@@ -2149,7 +2157,9 @@ qemu_loadvm_section_dev(QEMUFile *f, MigrationIncomingState *mis)
     char idstr[257];
 
     ftdev.state_entry_num = (uint8_t)qemu_get_byte(f);
+#ifdef ft_debug_mode_enable
     printf("entrynum = %d\n", ftdev.state_entry_num);
+#endif
     assert(ftdev.state_entry_num <= CUJU_FT_DEV_STATE_ENTRY_SIZE);
 #ifdef ft_debug_mode_enable
     printf("%s num %d\n", __func__, ftdev.state_entry_num);
@@ -2167,7 +2177,9 @@ qemu_loadvm_section_dev(QEMUFile *f, MigrationIncomingState *mis)
         ftdev.state_entries[i] = se;
         ftdev.state_entry_begins[i] = qemu_get_be32(f);
         ftdev.state_entry_lens[i] = qemu_get_be32(f);
+		#ifdef ft_debug_mode_enable
         printf("%s %s %d %p\n", __func__, idstr, ftdev.state_entry_lens[i], &ftdev.state_entry_lens[i]);
+		#endif
     }
     for (int i = 0; i < ftdev.state_entry_num; ++i) {
         se = ftdev.state_entries[i];
@@ -2176,7 +2188,9 @@ qemu_loadvm_section_dev(QEMUFile *f, MigrationIncomingState *mis)
             se->state_buf = g_realloc(se->state_buf, len + 1);
             se->state_buf_size = len + 1;
         }
+		#ifdef ft_debug_mode_enable
         printf("%s %s %d %p\n", __func__, se->idstr, ftdev.state_entry_lens[i], &ftdev.state_entry_lens[i]);
+		#endif
         qemu_get_buffer(f, (uint8_t *)se->state_buf, len);
         se->state_buf[len] = QEMU_VM_EOF;
     }
@@ -2792,7 +2806,9 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
         json_prop_int(vmdesc, "instance_id", se->instance_id);
 
         save_section_header(f, se, QEMU_VM_SECTION_FULL);
+		#ifdef ft_debug_mode_enable
         printf("%s complete precopy %s %p\n", __func__, se->idstr, se->opaque);
+		#endif
         vmstate_save(f, se, vmdesc);
         trace_savevm_section_end(se->idstr, se->section_id, 0);
         save_section_footer(f, se);
@@ -2803,7 +2819,9 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
         ftdev->state_entry_lens[ftdev->state_entry_num] = ftdev->ft_dev_put_off - ftdev->state_entry_begins[ftdev->state_entry_num];
         ftdev->state_entry_num++;
        // ft_dev_report_size(f->opaque);
+		#ifdef ft_debug_mode_enable
         printf("%s %s %d %p\n", __func__, se->idstr, ftdev->state_entry_lens[ftdev->state_entry_num-1], &ftdev->state_entry_lens[ftdev->state_entry_num-1]);
+		#endif
     }
 
     if (!more)
@@ -2814,6 +2832,8 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
 	#ifdef ft_debug_mode_enable
     int vmdesc_len = strlen(qjson_get_str(vmdesc));
     printf("%d\n", vmdesc_len);
+	#else
+	strlen(qjson_get_str(vmdesc));
 	#endif
     qjson_destroy(vmdesc);
 
@@ -2938,7 +2958,9 @@ void migrate_ft_trans_send_device_state_header(struct CUJUFTDev *ftdev, QEMUFile
     int i;
     qemu_put_byte(f, QEMU_VM_SECTION_DEV);
     qemu_put_byte(f, (uint8_t)ftdev->state_entry_num);
+	#ifdef ft_debug_mode_enable
     printf("%s num %d\n", __func__, ftdev->state_entry_num);
+	#endif
     for (i = 0; i < ftdev->state_entry_num; ++i) {
         SaveStateEntry *se = ftdev->state_entries[i];
         size_t len = strlen(se->idstr);
@@ -2972,7 +2994,9 @@ int qemu_loadvm_dev(QEMUFile *f)
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
         if (!se->state_buf)
             continue;
+		#ifdef ft_debug_mode_enable
         printf("%s %s\n", __func__, se->idstr);
+		#endif
         f->buf = se->state_buf;
         f->buf_index = 0;
         f->buf_size = se->state_buf_size;
@@ -2981,10 +3005,12 @@ int qemu_loadvm_dev(QEMUFile *f)
 
         section_type = qemu_get_byte(f);
 
+		#ifdef ft_debug_mode_enable
         uint32_t section_id = qemu_get_be32(f);
-		//unused section_id will trigger compile error
-        //qemu_get_be32(f);
         printf("%s %d %d\n", __func__, section_type, section_id);
+		#else
+		qemu_get_be32(f);
+		#endif
         assert(section_type == QEMU_VM_SECTION_FULL);
 
 		len = qemu_get_byte(f);

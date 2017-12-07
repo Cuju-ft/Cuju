@@ -1101,7 +1101,6 @@ static void virtio_blk_set_status(VirtIODevice *vdev, uint8_t status)
 
 static void virtio_blk_save_device(VirtIODevice *vdev, QEMUFile *f)
 {
-    printf("%s\n", __func__);
     VirtIOBlock *s = VIRTIO_BLK(vdev);
 
     VirtIOBlockReq *req = s->rq;
@@ -1169,7 +1168,6 @@ static void virtio_blk_save_device(VirtIODevice *vdev, QEMUFile *f)
 static int virtio_blk_load_device(VirtIODevice *vdev, QEMUFile *f,
                                   int version_id)
 {
-    printf("%s\n", __func__);
     VirtIOBlock *s = VIRTIO_BLK(vdev);
     int t, i;
 

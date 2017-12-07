@@ -2457,11 +2457,7 @@ static void *migration_thread(void *opaque)
 
     trace_migration_thread_setup_complete();
 
-    // For CUJU-FT
-    // Stop VM first and do completion
-//    migration_completion(s, current_active_state,
-//                 &old_vm_running, &start_time);
-
+	printf("Start live migration iterate backup\n");
     while (s->state == MIGRATION_STATUS_ACTIVE ||
            s->state == MIGRATION_STATUS_POSTCOPY_ACTIVE) {
         int64_t current_time;
@@ -2919,7 +2915,9 @@ static void migrate_timer(void *opaque)
     kvm_shmem_trackable_dirty_reset();
     migrate_ft_trans_send_device_state_header(s->ft_dev, s->file);
     qemu_put_buffer(s->file, s->ft_dev->ft_dev_buf, s->ft_dev->ft_dev_put_off);
+#ifdef ft_debug_mode_enable
     printf("device len: %d\n", s->ft_dev->ft_dev_put_off);
+#endif
 
     s->ft_dev->ft_dev_put_off = 0;
 
