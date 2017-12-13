@@ -585,16 +585,6 @@ static void kvm_destroy_dirty_bitmap_init(struct kvm_memory_slot *memslot)
         memslot->lock_dirty_bitmap = NULL;
     }
 
-    if (memslot->backup_transfer_bitmap) {
-        kvm_kvfree(memslot->backup_transfer_bitmap);
-        memslot->backup_transfer_bitmap = NULL;
-    }
-
-    if (memslot->epoch_gfn_to_put_off) {
-        kfree(memslot->epoch_gfn_to_put_off);
-        memslot->epoch_gfn_to_put_off = NULL;
-    }
-
     if (!memslot->dirty_bitmap)
         return;
 
@@ -825,25 +815,11 @@ static int kvm_create_dirty_bitmap(struct kvm_memory_slot *memslot)
     if (ret < 0)
         goto nomem;
 
-    array_size = sizeof(unsigned long) * KVM_DIRTY_BITMAP_INIT_COUNT;
-    memslot->epoch_gfn_to_put_off = kmalloc(array_size, GFP_KERNEL | __GFP_ZERO);
-    if (!memslot->epoch_gfn_to_put_off) {
-        goto nomem;
-    }
-
     if (memslot->lock_dirty_bitmap) {
         kvm_kvfree(memslot->lock_dirty_bitmap);
     }
     memslot->lock_dirty_bitmap = kvm_kvzalloc(dirty_bytes);
     if (!memslot->lock_dirty_bitmap) {
-        goto nomem;
-    }
-
-    if (memslot->backup_transfer_bitmap) {
-        kvm_kvfree(memslot->backup_transfer_bitmap);
-    }
-    memslot->backup_transfer_bitmap = kvm_kvzalloc(dirty_bytes);
-    if (!memslot->backup_transfer_bitmap) {
         goto nomem;
     }
 
@@ -858,34 +834,6 @@ nomem:
 
 return -ENOMEM;
 
-}
-
-static int kvm_extend_dirty_bitmap(struct kvm_memory_slot *memslot)
-{
-#ifndef CONFIG_S390
-    size_t array_size;
-    int ret;
- 
-    ret = shared_page_array_extend(&memslot->epoch_dirty_bitmaps);
-    if (ret < 0)
-        return ret;
- 
-    ret = shared_page_array_extend(&memslot->epoch_gfn_to_put_offs);
-    if (ret < 0)
-        return ret;
-
-    array_size = sizeof(unsigned long) * (memslot->bitmap_count + 1);
-    memslot->epoch_gfn_to_put_off = krealloc(memslot->epoch_gfn_to_put_off,
-                                             array_size,
-                                             GFP_KERNEL | __GFP_ZERO);
-    if (!memslot->epoch_gfn_to_put_off) {
-        return -ENOMEM;
-    }
-
-    memslot->bitmap_count++;
-
-#endif /* !CONFIG_S390 */
-    return 0;
 }
 
 /*
@@ -1144,11 +1092,6 @@ int __kvm_set_memory_region(struct kvm *kvm,
 		memset(&new.arch, 0, sizeof(new.arch));
 	}
 
-	if (new.epoch_gfn_to_put_off) {
-		new.epoch_gfn_to_put_off[0] = mem->gfn_to_put_off[0];
-		new.epoch_gfn_to_put_off[1] = mem->gfn_to_put_off[1];
-	}
-
 	update_memslots(slots, &new);
 	old_memslots = install_new_memslots(kvm, as_id, slots);
 
@@ -1213,30 +1156,6 @@ static int kvm_vm_ioctl_set_memory_region(struct kvm *kvm,
 		return -EINVAL;
 
 	return kvm_set_memory_region(kvm, mem);
-}
-
-int kvm_vm_ioctl_extend_memory_region_dirty_bitmap(struct kvm *kvm,
-                   struct kvm_userspace_memory_region *mem,
-                   int user_alloc)
-{
-    struct kvm_memory_slot *slot;
-    int r;
-
-    if (mem->slot >= KVM_MEMORY_SLOTS)
-        return -EINVAL;
-    mutex_lock(&kvm->slots_lock);
-    slot = id_to_memslot(kvm->memslots, mem->slot);
-    r = kvm_extend_dirty_bitmap(slot);
-    if (!r) {
-        slot->epoch_gfn_to_put_off[slot->bitmap_count-1] = mem->gfn_to_put_off[0];
-        mem->dirty_bitmap_plen = slot->epoch_dirty_bitmaps.plen;
-        mem->dirty_bitmap_pfn[0] = slot->epoch_dirty_bitmaps.pfn[slot->bitmap_count - 1];
-        mem->gfn_to_put_off_plen = slot->epoch_gfn_to_put_offs.plen;
-        mem->gfn_to_put_off_pfn[0] = slot->epoch_gfn_to_put_offs.pfn[slot->bitmap_count - 1];
-
-        mutex_unlock(&kvm->slots_lock);
-    }
-    return r;
 }
 
 int kvm_get_dirty_log(struct kvm *kvm,
@@ -3083,26 +3002,6 @@ static long kvm_vm_ioctl(struct file *filp,
         	r = 0;
 		break;
 	}
-    	case KVM_EXTEND_MEMORY_REGION_DIRTY_BITMAP: {
-        	struct kvm_userspace_memory_region kvm_userspace_mem;
-
-	        r = -EFAULT;
-        	if (copy_from_user(&kvm_userspace_mem, argp,
-                	           sizeof kvm_userspace_mem))
-	            goto out;
-
-        	r = kvm_vm_ioctl_extend_memory_region_dirty_bitmap(kvm, &kvm_userspace_mem, 1);
-	        if (r)
-           	 goto out;
-
-	        r = -EFAULT;
-        	if (copy_to_user(argp, &kvm_userspace_mem,
-                	         sizeof kvm_userspace_mem))
-	            goto out;
-
-        	r = 0;
-	        break;
-   	}
 	case KVM_GET_DIRTY_LOG: {
 		struct kvm_dirty_log log;
 
