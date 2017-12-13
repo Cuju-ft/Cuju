@@ -359,7 +359,6 @@ struct kvm_memory_slot {
 	struct shared_pages_array epoch_dirty_bitmaps;
 	struct shared_pages_array epoch_gfn_to_put_offs;
 
-	unsigned long *epoch_gfn_to_put_off;
 	unsigned long *lock_dirty_bitmap;
 
 	struct kvm_arch_memory_slot arch;
