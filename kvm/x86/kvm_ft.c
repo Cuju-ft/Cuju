@@ -771,39 +771,10 @@ static int wait_for_other_mark(struct kvm_memory_slot *memslot,
     return 0;
 }
 
-static int inline is_gfn_transferring(unsigned long gfn, struct kvm_memory_slot *memslot)
-{
-    return test_bit(gfn - memslot->base_gfn, memslot->backup_transfer_bitmap);
-}
 
 int replace_userspace_pte_page(struct task_struct *tsk,
              unsigned long addr, struct page *old, struct page *to);
 
-// called by dirty threads
-static void try_put_gfn_in_diff_req_list(struct kvm *kvm,
-                                    struct kvm_memory_slot *memslot,
-                                    unsigned long gfn)
-{
-    struct kvmft_context *ctx;
-    unsigned long gfn_off;
-
-	ctx = &kvm->ft_context;
-    gfn_off = gfn - memslot->base_gfn;
-
-    if (ctx->diff_req_list_cur != NULL) {    // previous epoch is still transfering
-        int prev_index = ((ctx->cur_index - 1) + ctx->max_desc_count) % ctx->max_desc_count;
-        volatile void *prev_bitmap = memslot->epoch_dirty_bitmaps.kaddr[prev_index];
-        if (test_bit(gfn_off, prev_bitmap)) {   // dirtied by previous too
-            if (!test_and_set_bit(gfn_off, memslot->backup_transfer_bitmap)) { // but gfn not yet transfered
-                struct diff_req_list *prev_list = ctx->diff_req_list[prev_index];
-                diff_req_list_put(prev_list, gfn, memslot);
-                //if (prev_list->off % 20 == 0) {
-                    wake_up(&kvm->diff_req_event);
-                //}
-            }
-        }
-    }
-}
 
 static inline void memcpy_avx_32(uint8_t *a, uint8_t *b)
 {
@@ -994,44 +965,6 @@ int kvmft_page_dirty(struct kvm *kvm, unsigned long gfn,
     if (unlikely(put_index >= dlist->dirty_stop_num))
 		ctx->log_full = true;
 
-#ifdef ENABLE_PRE_DIFF
-    try_put_gfn_in_diff_req_list(kvm, memslot, gfn);
-#endif
-
-#ifdef ENABLE_SWAP_PTE
-    if (is_user && replacer_pfn && is_gfn_transferring(gfn, memslot)) {
-        struct page *to = ctx->shared_pages_snapshot_pages[ctx->cur_index][put_index];
-        struct page *old = gfn_to_page(kvm, gfn);
-        int ret;
-        ret = replace_userspace_pte_page(current, orig, old, to);
-        #ifdef DEBUG_SWAP_PTE
-        printk("%s %lx is under transferring, repl ret %d \n", __func__, gfn, ret);
-        printk("!PageAnon(old) %d PageCompound(old) %d page_mapcount(old) %d\n",
-            !PageAnon(old), PageCompound(old), page_mapcount(old));
-        #endif
-        if (ret < 0) {
-            clear_bit(gfn - memslot->base_gfn, memslot->backup_transfer_bitmap);
-            #ifdef DEBUG_SWAP_PTE
-            printk("%s failed, clear bit\n", __func__);
-            #endif
-        } else if (ret == 0) {
-            struct page *page = alloc_pages(GFP_KERNEL, 0);
-            ctx->shared_pages_snapshot_pages[ctx->cur_index][put_index] = page;
-            ctx->shared_pages_snapshot_k[ctx->cur_index][put_index] = pfn_to_virt(page_to_pfn(page));
-            *replacer_pfn = page_to_pfn(to);
-            #ifdef DEBUG_SWAP_PTE
-            printk("%s replace %lx to %lx\n", __func__, page_to_pfn(old), page_to_pfn(to));
-            printk("%s succeed, alloc new snapshot page\n", __func__);
-            #endif
-        } else { //if (ret == 1) {
-            #ifdef DEBUG_SWAP_PTE
-            printk("%s changed, do nothing\n", __func__);
-            #endif
-            /* PTE no longer points to old, do nothing */
-        }
-        kvm_release_page_clean(old);
-    }
-#endif
 
     return 0;
 }
@@ -2077,75 +2010,6 @@ static void kvm_shm_tcp_get_callback(struct page *page)
 }
 */
 
-static int set_transfer_return_backup(struct kvm *kvm, unsigned long gfn)
-{
-    struct kvm_memory_slot *slot;
-
-    slot = gfn_to_memslot(kvm, gfn);
-    return test_and_set_bit(gfn - slot->base_gfn, slot->backup_transfer_bitmap);
-}
-
-#ifdef ENABLE_SWAP_PTE
-static int clear_transfer_return_old(struct kvm *kvm, unsigned long gfn)
-{
-    struct kvm_memory_slot *slot;
-
-    slot = gfn_to_memslot(kvm, gfn);
-    return test_and_clear_bit(gfn - slot->base_gfn, slot->backup_transfer_bitmap);
-}
-#endif
-
-static void clear_backup_transfer_bitmap(struct kvm *kvm, unsigned long gfn)
-{
-    struct kvm_memory_slot *slot;
-
-    slot = gfn_to_memslot(kvm, gfn);
-    clear_bit(gfn - slot->base_gfn, slot->backup_transfer_bitmap);
-}
-
-#if 0
-static void kvm_shm_tcp_put_callback(struct page *page)
-{
-    struct zerocopy_callback_arg *arg = page->net_priv;
-
-    return;
-
-    if (arg && atomic_dec_return(&arg->counter) == 0) {
-        struct page *backup = NULL;
-        // TODO disable mdt
-        if (false && arg->check_modify) {
-            // for gfn_to_page
-            kvm_release_page_clean(page);
-#ifdef ENABLE_SWAP_PTE
-            // if bit still set, then nothing happened.
-            // else if bit cleared, we need to re-transmit.
-            if (!clear_transfer_return_old(arg->kvm, arg->gfn)) {
-                #ifdef DEBUG_SWAP_PTE
-                printk("%s %lx switch PTE failed, need to transfer backup again.\n", __func__, arg->gfn);
-                #endif
-                backup = find_later_backup(arg->kvm,
-                                           arg->gfn,
-                                           arg->trans_index,
-                                           arg->run_serial);
-            }
-#else
-            backup = find_later_backup(arg->kvm,
-                                       arg->gfn,
-                                       arg->trans_index,
-                                       arg->run_serial);
-#endif
-        }
-        if (backup != NULL) {
-            arg->page2 = backup;
-            modified_during_transfer_list_add(arg->kvm, arg);
-        } else {
-            transfer_finish_callback(arg->kvm, arg->gfn, arg->trans_index);
-            kfree(arg);
-        }
-        page->net_priv = NULL;
-    }
-}
-#endif
 
 static struct page *find_later_backup(struct kvm *kvm,
                                       unsigned long gfn,
@@ -2202,16 +2066,6 @@ static inline int zerocopy_send_one_page_diff(struct socket *psock,
     page2 = find_later_backup(kvm, gfn, trans_index, run_serial);
 
     if (page2 == NULL) {
-#ifdef ENABLE_SWAP_PTE
-        struct kvm_memory_slot *slot;
-        slot = gfn_to_memslot(kvm, gfn);
-        // when swap-pte is enabled, check_modify == true && bit is set
-        if (test_and_set_bit(gfn - slot->base_gfn, slot->backup_transfer_bitmap)) {
-            #ifdef DEBUG_SWAP_PTE
-            printk("%s backup bit is already set, wrong!\n", __func__);
-            #endif
-        }
-#endif
         page2 = gfn_to_page(kvm, gfn);
         check_modify = true;
     }
@@ -2265,29 +2119,6 @@ static int send_mdt(struct kvm *kvm, int trans_index)
     }
 
     return len;
-}
-
-static void clear_all_backup_transfer_bitmap(struct kvm *kvm, int index)
-{
-    struct kvmft_context *ctx = &kvm->ft_context;
-    struct kvmft_dirty_list *list = ctx->page_nums_snapshot_k[index];
-    struct kvm_memory_slot *slot;
-    int i;
-
-    for (i = 0; i < list->put_off; i++) {
-        unsigned long gfn = list->pages[i];
-        slot = gfn_to_memslot(kvm, gfn);
-        clear_bit(gfn - slot->base_gfn, slot->backup_transfer_bitmap);
-    }
-}
-
-static inline int gfn_in_diff_list(struct kvm *kvm,
-                                unsigned long gfn)
-{
-    struct kvm_memory_slot *slot;
-    slot = gfn_to_memslot(kvm, gfn);
-    return test_and_set_bit(gfn - slot->base_gfn,
-            slot->backup_transfer_bitmap);
 }
 
 static inline void notify_diff_req_list_change(struct kvm *kvm, int index)
@@ -2686,10 +2517,6 @@ static int diff_and_transfer_all(struct kvm *kvm, int trans_index, int max_conn)
 
     BUG_ON(!psock);
 
-#ifdef ENABLE_SWAP_PTE
-    clear_all_backup_transfer_bitmap(kvm, trans_index);
-#endif
-
     if (dlist->put_off == 0)
         return 0;
 
@@ -2759,19 +2586,6 @@ static int diff_and_transfer_all(struct kvm *kvm, int trans_index, int max_conn)
     kvmft_tcp_nodelay(psock);
 #endif
 
-#ifdef ENABLE_PRE_DIFF
-    take_over_diff_req_list(kvm);
-    if (count > 0) {
-        //if (skipped > 0)
-        //    printk("%s\tskipped\t%8d\t%8d\n", __func__, skipped, count);
-        ret = transfer_diff_req_list(kvm, psock, trans_index);
-        if (ret < 0) {
-            return ret;
-        }
-        len += ret;
-        clear_all_backup_transfer_bitmap(kvm, trans_index);
-    }
-#endif
 
     {
         #ifdef PAGE_TRANSFER_TIME_MEASURE

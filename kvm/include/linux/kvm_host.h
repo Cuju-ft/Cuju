@@ -361,7 +361,6 @@ struct kvm_memory_slot {
 
 	unsigned long *epoch_gfn_to_put_off;
 	unsigned long *lock_dirty_bitmap;
-	unsigned long *backup_transfer_bitmap;
 
 	struct kvm_arch_memory_slot arch;
 	unsigned long userspace_addr;

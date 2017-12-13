@@ -585,11 +585,6 @@ static void kvm_destroy_dirty_bitmap_init(struct kvm_memory_slot *memslot)
         memslot->lock_dirty_bitmap = NULL;
     }
 
-    if (memslot->backup_transfer_bitmap) {
-        kvm_kvfree(memslot->backup_transfer_bitmap);
-        memslot->backup_transfer_bitmap = NULL;
-    }
-
     if (memslot->epoch_gfn_to_put_off) {
         kfree(memslot->epoch_gfn_to_put_off);
         memslot->epoch_gfn_to_put_off = NULL;
@@ -836,14 +831,6 @@ static int kvm_create_dirty_bitmap(struct kvm_memory_slot *memslot)
     }
     memslot->lock_dirty_bitmap = kvm_kvzalloc(dirty_bytes);
     if (!memslot->lock_dirty_bitmap) {
-        goto nomem;
-    }
-
-    if (memslot->backup_transfer_bitmap) {
-        kvm_kvfree(memslot->backup_transfer_bitmap);
-    }
-    memslot->backup_transfer_bitmap = kvm_kvzalloc(dirty_bytes);
-    if (!memslot->backup_transfer_bitmap) {
         goto nomem;
     }
 
