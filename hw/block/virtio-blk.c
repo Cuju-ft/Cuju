@@ -45,6 +45,7 @@ static void confirm_req_read_memory_mapped(VirtIOBlockReq *req)
         req->in = (void *)in_iov[in_num - 1].iov_base
               + in_iov[in_num - 1].iov_len
               - sizeof(struct virtio_blk_inhdr);
+        req->in_len = iov_size(in_iov, in_num);
     } else {
         printf("%s %p already mapped\n", __func__, req);
         abort();
