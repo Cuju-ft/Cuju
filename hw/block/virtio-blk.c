@@ -60,16 +60,19 @@ static void virtio_blk_save_write_head(VirtIOBlock *s, VirtIOBlockReq *req, unsi
         s->temp_list->list = g_malloc(sizeof(s->temp_list->list[0]) * HEAD_LIST_INIT_SIZE);
         s->temp_list->idx = g_malloc(sizeof(s->temp_list->idx[0]) * HEAD_LIST_INIT_SIZE);
         s->temp_list->reqs = g_malloc(sizeof(s->temp_list->reqs[0]) * HEAD_LIST_INIT_SIZE);
+        s->temp_list->completed = g_malloc(sizeof(s->temp_list->completed[0]) * HEAD_LIST_INIT_SIZE);
         s->temp_list->size = HEAD_LIST_INIT_SIZE;
     } else if (s->temp_list->len >= s->temp_list->size) {
         s->temp_list->size *= 2;
         s->temp_list->list = g_realloc(s->temp_list->list, sizeof(s->temp_list->list[0]) * s->temp_list->size);
         s->temp_list->idx = g_realloc(s->temp_list->idx, sizeof(s->temp_list->idx[0]) * s->temp_list->size);
         s->temp_list->reqs = g_realloc(s->temp_list->reqs, sizeof(s->temp_list->reqs[0]) * s->temp_list->size);
+        s->temp_list->completed = g_realloc(s->temp_list->completed, sizeof(s->temp_list->completed[0]) * s->temp_list->size);
     }
     s->temp_list->reqs[s->temp_list->len] = req;
     s->temp_list->list[s->temp_list->len] = head;
     s->temp_list->idx[s->temp_list->len] = virtio_get_queue_index(req->vq);
+    s->temp_list->completed[s->temp_list->len] = false;
     s->temp_list->len++;
     req->record = s->temp_list;
 }
@@ -151,8 +154,16 @@ static void virtio_blk_complete_head(VirtIOBlockReq *req)
 {
     VirtIOBlock *s = global_virtio_block;
     ReqRecord *rec = req->record;
+    int i;
 
     if (rec != NULL) {
+        for (i=0 ; i<rec->len ; ++i) {
+            if (rec->reqs[i] == req) {
+                rec->completed[i] = true;
+                break;
+            }
+        }
+        assert(i<rec->len);
         if (--rec->left == 0) {
             QTAILQ_REMOVE(&s->record_list, rec, node);
             g_free(rec);
@@ -410,6 +421,7 @@ static VirtIOBlockReq *virtio_blk_get_request_from_head(VirtIODevice *vdev, unsi
     iov_discard_back(in_iov, &in_num, sizeof(struct virtio_blk_inhdr));
 
     qemu_iovec_init_external(&req->qiov, iov, out_num);
+    req->sector_num = virtio_ldq_p(VIRTIO_DEVICE(req->dev), &req->out.sector);
     type = virtio_ldl_p(VIRTIO_DEVICE(req->dev), &req->out.type);
 
     assert(type & VIRTIO_BLK_T_OUT);
@@ -1110,12 +1122,17 @@ static void virtio_blk_save_device(VirtIODevice *vdev, QEMUFile *f)
 
     // send temp_list and record_list to slave.
     QTAILQ_FOREACH(rec, &s->record_list, node) {
+        int nsend = 0; // debugging
         qemu_put_sbyte(f, 3);
-        qemu_put_be32(f, rec->len);
+        qemu_put_be32(f, rec->left);
         for (i = 0; i < rec->len; i++) {
+            if (rec->completed[i])
+                continue;
             qemu_put_be32(f, rec->list[i]);
             qemu_put_be32(f, rec->idx[i]);
+            nsend++;
         }
+        assert(nsend==rec->left);
     }
     if (s->temp_list && s->temp_list->len > 0) {
         qemu_put_sbyte(f, 3);
@@ -1128,6 +1145,7 @@ static void virtio_blk_save_device(VirtIODevice *vdev, QEMUFile *f)
 
     req = s->pending_rq;
     while (req) {
+        qemu_put_sbyte(f, 2);
         if (s->conf.num_queues > 1) {
             qemu_put_be32(f, virtio_get_queue_index(req->vq));
         }
@@ -1238,8 +1256,10 @@ static int virtio_blk_load_device(VirtIODevice *vdev, QEMUFile *f,
                     int head = qemu_get_be32(f);
                     int idx = qemu_get_be32(f);
                     printf("%s handle head %d/%d: %d\n", __func__, i, len, head);
+                    blk_io_plug(s->blk);
                     VirtIOBlockReq *req = virtio_blk_get_request_from_head(vdev, head, idx);
                     virtio_blk_handle_write(req, &mrb);
+                    blk_io_unplug(s->blk);
                 }
             }
         } else {

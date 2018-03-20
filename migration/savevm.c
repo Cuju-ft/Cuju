@@ -2788,6 +2788,7 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
         dirty = kvm_shmem_trackable_dirty_test(se->opaque);
 			
 		if ((strstr(se->idstr, "virtio-net"))||
+            (strstr(se->idstr, "virtio-blk"))||
 			(!strncmp(se->idstr, "kvmclock", 8))||
 			(!strncmp(se->idstr, "mc146818rtc", 11)))
         	dirty = 1;

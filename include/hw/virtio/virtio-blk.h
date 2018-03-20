@@ -47,6 +47,7 @@ typedef struct ReqRecord {
     int *list;
     int *idx;
     void **reqs;
+    bool *completed;
     int len;
     int size;
     int left;
