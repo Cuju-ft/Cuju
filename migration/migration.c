@@ -44,6 +44,7 @@
 #include "qemu/main-loop.h"
 #include "migration/event-tap.h"
 #include "hw/virtio/virtio-blk.h"
+#include "migration/group_ft.h"
 
 //#define DEBUG_MIGRATION
 
@@ -170,6 +171,27 @@ static MigrationState **migration_states;
 int migration_states_count = 0;
 int migrate_get_index(MigrationState *s);
 static void migrate_run(MigrationState *s);
+
+// Group FT
+#define GROUP_FT_MEMBER_MAX     10
+static GroupFTMember group_ft_members[GROUP_FT_MEMBER_MAX];
+static int group_ft_members_size;
+static bool group_ft_leader_inited = false;
+static GroupFTMember group_ft_members_tmp[GROUP_FT_MEMBER_MAX];
+static int group_ft_members_size_tmp = 0;
+/* sockets of leader and other VMs */
+static int group_ft_sockets[GROUP_FT_MEMBER_MAX];
+/* socket connecting leader */
+// static int group_ft_leader_sock = 0;
+static int group_ft_master_sock = 0;
+/* count of masters that finish migrating */
+// static int group_ft_members_ready = 0;
+// static struct group_ft_wait_all {
+//     QEMUTimer *timer;
+//     MigrationState *s;
+// } group_ft_wait_all;
+
+extern int my_gft_id;
 
 int qio_ft_sock_fd = 0;
 
@@ -2964,6 +2986,64 @@ void kvmft_tick_func(void)
     ft_tick_func();
 }
 
+static int migrate_join_mac_to_array(const char *mac, char array[])
+{
+    int a[6];
+    int read, i;
+
+    read = sscanf(mac, "%x:%x:%x:%x:%x:%x", &a[0], &a[1], &a[2], &a[3], &a[4], &a[5]);
+    if (read != 6)
+        return -1;
+    for (i = 0; i < 6; ++i)
+        array[i] = (char)a[i];
+
+    return 0;
+}
+
+// groupft leader sends out gft_add_host and gft_init,
+// this function receives them on other group VMs.
+static void gft_master_accept_leader(void *opaque)
+{
+}
+
+int gft_init(int port)
+{
+    char host_port[32]; // format will be 0:4445
+    Error *err = NULL;
+
+    sprintf(host_port, "0:%d", port);
+    SocketAddress* sa = socket_parse(host_port, &err);
+    if (err) {
+        error_report_err(err);
+    }
+    group_ft_master_sock = socket_listen(sa, &err);
+    if (err) {
+        error_report_err(err);
+    }
+    // group_ft_master_sock = inet_listen(host_port, NULL, 256, SOCK_STREAM, 0, &err);
+    if (group_ft_master_sock <= 0)
+        return -1;
+
+    qemu_set_fd_handler(group_ft_master_sock,
+                        gft_master_accept_leader,
+                        NULL,
+                        (void *)(uintptr_t)group_ft_master_sock);
+    qemu_set_fd_survive_ft_pause(group_ft_master_sock, true);
+    return 0;
+}
+
+static void gft_master_accept_other_master(void *opaque)
+{
+}
+
+static void gft_leader_read_master(void *opaque)
+{
+}
+
+static void gft_start_migration(void)
+{
+}
+
 void qmp_gft_add_host(int gft_id,
                       const char *master_host_ip,
                       int master_host_gft_port,
@@ -2972,8 +3052,87 @@ void qmp_gft_add_host(int gft_id,
                       int slave_host_ft_port,
                       Error **errp)
 {
+    GroupFTMember *m = &group_ft_members_tmp[group_ft_members_size_tmp];
+    if (group_ft_leader_inited) {
+        printf("%s failed since gft already started.\n", __func__);
+        return;
+    }
+    m->gft_id = gft_id;
+    memcpy(m->master_host_ip, master_host_ip, IP_LEN);
+    m->master_host_gft_port = master_host_gft_port;
+    if (migrate_join_mac_to_array(master_mac, m->master_mac)) {
+        printf("%s bad mac.\n", __func__);
+        return;
+    }
+    memcpy(m->slave_host_ip, slave_host_ip, IP_LEN);
+    m->slave_host_ft_port = slave_host_ft_port;
+    group_ft_members_size_tmp++;
 }
 
 void qmp_gft_leader_init(Error **errp)
 {
+    Error *err = NULL;
+    char host_port[32];
+    int i;
+
+    if (group_ft_leader_inited)
+        return;
+    group_ft_leader_inited = true;
+
+    qemu_set_fd_handler(group_ft_master_sock, NULL, NULL, NULL);
+    qemu_set_fd_handler(group_ft_master_sock,
+                         gft_master_accept_other_master,
+                         NULL,
+                         (void *)(uintptr_t)group_ft_master_sock);
+
+    // distribute group info to members
+    for (i = 0; i < group_ft_members_size_tmp; ++i) {
+        // connect to all master:gft_port and broadcase GroupFTMember list
+        GroupFTMember *m = &group_ft_members_tmp[i];
+        int sd, send;
+
+        sprintf(host_port, "%s:%d", m->master_host_ip, m->master_host_gft_port);
+
+        if (m->gft_id == my_gft_id) {
+            group_ft_members_size = group_ft_members_size_tmp;
+            memcpy(group_ft_members, group_ft_members_tmp,
+                    sizeof(GroupFTMember) * group_ft_members_size);
+            group_ft_sockets[i] = 0;
+            continue;
+        }
+
+        sd = inet_connect(host_port, &err);
+        if (err || sd == -1) {
+            printf("%s error connect to %s.\n", __func__, host_port);
+            return;
+        }
+
+        send = MIG_JOIN_GFT_ADD_HOST;
+        assert(write(sd, &send, sizeof(send)) == sizeof(send));
+
+        send = group_ft_members_size_tmp;
+        assert(write(sd, &send, sizeof(send)) == sizeof(send));
+
+        assert(write(sd, (const void *)group_ft_members_tmp,
+                    sizeof(GroupFTMember)*group_ft_members_size_tmp)
+                == sizeof(GroupFTMember)*group_ft_members_size_tmp);
+
+        send = MIG_JOIN_GFT_INIT;
+        assert(write(sd, &send, sizeof(send)) == sizeof(send));
+
+        assert(read(sd, &send, sizeof(send)) == sizeof(send));
+        if (send != MIG_JOIN_GFT_INIT_ACK) {
+            printf("%s failed to receive MIG_JOIN_GFT_INIT_ACK from %s.\n",
+                    __func__, host_port);
+            return;
+        }
+
+        qemu_set_nonblock(sd);
+        qemu_set_fd_handler(sd, NULL, NULL, NULL);
+        qemu_set_fd_handler(sd, gft_leader_read_master, NULL, (void *)(uintptr_t)sd);
+
+        group_ft_sockets[i] = sd;
+    }
+
+    gft_start_migration();
 }
