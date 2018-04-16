@@ -37,6 +37,7 @@
 #include "qemu/cutils.h"
 #include "qemu/error-report.h"
 #include "hw/intc/intc.h"
+#include "migration/migration.h"
 
 #ifdef CONFIG_SPICE
 #include <spice/enums.h>
@@ -2592,6 +2593,43 @@ void hmp_cuju_adjust_epoch(Monitor *mon, const QDict *qdict)
     qmp_cuju_adjust_epoch(epoch, &err);
     if (err) {
         error_report_err(err);
+        return;
+    }
+}
+
+void hmp_gft_add_host(Monitor *mon, const QDict *qdict)
+{
+    int gft_id = qdict_get_int(qdict, "gft_id");
+    const char *master_host_ip = qdict_get_str(qdict, "master_host_ip");
+    int master_host_gft_port = qdict_get_int(qdict, "master_host_gft_port");
+    const char *master_mac = qdict_get_str(qdict, "master_mac");
+    const char *slave_host_ip = qdict_get_str(qdict, "slave_host_ip");
+    int slave_host_ft_port = qdict_get_int(qdict, "slave_host_ft_port");
+
+    Error *err = NULL;
+
+    qmp_gft_add_host(gft_id,
+                     master_host_ip,
+                     master_host_gft_port,
+                     master_mac,
+                     slave_host_ip,
+                     slave_host_ft_port,
+                     &err);
+    if (err) {
+        monitor_printf(mon, "gft_add_host: %s\n", error_get_pretty(err));
+        error_free(err);
+        return;
+    }
+}
+
+void hmp_gft_init(Monitor *mon, const QDict *qdict)
+{
+    Error *err = NULL;
+
+    qmp_gft_leader_init(&err);
+    if (err) {
+        monitor_printf(mon, "gft_init: %s\n", error_get_pretty(err));
+        error_free(err);
         return;
     }
 }

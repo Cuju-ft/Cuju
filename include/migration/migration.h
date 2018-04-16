@@ -490,4 +490,10 @@ unsigned int dirty_page_tracking_logs_max(int bound_ms);
 
 void kvmft_tick_func(void);
 
+void qmp_gft_add_host(int gft_id, const char *master_host_ip,
+                      int master_host_gft_port, const char *master_mac,
+                      const char *slave_host_ip, int slave_host_ft_port,
+                      Error **errp);
+void qmp_gft_leader_init(Error **errp);
+
 #endif

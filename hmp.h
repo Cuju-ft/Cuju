@@ -139,5 +139,7 @@ void hmp_info_dump(Monitor *mon, const QDict *qdict);
 void hmp_hotpluggable_cpus(Monitor *mon, const QDict *qdict);
 void hmp_cuju_failover(Monitor *mon, const QDict *qdict);
 void hmp_cuju_adjust_epoch(Monitor *mon, const QDict *qdict);
+void hmp_gft_add_host(Monitor *mon, const QDict *qdict);
+void hmp_gft_init(Monitor *mon, const QDict *qdict);
 
 #endif
