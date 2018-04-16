@@ -1810,3 +1810,31 @@ STEXI
 @findex cuju-adjust-epoch
 Adjust epoch size in cuju-ft
 ETEXI
+
+    {
+        .name       = "gft_add_host",
+        .args_type  = "gft_id:i,master_host_ip:s,master_host_gft_port:i,master_mac:s,slave_host_ip:s,slave_host_ft_port:i",
+        .params     = "gft_id master_host_ip master_host_gft_port master_mac slave_host_ip slave_host_ft_port",
+        .help       = "add a master/slave pair to group ft",
+        .cmd = hmp_gft_add_host,
+    },
+
+STEXI
+@item gft_add_host gft_id master_host_ip master_host_gft_port master_mac slave_host_ip slave_host_ft_port
+@findex gft_add_host
+Add one master/slave pair to group ft.
+ETEXI
+
+    {
+        .name       = "gft_init",
+        .args_type  = "",
+        .params     = "",
+        .help       = "add a master/slave pair to group ft",
+        .cmd = hmp_gft_init,
+    },
+
+STEXI
+@item gft_init
+@findex gft_init
+Start group ft after gft_add_host.
+ETEXI
