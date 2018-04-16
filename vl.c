@@ -4720,6 +4720,7 @@ int main(int argc, char **argv, char **envp)
 #ifdef KVM_SHARE_MEM
     kvm_share_mem_init(ram_size);
 #endif
+    assert(!gft_init(ft_join_port));
 	printf("VM init finished\n");
 
     main_loop();
