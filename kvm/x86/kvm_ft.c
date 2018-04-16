@@ -914,6 +914,44 @@ void kvmft_prepare_upcall(struct kvm_vcpu *vcpu)
         gfn_list[i+1] = (uint32_t)dlist->pages[i];
 }
 
+static void __bd_average_update(struct kvmft_context *ctx)
+{
+    int sum_const = 0, sum_latency = 0, sum_rate = 0; 
+    int i;
+                
+    for (i = 0; i < BD_HISTORY_MAX; ++i) {
+        sum_const += ctx->bd_average_consts[i];
+        sum_latency += ctx->bd_average_latencies[i];
+        sum_rate += ctx->bd_average_rates[i];
+    }    
+
+    ctx->bd_average_const = sum_const / BD_HISTORY_MAX;
+    ctx->bd_average_latency = sum_latency / BD_HISTORY_MAX;
+    ctx->bd_average_rate = sum_rate / BD_HISTORY_MAX;
+
+    if (ctx->bd_average_rate >= 500000)
+        ctx->bd_average_rate = 500000;
+    else if (ctx->bd_average_rate < 50000)
+        ctx->bd_average_rate = 50000;                                                                                                             
+}
+
+
+static void __bd_average_init(struct kvmft_context *ctx)
+{
+    int i;                                                                                                                                        
+
+    for (i = 0; i < BD_HISTORY_MAX; ++i) {
+        ctx->bd_average_consts[i] = 300; 
+        ctx->bd_average_latencies[i] = 10000;
+        ctx->bd_average_rates[i] = 300; 
+    }    
+    ctx->bd_average_put_off = 0; 
+
+    __bd_average_update(ctx);
+}
+
+
+
 // backup data in snapshot mode.
 // for pte, record list
 // for other, backup whole page
@@ -3307,6 +3345,8 @@ int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
         goto err_free;
 
     init_waitqueue_head(&ctx->tran_event);
+
+    __bd_average_init(ctx);
 
     return 0;
 

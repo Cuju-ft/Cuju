@@ -104,6 +104,20 @@ struct kvmft_context {
 
     int pending_tran_num;
     wait_queue_head_t tran_event;
+    
+#define BD_HISTORY_MAX  4
+    int bd_average_consts[BD_HISTORY_MAX];
+    int bd_average_latencies[BD_HISTORY_MAX];   // in us
+    int bd_average_rates[BD_HISTORY_MAX];       // pages per ms
+    int bd_average_put_off;
+
+    int bd_average_const;
+    int bd_average_latency; // in us
+    int bd_average_rate;    // pages per ms
+
+    int bd_average_dirty_bytes;
+
+
 };
 
 int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info);
