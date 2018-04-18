@@ -68,6 +68,6 @@ void kvm_shmem_load_ram_with_hdr(void *buf, int size, void *hdr_buf, int hdr_siz
 void kvm_shmem_load_ram(void *buf, int size);
 void* kvm_shmem_map_pfn(unsigned long pfn, unsigned long size);
 void kvm_shmem_unmap_pfn(void *ptr, unsigned long size);
-
+int kvmft_bd_update_latency(int dirty_page, int runtime_us, int trans_us, int latency_us);
 
 #endif

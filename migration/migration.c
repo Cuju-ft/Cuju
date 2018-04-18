@@ -2254,22 +2254,8 @@ static void kvmft_flush_output(MigrationState *s)
     int latency_us = (int)((s->flush_start_time - s->run_real_start_time) * 1000000);
     int trans_us = (int)((s->recv_ack1_time - s->transfer_start_time) * 1000000);
 
-    FILE *pFile;
-    pFile = fopen("myprofile.txt", "a");
-    char pbuf[200];       
-    if(pFile != NULL){
-        sprintf(pbuf, "%d\n", runtime_us);
-        fputs(pbuf, pFile);                                                                                                                      
-        sprintf(pbuf, "%d\n", latency_us);
-        fputs(pbuf, pFile);                                                                                                                      
-        sprintf(pbuf, "%d\n", trans_us);
-        fputs(pbuf, pFile);                                                                                                                      
-    }    
-    else
-        printf("no profile\n");        
-    fclose(pFile);
 
-
+    assert(!kvmft_bd_update_latency(s->ram_len, runtime_us, trans_us, latency_us));
 
 	/* TODO blk server
     if (kvm_blk_session)

@@ -951,6 +951,35 @@ static void __bd_average_init(struct kvmft_context *ctx)
 }
 
 
+// latency = runtime + constant + dirty_page_number / rate
+void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *update)
+{
+
+    struct kvmft_context *ctx;
+    int i, put_off;
+                                                                                                                                                                                                                    
+    ctx = &kvm->ft_context;
+    put_off = ctx->bd_average_put_off;
+
+    ctx->bd_average_latencies[put_off] = update->latency_us;
+    ctx->bd_average_consts[put_off] = (update->latency_us - update->runtime_us - update->trans_us);
+
+
+    if (update->trans_us > 0) { 
+        ctx->bd_average_rates[put_off] = update->dirty_page * 1000 / update->trans_us;
+    } else {
+        ctx->bd_average_rates[put_off] = 100000;
+    }    
+
+    __bd_average_update(ctx);
+
+
+    ctx->bd_average_put_off = (put_off + 1) % BD_HISTORY_MAX;
+    
+}
+
+
+
 
 // backup data in snapshot mode.
 // for pte, record list
