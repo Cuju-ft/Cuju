@@ -253,6 +253,8 @@ struct MigrationState
 
     void *virtio_blk_temp_list;
 
+    int average_dirty_bytes;
+
     double time;
     double run_sched_time;
     double run_real_start_time;

@@ -2257,6 +2257,15 @@ static void kvmft_flush_output(MigrationState *s)
 
     assert(!kvmft_bd_update_latency(s->ram_len, runtime_us, trans_us, latency_us));
 
+    bd_update_stat(s->dirty_pfns_len, s->flush_start_time-s->transfer_start_time,
+        s->flush_start_time - s->run_real_start_time,
+        s->snapshot_start_time - s->run_real_start_time,                                                                                                                                                            
+        s->send_commit1_time - s->invoke_commit1_bh_time,
+        s->recv_ack1_time - s->send_commit1_time,
+        s->ram_len,
+        s->average_dirty_bytes);
+
+
 	/* TODO blk server
     if (kvm_blk_session)
         kvm_blk_epoch_commit(kvm_blk_session);
