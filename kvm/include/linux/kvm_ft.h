@@ -116,7 +116,7 @@ struct kvmft_context {
     int bd_average_rate;    // pages per ms
 
     int bd_average_dirty_bytes;
-
+    int bd_alpha;
 
 };
 

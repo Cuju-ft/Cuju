@@ -3347,6 +3347,8 @@ int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
     init_waitqueue_head(&ctx->tran_event);
 
     __bd_average_init(ctx);
+    
+    ctx->bd_alpha = 1000;   // start alpha is 1ms
 
     return 0;
 

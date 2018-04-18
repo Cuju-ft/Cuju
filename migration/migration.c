@@ -2248,6 +2248,29 @@ static void migrate_ft_trans_flush_cb(void *opaque)
 
 static void kvmft_flush_output(MigrationState *s)
 {
+    s->flush_start_time = time_in_double();
+
+    int runtime_us = (int)((s->snapshot_start_time - s->run_real_start_time) * 1000000);
+    int latency_us = (int)((s->flush_start_time - s->run_real_start_time) * 1000000);
+    int trans_us = (int)((s->recv_ack1_time - s->transfer_start_time) * 1000000);
+
+    FILE *pFile;
+    pFile = fopen("myprofile.txt", "a");
+    char pbuf[200];       
+    if(pFile != NULL){
+        sprintf(pbuf, "%d\n", runtime_us);
+        fputs(pbuf, pFile);                                                                                                                      
+        sprintf(pbuf, "%d\n", latency_us);
+        fputs(pbuf, pFile);                                                                                                                      
+        sprintf(pbuf, "%d\n", trans_us);
+        fputs(pbuf, pFile);                                                                                                                      
+    }    
+    else
+        printf("no profile\n");        
+    fclose(pFile);
+
+
+
 	/* TODO blk server
     if (kvm_blk_session)
         kvm_blk_epoch_commit(kvm_blk_session);
@@ -2301,6 +2324,8 @@ static int migrate_ft_trans_get_ready(void *opaque)
             printf("%s sender receive ACK1 failed.\n", __func__);
             goto error_out;
         }
+
+        s->recv_ack1_time = time_in_double();
 
         FTPRINTF("%s slave ack1 time %lf\n", __func__,
             time_in_double() - s->transfer_finish_time);
