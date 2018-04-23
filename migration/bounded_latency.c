@@ -3,6 +3,7 @@
 #include "migration/cuju-kvm-share-mem.h"
 #include "sysemu/kvm.h"
 #include <linux/kvm.h>
+#include "qmp-commands.h"
 
 
 static int bd_target = EPOCH_TIME_IN_MS * 1000;                                                                                                                                                                     
@@ -78,5 +79,21 @@ int kvmft_bd_update_latency(int dirty_page, int runtime_us, int trans_us, int la
     update.latency_us = latency_us;
 
     return kvm_vm_ioctl(kvm_state, KVMFT_BD_UPDATE_LATENCY, &update);
+}
+
+void bd_reset_epoch_timer(void)
+{
+    //float nvalue = BD_TIMER_RATIO * EPOCH_TIME_IN_MS * 1000;
+    float nvalue = 1000;
+    if (EPOCH_TIME_IN_MS < 10)                                                                                                                                                                                      
+        nvalue = EPOCH_TIME_IN_MS*1000/10;
+
+    Error *err = NULL;
+    qmp_cuju_adjust_epoch((unsigned int)nvalue, &err);                                                                                                                                                                             
+    if (err) {
+        error_report_err(err);
+        return;
+    }    
+
 }
 

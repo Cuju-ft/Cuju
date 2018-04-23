@@ -140,4 +140,5 @@ void hmp_hotpluggable_cpus(Monitor *mon, const QDict *qdict);
 void hmp_cuju_failover(Monitor *mon, const QDict *qdict);
 void hmp_cuju_adjust_epoch(Monitor *mon, const QDict *qdict);
 
+
 #endif

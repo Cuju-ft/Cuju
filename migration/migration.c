@@ -2591,6 +2591,9 @@ static void *migration_thread(void *opaque)
         assert(!kvmft_set_master_slave_sockets(s, ft_ram_conn_count));
         assert(!kvmft_set_master_slave_sockets(s2, ft_ram_conn_count));
 
+        // bounded latency
+        bd_reset_epoch_timer();
+
 		return NULL;
     }
     else {
@@ -2879,6 +2882,7 @@ static void migrate_run(MigrationState *s)
 #ifdef CONFIG_EPOCH_OUTPUT_TRIGGER
     kvmft_output_notified = 0;
 #else
+    bd_reset_epoch_timer();
     kvm_shmem_start_timer();
 #endif
 }
