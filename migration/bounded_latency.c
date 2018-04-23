@@ -97,3 +97,47 @@ void bd_reset_epoch_timer(void)
 
 }
 
+bool bd_timer_func(void)
+{
+/*
+    static int count = 0;
+    int dirty_bytes;
+    MigrationState *s = migrate_get_current();
+
+    static int last_dirty_bytes = 0;
+
+    ++count;
+                                                                                                                                                                                                                    
+    if (ofile == NULL) {
+        ofile = fopen("/tmp/bd_delay", "w");
+        assert(ofile);
+    }
+
+    if (EPOCH_TIME_IN_MS >= 10) {
+        if (count < EPOCH_TIME_IN_MS/2) {
+            kvm_shmem_start_timer();
+            return true;
+        }
+
+        if (count == EPOCH_TIME_IN_MS/2) {
+            s->average_dirty_bytes = bd_calc_dirty_bytes();
+        }
+
+        if (count > EPOCH_TIME_IN_MS/2) {
+            //s->average_dirty_bytes = bd_calc_dirty_bytes();
+        }
+
+        if (bd_is_last_count(count) || kvmft_bd_check_dirty_page_number()) {
+            count = 0;
+            last_dirty_bytes = 0;
+            return false;
+        }
+
+    }
+*/
+
+
+    return 0;
+}
+
+
