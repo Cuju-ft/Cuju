@@ -27,6 +27,8 @@
 
 //#define SPCL    1
 
+const int max_latency = 29700;
+
 static int dirty_page = 0;
 
 #ifdef PAGE_TRANSFER_TIME_MEASURE
@@ -727,6 +729,8 @@ int kvm_shm_flip_sharing(struct kvm *kvm, __u32 cur_index, __u32 run_serial)
     struct kvmft_context *ctx = &kvm->ft_context;
     struct kvmft_master_slave_conn_info *info =
         &ctx->master_slave_info[cur_index];
+    struct kvmft_dirty_list *dlist;
+
 	#ifdef ft_debug_mode_enable
 	printk("kvm_shm_flip_sharing cur_index = %x\n", cur_index);
 	#endif
@@ -736,8 +740,13 @@ int kvm_shm_flip_sharing(struct kvm *kvm, __u32 cur_index, __u32 run_serial)
     ctx->cur_index = cur_index;
     info->run_serial = run_serial;
     ctx->log_full = false;
+    ctx->bd_average_dirty_bytes = 100;
+
+    dlist = ctx->page_nums_snapshot_k[cur_index];
 
     //printk("%s start run %d run_serial = %d\n", __func__, cur_index, run_serial);
+
+    dlist->epoch_start_time = time_in_us(); 
 
     spcl_kthread_notify_new(kvm, run_serial);
 
@@ -913,6 +922,62 @@ void kvmft_prepare_upcall(struct kvm_vcpu *vcpu)
     for (i = 0; i < dlist->put_off; i++)
         gfn_list[i+1] = (uint32_t)dlist->pages[i];
 }
+
+#define FACTOR_SHOOTUP 130
+
+static bool __bd_check_dirty_page_number(struct kvm *kvm,
+    struct kvmft_dirty_list *dlist, int put_off)
+{
+    //return kvmft_ioctl_bd_calc_left_runtime(kvm) <= 0;
+
+    struct kvmft_context *ctx;
+
+    ctx = &kvm->ft_context;
+
+    s64 epoch_run_time = time_in_us() - dlist->epoch_start_time;
+    // alpha
+    //s64 left_time = max_latency - ctx->bd_alpha - (int)epoch_run_time;
+    // const
+    s64 left_time = max_latency - (int)epoch_run_time + ctx->bd_average_const;
+    // const & alpha
+    //s64 left_time = max_latency - ctx->bd_alpha - (int)epoch_run_time + ctx->bd_average_const;
+    //if (left_time > max_latency - epoch_run_time)
+    //    left_time = max_latency - epoch_run_time - 1000;
+
+    // if average dirty bytes raise a lot, more time to transfer
+    int factor = 100; 
+    if (ctx->bd_average_dirty_bytes >= ctx->bd_last_average_dirty_bytes * 130 / 100) {
+        factor = FACTOR_SHOOTUP;
+    }    
+    if (put_off >= ctx->bd_last_dp_num*130/100) {
+        factor = factor * FACTOR_SHOOTUP / 100; 
+    }    
+
+    if (factor != 100) {
+        left_time -= put_off;
+    }    
+
+    int transfer_rate = ctx->bd_average_rate;
+    if (transfer_rate / 500 > ctx->bd_average_dirty_bytes && ctx->bd_average_dirty_bytes) {
+        transfer_rate = ctx->bd_average_dirty_bytes * 500; 
+    }    
+
+    if (ctx->bd_average_dirty_bytes <= 300) {
+        if (put_off * 1000 / 600 >= left_time) {
+            ctx->bd_last_dp_num = put_off;
+            return true;
+        }    
+    } else {
+        if (put_off >= left_time * transfer_rate * 1024 *100/factor / ctx->bd_average_dirty_bytes / 1000) {
+            ctx->bd_last_dp_num = put_off;
+            return true;
+        }    
+    }    
+
+    return false;
+}
+
+
 
 static void __bd_average_update(struct kvmft_context *ctx)
 {
@@ -3015,6 +3080,14 @@ int kvm_start_kernel_transfer(struct kvm *kvm,
         //return diff_and_transfer_second_half(kvm, trans_index, conn_index, max_conn);
     }
 
+    if (ram_len == 0) { 
+        ctx->bd_last_average_dirty_bytes = 0; 
+    } else {
+        ctx->bd_last_average_dirty_bytes = ram_len / ctx->page_nums_snapshot_k[trans_index]->put_off;
+    }    
+
+
+
     return ram_len;
 }
 
@@ -3429,5 +3502,23 @@ int kvmft_ioctl_bd_calc_dirty_bytes(struct kvm *kvm)
 
     return 0;
 }
+
+int kvmft_ioctl_bd_check_dirty_page_number(struct kvm *kvm)
+{
+    struct kvmft_context *ctx;
+    struct kvmft_dirty_list *dlist;
+    int put_index;
+
+    ctx = &kvm->ft_context;
+    dlist = ctx->page_nums_snapshot_k[ctx->cur_index];
+
+    if (__bd_check_dirty_page_number(kvm, dlist, dlist->put_off)) {
+        ctx->log_full = true;
+        return 1;
+    }
+                                                                                                                                                                                                                    
+    return 0;
+}
+
 
 

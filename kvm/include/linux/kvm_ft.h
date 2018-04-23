@@ -39,6 +39,8 @@ struct kvmft_dirty_list {
     __u32 gva_spcl_pages_off;
     __u32 *gva_spcl_pages;
 
+    __u64 epoch_start_time; 
+
     __u32 *spcl_bitmap;         // if set, the speculated page corresponding in pages is dirty
     __u32 pages[];
 };
@@ -119,6 +121,9 @@ struct kvmft_context {
     int bd_average_rate;    // pages per ms
 
     int bd_average_dirty_bytes;
+
+    int bd_last_dp_num;
+    int bd_last_average_dirty_bytes;
     int bd_alpha;
 
 };
@@ -171,6 +176,8 @@ int kvmft_ioctl_set_master_slave_sockets(struct kvm *kvm,
 void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *update);
 int kvmft_ioctl_bd_set_alpha(struct kvm *kvm, int alpha);
 int kvmft_ioctl_bd_calc_dirty_bytes(struct kvm *kvm);
+int kvmft_ioctl_bd_check_dirty_page_number(struct kvm *kvm);
+
 
 #endif
 

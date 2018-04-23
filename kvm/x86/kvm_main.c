@@ -3477,7 +3477,14 @@ out_free_irq_routing:
     case KVMFT_BD_CALC_DIRTY_BYTES: {
         r = kvmft_ioctl_bd_calc_dirty_bytes(kvm);
         break;
-    }                                                                                                                                                                                                               
+    }    
+    case KVMFT_BD_CHECK_DIRTY_PAGE_NUMBER: {                                                                                                                                                                        
+        r = kvmft_ioctl_bd_check_dirty_page_number(kvm);
+        if (r)
+            goto out; 
+        break;
+    }    
+                                                                                                                                                                                                           
     case KVMFT_BD_UPDATE_LATENCY: {
         struct kvmft_update_latency update;                                                                                                                                                                         
         r = -EFAULT;
