@@ -3002,6 +3002,100 @@ static int migrate_join_mac_to_array(const char *mac, char array[])
 
 static MigrationJoinConn* gft_master_accept_other_master_one(MigrationState *s, int sd)
 {
+    struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+    int c, i, cmd, index = s->cur_off;
+    QEMUFile *f;
+    struct MigrationJoinConn *conn = NULL;
+
+    printf("%s begin\n", __func__);
+
+    // find spare one.
+    for (i = 0; i < MIG_MAX_JOIN; ++i) {
+        if (!s->join.conn[i].r_sock) {
+            conn = &s->join.conn[i];
+            break;
+        }
+    }
+    if (i == MIG_MAX_JOIN) {
+        printf("%s can't find free conn.\n", __func__);
+        goto out;
+    }
+
+    /* their read first, write second. */
+    do {
+        c = qemu_accept(sd, (struct sockaddr *)&addr, &addrlen);
+    } while (c == -1 && socket_error() == EINTR);
+
+    if (c == -1) {
+        printf("%s accept error.\n", __func__);
+        goto out;
+    }
+
+    f = qemu_fopen_socket(c);
+    if (f == NULL) {
+        printf("%s can't open qemu_fopen_socket.\n", __func__);
+        goto out;
+    }
+    conn->w_sock = c;
+    conn->w_file = f;
+
+    assert(recv(c, &index, sizeof(index), 0) == sizeof(index));
+    assert(index == s->cur_off);
+    index = s->cur_off;
+    assert(send(c, &index, sizeof(index), 0) == sizeof(index));
+
+    do {
+        c = qemu_accept(sd, (struct sockaddr *)&addr, &addrlen);
+    } while (c == -1 && socket_error() == EINTR);
+
+    if (c == -1) {
+        printf("%s accept error.\n", __func__);
+        goto out;
+    }
+
+    f = qemu_fopen_socket(c);
+    if (f == NULL) {
+        printf("%s can't open qemu_fopen_socket.\n", __func__);
+        goto out;
+    }
+    conn->r_sock = c;
+    conn->r_file = f;
+
+    assert(recv(c, &index, sizeof(index), 0) == sizeof(index));
+    assert(index == s->cur_off);
+    index = s->cur_off;
+    assert(send(c, &index, sizeof(index), 0) == sizeof(index));
+
+    conn->migrate = s;
+
+    printf("%s accepted\n", __func__);
+
+    // receive MIG_JOIN_GFT_NEW and gft_id
+    assert(recv(conn->r_sock, &cmd, sizeof(cmd), 0) == sizeof(cmd));
+    assert(cmd == MIG_JOIN_GFT_NEW);
+    assert(recv(conn->r_sock, &conn->gft_id, sizeof(conn->gft_id), 0) == sizeof(conn->gft_id));
+
+    printf("%s build connection between gft_id %d and %d\n",
+            __func__, my_gft_id, conn->gft_id);
+
+    clear_bit(conn->gft_id, &s->join.bitmaps_snapshot_started);
+    clear_bit(conn->gft_id, &s->join.bitmaps_commit1);
+
+    socket_set_nodelay(conn->w_sock);
+    qemu_set_nonblock(conn->w_sock);
+    qemu_set_nonblock(conn->r_sock);
+    //qemu_set_fd_survive_ft_pause(conn->w_sock, true);
+
+    printf("%s done\n", __func__);
+    return conn;
+out:
+    printf("%s error.\n", __func__);
+    if (conn) {
+        conn->r_sock = 0;
+        conn->w_sock = 0;
+        // TODO..
+    }
     return NULL;
 }
 
@@ -3038,6 +3132,22 @@ static void gft_master_read_leader(void *opaque)
 
 static void gft_start_migration(void)
 {
+    int i;
+    GroupFTMember *gm;
+    char url[128];
+    Error *err = NULL;
+
+    for (i = 0; i < group_ft_members_size; ++i) {
+        gm = &group_ft_members[i];
+        if (my_gft_id == gm->gft_id)
+            break;
+    }
+    assert(i < group_ft_members_size);
+
+    cuju_ft_mode = CUJU_FT_INIT;
+    sprintf(url, "tcp:%s:%d,ft_mode", gm->slave_host_ip,
+            gm->slave_host_ft_port);
+    qmp_migrate(url, false, false, false, false, false, false, true, true, &err);
 }
 
 // groupft leader sends out gft_add_host and gft_init,
@@ -3140,8 +3250,31 @@ int gft_init(int port)
     return 0;
 }
 
+static void gft_leader_broadcast_all_migration_done(void)
+{
+    int cmd, fd, i;
+    cmd = MIG_JOIN_GFT_MIGRATION_ALL;
+    for (i = 0; i < group_ft_members_size; i++) {
+        fd = group_ft_sockets[i];
+        if (fd) {
+            assert(write(fd, &cmd, sizeof(cmd)) == sizeof(cmd));
+            qemu_set_fd_handler(fd, NULL, NULL, NULL);
+            close(fd);
+            group_ft_sockets[i] = 0;
+        }
+    }
+    printf("%s\n", __func__);
+}
+
 static void gft_leader_read_master(void *opaque)
 {
+    int cmd, fd;
+    fd = (uintptr_t)opaque;
+    assert(read(fd, &cmd, sizeof(cmd)) == sizeof(cmd));
+    assert(cmd == MIG_JOIN_GFT_MIGRATION_DONE);
+    if (++group_ft_members_ready == group_ft_members_size)
+        gft_leader_broadcast_all_migration_done();
+    printf("%s ready member %d total member %d\n", __func__, group_ft_members_ready, group_ft_members_size);
 }
 
 void qmp_gft_add_host(int gft_id,

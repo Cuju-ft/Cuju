@@ -3280,6 +3280,12 @@ Enable KVM full virtualization support. This option is only available
 if KVM support is enabled when compiling.
 ETEXI
 
+DEF("ft-join-port", HAS_ARG, QEMU_OPTION_ft_join_port,
+    "-ft-join-port port specify listening port for fault tolerant join port\n", QEMU_ARCH_ALL)
+
+DEF("gft-id", HAS_ARG, QEMU_OPTION_gft_id,
+"-gft-id gft_id specify id for group ft\n", QEMU_ARCH_ALL)
+
 DEF("xen-domid", HAS_ARG, QEMU_OPTION_xen_domid,
     "-xen-domid id   specify xen guest domain id\n", QEMU_ARCH_ALL)
 DEF("xen-create", 0, QEMU_OPTION_xen_create,

@@ -3948,6 +3948,12 @@ int main(int argc, char **argv, char **envp)
                 }
                 xen_domid = atoi(optarg);
                 break;
+            case QEMU_OPTION_ft_join_port:
+                ft_join_port = atoi(optarg);
+                break;
+            case QEMU_OPTION_gft_id:
+                my_gft_id = atoi(optarg);
+                break;
             case QEMU_OPTION_xen_create:
                 if (!(xen_available())) {
                     error_report("Option not supported for this target");
