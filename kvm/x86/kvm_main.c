@@ -3477,7 +3477,11 @@ out_free_irq_routing:
     case KVMFT_BD_CALC_DIRTY_BYTES: {
         r = kvmft_ioctl_bd_calc_dirty_bytes(kvm);
         break;
-    }    
+    }
+    case KVMFT_BD_CALC_LEFT_RUNTIME: {
+        r = kvmft_ioctl_bd_calc_left_runtime(kvm);                                                                                                                                                                  
+        break;
+    }
     case KVMFT_BD_CHECK_DIRTY_PAGE_NUMBER: {                                                                                                                                                                        
         r = kvmft_ioctl_bd_check_dirty_page_number(kvm);
         if (r)

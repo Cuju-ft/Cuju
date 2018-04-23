@@ -22,6 +22,11 @@ static int kvmft_bd_check_dirty_page_number(void)
     return kvm_vm_ioctl(kvm_state, KVMFT_BD_CHECK_DIRTY_PAGE_NUMBER);
 }                                                                                                                                                                                                                   
 
+static int bd_calc_left_runtime(void)                                                                                                                                                                               
+{
+    return kvm_vm_ioctl(kvm_state, KVMFT_BD_CALC_LEFT_RUNTIME);
+}
+
 
 
 //static FILE *bdofile = NULL; 
@@ -153,6 +158,31 @@ bool bd_timer_func(void)
             //last_dirty_bytes = 0;
             return false;
         }
+        if (count >= EPOCH_TIME_IN_MS/2) {
+            int lefttime = bd_calc_left_runtime();
+
+            //fprintf(ofile, "%d %d %d\n", count, lefttime, s->average_dirty_bytes);
+
+            //if (lefttime <= -400)
+            //    printf("%s %d lefttime = %d\n", __func__, count, lefttime);
+            if (lefttime <= 200) {
+                count = 0;
+                //last_dirty_bytes = 0;
+                return false;
+            } else if (lefttime < 1000) {
+                Error *err = NULL;
+                qmp_cuju_adjust_epoch((unsigned int)lefttime, &err);                                                                                                                                                              
+            }                                                                                                                                                                                                       
+
+            if (count == EPOCH_TIME_IN_MS-1 && lefttime >= 800) {
+                Error *err = NULL;
+                qmp_cuju_adjust_epoch(700, &err);                                                                                                                                                              
+            }   
+        }   
+
+
+
+
 
     }
 

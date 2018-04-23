@@ -3503,6 +3503,55 @@ int kvmft_ioctl_bd_calc_dirty_bytes(struct kvm *kvm)
     return 0;
 }
 
+int kvmft_ioctl_bd_calc_left_runtime(struct kvm *kvm)
+{
+    struct kvmft_context *ctx = &kvm->ft_context;
+    struct kvmft_dirty_list *dlist;
+    int ret; 
+
+    dlist = ctx->page_nums_snapshot_k[ctx->cur_index];
+
+    s64 epoch_run_time = time_in_us() - dlist->epoch_start_time;
+
+    // if average dirty bytes raise a lot, more time to transfer
+    int factor = 100; 
+    if (ctx->bd_average_dirty_bytes >= ctx->bd_last_average_dirty_bytes * 130 / 100) {
+        factor = FACTOR_SHOOTUP;
+    }    
+    if (dlist->put_off >= ctx->bd_last_dp_num*130/100) {
+        factor = factor * FACTOR_SHOOTUP / 100; 
+    }    
+
+    int transfer_rate = ctx->bd_average_rate;
+    if (transfer_rate / 500 > ctx->bd_average_dirty_bytes && ctx->bd_average_dirty_bytes) {
+        transfer_rate = ctx->bd_average_dirty_bytes * 500; 
+    }    
+
+    if (ctx->bd_average_dirty_bytes <= 300) {
+        ret = max_latency - epoch_run_time - dlist->put_off * 1000 / 600; 
+    } else {
+        ret = max_latency - epoch_run_time - dlist->put_off * ctx->bd_average_dirty_bytes * 1000 / transfer_rate * factor/100;
+        if (factor != 100) 
+            ret -= dlist->put_off;
+    }    
+
+        /*   
+    if (dlist->put_off >= ctx->bd_last_dp_num*140/100) {
+        // 4/3 is for slave loading time prediction
+        ret = max_latency - epoch_run_time - dlist->put_off * ctx->bd_average_dirty_bytes * 1000 / (ctx->bd_average_rate * 75 / 100);
+    } else {
+        ret = max_latency - epoch_run_time - dlist->put_off * ctx->bd_average_dirty_bytes * 1000 / (ctx->bd_average_rate * 100 / 100);
+    }
+    */
+
+    if (ret <= 0) { 
+        ctx->bd_last_dp_num = dlist->put_off;
+    }    
+    
+    return ret; 
+}
+
+
 int kvmft_ioctl_bd_check_dirty_page_number(struct kvm *kvm)
 {
     struct kvmft_context *ctx;
