@@ -169,7 +169,7 @@ int kvmft_ioctl_set_master_slave_sockets(struct kvm *kvm,
     struct kvmft_set_master_slave_sockets *socks);
 
 void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *update);
-
+int kvmft_ioctl_bd_set_alpha(struct kvm *kvm, int alpha);
 
 #endif
 

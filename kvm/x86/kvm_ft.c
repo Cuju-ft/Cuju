@@ -3385,3 +3385,14 @@ err_free:
     kvm_shm_exit(kvm);
     return ret;
 }
+
+int kvmft_ioctl_bd_set_alpha(struct kvm *kvm, int alpha)
+{
+    struct kvmft_context *ctx;
+
+    ctx = &kvm->ft_context;
+    ctx->bd_alpha = alpha;
+
+    return 0;
+}   
+

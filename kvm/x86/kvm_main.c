@@ -3483,7 +3483,14 @@ out_free_irq_routing:
         kvmft_bd_update_latency(kvm, &update);
         break;
     }    
-
+    case KVMFT_BD_SET_ALPHA: {
+        __u32 alpha;
+        r = -EFAULT;
+        if (copy_from_user(&alpha, argp, sizeof alpha))
+            goto out; 
+        r = kvmft_ioctl_bd_set_alpha(kvm, (int)alpha);
+        break;
+    }  
 
 	default:
 		r = kvm_arch_vm_ioctl(filp, ioctl, arg);
