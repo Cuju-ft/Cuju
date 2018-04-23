@@ -3396,3 +3396,38 @@ int kvmft_ioctl_bd_set_alpha(struct kvm *kvm, int alpha)
     return 0;
 }   
 
+int kvmft_ioctl_bd_calc_dirty_bytes(struct kvm *kvm)
+{
+    struct kvmft_context *ctx = &kvm->ft_context;
+    struct kvmft_dirty_list *dlist;
+    void **snapshot_pages;
+    int i, j, count, dirty_bytes = 0;
+
+    dlist = ctx->page_nums_snapshot_k[ctx->cur_index];
+    snapshot_pages = ctx->shared_pages_snapshot_k[ctx->cur_index];
+
+    kernel_fpu_begin();
+
+    count = dlist->put_off;
+    for (i = 0; i < count; ++i) {
+        gfn_t gfn = dlist->pages[i];
+        uint8_t *page1 = snapshot_pages[i];
+        uint8_t *page2 = gfn_to_hva(kvm, gfn);
+        for (j = 0; j < 4096; j += 32) {
+            dirty_bytes += 32 * (!!memcmp_avx_32(page1 + j, page2 + j));
+        }
+    }
+
+    kernel_fpu_end();
+
+    if (count > 0) {
+        ctx->bd_average_dirty_bytes = dirty_bytes / count;
+        if (ctx->bd_average_dirty_bytes < 100)
+            ctx->bd_average_dirty_bytes = 100;
+        return ctx->bd_average_dirty_bytes;
+    }
+
+    return 0;
+}
+
+

@@ -3474,6 +3474,10 @@ out_free_irq_routing:
         r = kvmft_ioctl_set_master_slave_sockets(kvm, &socks);
         break;
     }
+    case KVMFT_BD_CALC_DIRTY_BYTES: {
+        r = kvmft_ioctl_bd_calc_dirty_bytes(kvm);
+        break;
+    }                                                                                                                                                                                                               
     case KVMFT_BD_UPDATE_LATENCY: {
         struct kvmft_update_latency update;                                                                                                                                                                         
         r = -EFAULT;

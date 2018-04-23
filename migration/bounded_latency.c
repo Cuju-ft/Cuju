@@ -81,6 +81,22 @@ int kvmft_bd_update_latency(int dirty_page, int runtime_us, int trans_us, int la
     return kvm_vm_ioctl(kvm_state, KVMFT_BD_UPDATE_LATENCY, &update);
 }
 
+static int bd_calc_dirty_bytes(void)                                                                                                                                                                                
+{
+    return kvm_vm_ioctl(kvm_state, KVMFT_BD_CALC_DIRTY_BYTES);
+}
+
+/*
+static int bd_is_last_count(int count)
+{
+    if (EPOCH_TIME_IN_MS < 10) {
+        return count == 10;                                                                                                                                                                                         
+    } else {
+        return count == EPOCH_TIME_IN_MS;
+    }   
+}*/
+
+
 void bd_reset_epoch_timer(void)
 {
     //float nvalue = BD_TIMER_RATIO * EPOCH_TIME_IN_MS * 1000;
@@ -99,12 +115,12 @@ void bd_reset_epoch_timer(void)
 
 bool bd_timer_func(void)
 {
-/*
+
     static int count = 0;
-    int dirty_bytes;
+    //int dirty_bytes;
     MigrationState *s = migrate_get_current();
 
-    static int last_dirty_bytes = 0;
+//    static int last_dirty_bytes = 0;
 
     ++count;
                                                                                                                                                                                                                     
@@ -127,14 +143,14 @@ bool bd_timer_func(void)
             //s->average_dirty_bytes = bd_calc_dirty_bytes();
         }
 
-        if (bd_is_last_count(count) || kvmft_bd_check_dirty_page_number()) {
-            count = 0;
-            last_dirty_bytes = 0;
-            return false;
-        }
+//        if (bd_is_last_count(count) || kvmft_bd_check_dirty_page_number()) {
+ //           count = 0;
+  //          last_dirty_bytes = 0;
+   //         return false;
+    //    }
 
     }
-*/
+
 
 
     return 0;
