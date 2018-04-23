@@ -23,6 +23,7 @@
 #include "exec/cpu-common.h"
 #include "qemu/coroutine_int.h"
 #include "io/channel-socket.h"
+#include "migration/group_ft.h"
 
 #define CUJU_FT_DEV_INIT_BUF (8*1024*1024)
 #define CUJU_FT_DEV_STATE_ENTRY_SIZE 50
@@ -245,6 +246,7 @@ struct MigrationState
     unsigned int dirty_page_tracking_logs_off;
 
     struct CUJUFTDev *ft_dev;
+    struct MigrationJoin join;
     QTAILQ_ENTRY(MigrationState) nodes[4];
 #ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
     unsigned long *dirty_pfns;
