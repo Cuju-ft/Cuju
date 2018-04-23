@@ -230,6 +230,7 @@ void qemu_file_set_blocking(QEMUFile *f, bool block);
 void qemu_file_put_notify(QEMUFile *f);
 void qemu_file_get_notify(void *opaque);
 QEMUFile *cuju_qemu_fopen_ft_trans(int s_fd, int c_fd, int ram_fd, int ram_hdr_fd);
+QEMUFile *qemu_fopen_socket(int fd);
 
 static inline void qemu_put_be64s(QEMUFile *f, const uint64_t *pv)
 {

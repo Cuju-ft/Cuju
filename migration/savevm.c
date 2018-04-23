@@ -176,7 +176,25 @@ static ssize_t socket_put_buffer(void *opaque, const void *buf, size_t size)
     return len;
 }
 
-static int socket_get_buffer(void *opaque, uint8_t *buf, int64_t pos, int size)
+static int socket_put_buffer2(void *opaque, uint8_t *buf, int64_t pos, int size)
+{
+    QEMUFileSocket *s = opaque;
+    ssize_t len;
+
+    do {
+        len = send(s->fd, buf, size, 0);
+    } while (len == -1 && socket_error() == EINTR);
+
+    if (len == -1)
+        len = -socket_error();
+    // yifeng
+    if (len == 0)
+        len = -EINVAL;
+
+    return len;
+}
+
+static ssize_t socket_get_buffer(void *opaque, uint8_t *buf, int64_t pos, size_t size)
 {
     QEMUFileSocket *s = opaque;
     ssize_t len;
@@ -192,6 +210,13 @@ static int socket_get_buffer(void *opaque, uint8_t *buf, int64_t pos, int size)
         len = -EINVAL;
 
     return len;
+}
+
+static int socket_close(void *opaque)
+{
+    QEMUFileSocket *s = opaque;
+    g_free(s);
+    return 0;
 }
 static QTAILQ_HEAD(savevm_handlers, SaveStateEntry) savevm_handlers =
     QTAILQ_HEAD_INITIALIZER(savevm_handlers);
@@ -415,6 +440,20 @@ static QEMUFile *qemu_fopen_bdrv(BlockDriverState *bs, int is_writable)
     return qemu_fopen_ops(bs, &bdrv_read_ops);
 }
 
+static const QEMUFileOps cuju_socket_ops = {
+    .put_buffer = socket_put_buffer2,
+    .get_buffer = socket_get_buffer,
+    .close =      socket_close
+};
+
+QEMUFile *qemu_fopen_socket(int fd)
+{
+    QEMUFileSocket *s = g_malloc0(sizeof(QEMUFileSocket));
+
+    s->fd = fd;
+    s->file = qemu_fopen_ops(s, &cuju_socket_ops);
+    return s->file;
+}
 
 /* QEMUFile timer support.
  * Not in qemu-file.c to not add qemu-timer.c as dependency to qemu-file.c
