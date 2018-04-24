@@ -179,10 +179,52 @@ bool bd_timer_func(void)
                 qmp_cuju_adjust_epoch(700, &err);                                                                                                                                                              
             }   
         }   
+        kvm_shmem_start_timer();
+        return true;
+    } else {
+        if (count < 5) {
+            kvm_shmem_start_timer();
+            return true;
+        }
 
+        if (count == 5) {
+            s->average_dirty_bytes = bd_calc_dirty_bytes();
+        }
 
+        if (count > 5) {
+            s->average_dirty_bytes = bd_calc_dirty_bytes();
+        }
 
+        if (bd_is_last_count(count) || kvmft_bd_check_dirty_page_number()) {
+            count = 0;
+            //last_dirty_bytes = 0;
+            return false;
+        }
 
+        if (count >= 5) {
+            int lefttime = bd_calc_left_runtime();
+
+            //fprintf(ofile, "%d %d %d\n", count, lefttime, s->average_dirty_bytes);
+
+            //if (lefttime <= -400)
+            //    printf("%s %d lefttime = %d\n", __func__, count, lefttime);
+            if (lefttime <= 200) {
+                count = 0;
+                //last_dirty_bytes = 0;
+                return false;
+            } else if (lefttime < EPOCH_TIME_IN_MS*1000/10) {
+                Error *err = NULL;
+                qmp_cuju_adjust_epoch((unsigned int)lefttime, &err);
+            }
+
+            if (count == EPOCH_TIME_IN_MS-1 && lefttime >= EPOCH_TIME_IN_MS*1000/10-200) {
+                Error *err = NULL;
+                qmp_cuju_adjust_epoch(EPOCH_TIME_IN_MS*1000/10-300, &err);
+            }
+        }
+                                                                                                                                                                                                                    
+        kvm_shmem_start_timer();
+        return true;
 
     }
 
