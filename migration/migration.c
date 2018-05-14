@@ -192,10 +192,10 @@ static int group_ft_leader_sock = 0;
 static int group_ft_master_sock = 0;
 /* count of masters that finish migrating */
 static int group_ft_members_ready = 0;
-// static struct group_ft_wait_all {
-//     QEMUTimer *timer;
-//     MigrationState *s;
-// } group_ft_wait_all;
+static struct group_ft_wait_all {
+    QEMUTimer *timer;
+    MigrationState *s;
+} group_ft_wait_all;
 
 extern int my_gft_id;
 
@@ -205,6 +205,7 @@ int qio_ft_sock_fd = 0;
 static int migration_states_current;
 
 static void migrate_fd_get_notify(void *opaque);
+static void gft_leader_broadcast_all_migration_done(void);
 
 int cuju_get_fd_from_QIOChannel(QIOChannel *ioc);
 
@@ -2444,6 +2445,154 @@ static void gft_master_try_get_notify(MigrationState *s)
     }
 }
 
+static struct MigrationJoinConn* gft_master_connect_other_master(
+                MigrationState *s, int target_gft_id)
+{
+    struct MigrationJoinConn *conn = NULL;
+    int i, sd, cmd, index = s->cur_off;
+    Error *err = NULL;
+    char host_port[32];
+    QEMUFile *f;
+    GroupFTMember *gft_member;
+
+    assert(target_gft_id >= 0 && target_gft_id < GROUP_FT_MEMBER_MAX);
+
+    gft_member = &group_ft_members[target_gft_id];
+
+    sprintf(host_port, "%s:%d", gft_member->master_host_ip,
+            gft_member->master_host_gft_port);
+
+    printf("%s\n", host_port);
+
+    for (i = 0; i < MIG_MAX_JOIN; ++i) {
+        if (s->join.conn[i].r_sock == 0) {
+            conn = &s->join.conn[i];
+            break;
+        }
+    }
+    if (i == MIG_MAX_JOIN) {
+        printf("%s can't find spare conn.\n", __func__);
+        goto out;
+    }
+
+    /* read first, write second. */
+    sd = inet_connect(host_port, &err);
+    if (err || sd == -1) {
+        printf("%s error connect to %s.\n", __func__, host_port);
+        goto out;
+    }
+
+    f = qemu_fopen_socket(sd);
+    if (f == NULL) {
+        printf("%s can't open qemu_fopen_socket.\n", __func__);
+        goto out;
+    }
+    conn->r_file = f;
+    conn->r_sock = sd;
+
+    printf("%s send sock %d\n", __func__, sd);
+    assert(send(sd, &index, sizeof(index), 0) == sizeof(index));
+    assert(recv(sd, &index, sizeof(index), 0) == sizeof(index));
+    assert(index == s->cur_off);
+
+    sd = inet_connect(host_port, &err);
+    if (err || sd == -1) {
+        printf("%s error connect to %s.\n", __func__, host_port);
+        goto out;
+    }
+
+    f = qemu_fopen_socket(sd);
+    if (f == NULL) {
+        printf("%s can't open qemu_fopen_socket.\n", __func__);
+        goto out;
+    }
+    conn->w_file = f;
+    conn->w_sock = sd;
+
+    printf("%s send sock %d\n", __func__, sd);
+    assert(send(sd, &index, sizeof(index), 0) == sizeof(index));
+    assert(recv(sd, &index, sizeof(index), 0) == sizeof(index));
+    assert(index == s->cur_off);
+
+    conn->migrate = s;
+    conn->gft_id = target_gft_id;
+
+    socket_set_nodelay(conn->w_sock);
+    qemu_set_nonblock(conn->w_sock);
+    qemu_set_nonblock(conn->r_sock);
+
+    //qemu_set_fd_survive_ft_pause(conn->r_sock, true);
+    //qemu_set_fd_survive_ft_pause(conn->w_sock, true);
+
+    // send MIG_JOIN_GFT_NEW and my gft_id
+    cmd = MIG_JOIN_GFT_NEW;
+    assert(send(conn->w_sock, &cmd, sizeof(cmd), 0) == sizeof(cmd));
+    assert(send(conn->w_sock, &my_gft_id, sizeof(my_gft_id), 0) == sizeof(my_gft_id));
+
+    return conn;
+out:
+    if (conn)
+        migrate_join_close_socks(conn);
+    return NULL;
+}
+
+static void gft_connect_internal(void)
+{
+    MigrationState *s1, *s2;
+    struct MigrationJoinConn *conn1, *conn2;
+    int i;
+
+    s1 = migrate_by_index(0);
+    s2 = migrate_by_index(1);
+
+    for (i = 0; i < group_ft_members_size; ++i) {
+        GroupFTMember *m = &group_ft_members[i];
+        if (m->gft_id > my_gft_id) {
+            conn1 = gft_master_connect_other_master(s1, m->gft_id);
+            if (!conn1)
+                return;
+            conn2 = gft_master_connect_other_master(s2, m->gft_id);
+            if (!conn2)
+                return;
+
+            conn1->brother = conn2;
+            conn2->brother = conn1;
+
+            clear_bit(conn1->gft_id, &s1->join.bitmaps_snapshot_started);
+            clear_bit(conn1->gft_id, &s1->join.bitmaps_commit1);
+            clear_bit(conn2->gft_id, &s2->join.bitmaps_snapshot_started);
+            clear_bit(conn2->gft_id, &s2->join.bitmaps_commit1);
+
+            s1->join.number++;
+            s2->join.number++;
+
+            printf("%s connection built with %d\n", __func__, m->gft_id);
+            printf("%s join.number %d %d\n", __func__, s1->join.number, s2->join.number);
+        }
+    }
+}
+
+static void gft_master_notify_leader_migration_done(void)
+{
+    int send;
+    if (!group_ft_members_size)
+        return;
+    if (group_ft_leader_sock) {
+        send = MIG_JOIN_GFT_MIGRATION_DONE;
+        assert(write(group_ft_leader_sock, &send, sizeof(send)) == sizeof(send));
+    } else if (++group_ft_members_ready == group_ft_members_size)
+        gft_leader_broadcast_all_migration_done();
+    printf("%s leader_sock = %d\n", __func__, group_ft_leader_sock);
+}
+
+static void gft_master_wait_all_migration_done(void)
+{
+}
+
+static void gft_broadcast_backup_done(MigrationState *s)
+{
+}
+
 // NOTE: don't send content in this function
 static int migrate_ft_trans_get_ready(void *opaque)
 {
@@ -2470,10 +2619,10 @@ static int migrate_ft_trans_get_ready(void *opaque)
         kvmft_calc_ram_hash();
 
         assert(s == migrate_token_owner);
-        //gft_connect_internal();
-        //gft_master_notify_leader_migration_done();
-        //group_ft_wait_all.s = s;
-        //gft_master_wait_all_migration_done();
+        gft_connect_internal();
+        gft_master_notify_leader_migration_done();
+        group_ft_wait_all.s = s;
+        gft_master_wait_all_migration_done();
 		migrate_run(s);
 		vm_start();
 
@@ -2491,15 +2640,15 @@ static int migrate_ft_trans_get_ready(void *opaque)
         dirty_page_tracking_logs_start_flush_output(s);
         migrate_set_ft_state(s, CUJU_FT_TRANSACTION_FLUSH_OUTPUT);
 
-        //gft_broadcast_backup_done(s);
-	/*
+        gft_broadcast_backup_done(s);
+
         if (s->join.bitmaps_commit1 == ~0) {
             gft_reset_bitmaps_commit1(s);
             kvmft_flush_output(s);
         } else
             s->join.wait_group_transfer_done = true;
         break;
-	*/
+
 		kvmft_flush_output(s);
         break;
 
