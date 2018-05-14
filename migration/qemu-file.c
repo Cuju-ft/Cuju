@@ -245,7 +245,7 @@ size_t ram_control_save_page(QEMUFile *f, ram_addr_t block_offset,
  * case if the underlying file descriptor gives a short read, and that can
  * happen even on a blocking fd.
  */
-static ssize_t qemu_fill_buffer(QEMUFile *f)
+ssize_t qemu_fill_buffer(QEMUFile *f)
 {
     int len;
     int pending;
