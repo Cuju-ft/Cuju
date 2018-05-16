@@ -3479,19 +3479,21 @@ int kvmft_ioctl_bd_calc_dirty_bytes(struct kvm *kvm)
     dlist = ctx->page_nums_snapshot_k[ctx->cur_index];
     snapshot_pages = ctx->shared_pages_snapshot_k[ctx->cur_index];
 
-    kernel_fpu_begin();
 
     count = dlist->put_off;
     for (i = 0; i < count; ++i) {
         gfn_t gfn = dlist->pages[i];
+
         uint8_t *page1 = snapshot_pages[i];
-        uint8_t *page2 = gfn_to_hva(kvm, gfn);
+        uint8_t *page2 = __va(gfn_to_pfn(kvm, gfn) << PAGE_SHIFT);
+
+        kernel_fpu_begin();
         for (j = 0; j < 4096; j += 32) {
             dirty_bytes += 32 * (!!memcmp_avx_32(page1 + j, page2 + j));
         }
+        kernel_fpu_end();
     }
 
-    kernel_fpu_end();
 
     if (count > 0) {
         ctx->bd_average_dirty_bytes = dirty_bytes / count;
