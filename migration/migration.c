@@ -2420,7 +2420,10 @@ static void gft_master_read_master(void *opaque)
                     else
                         s->epoch_timer_pending = true;
                 }
-                if(join->bitmaps_snapshot_started == ~0) break;
+                if(join->bitmaps_snapshot_started == ~0) {
+                    printf("!!%s Get duplicated command snapshot %d!!\n", __func__, cmd);
+                    break;
+                }
                 assert(join->bitmaps_snapshot_started != ~0);
                 if (test_and_set_bit(conn->gft_id, &join->bitmaps_snapshot_started))
                     abort();
@@ -2448,7 +2451,10 @@ static void gft_master_read_master(void *opaque)
                 }
                 break;
             case MIG_JOIN_EPOCH_COMMIT2:
-                if(join->bitmaps_commit2 == ~0) break;
+                if(join->bitmaps_commit2 == ~0) {
+                    printf("!!%s Get duplicated command commit2 %d!!\n", __func__, cmd);
+                    break;
+                }
                 assert(join->bitmaps_commit2 != ~0);
                 if (test_and_set_bit(conn->gft_id, &join->bitmaps_commit2))
                     abort();
@@ -3829,4 +3835,48 @@ void qmp_gft_leader_init(Error **errp)
     }
 
     gft_start_migration();
+}
+
+int gft_packet_can_send(const uint8_t *buf, int size)
+{
+    char *p = (char *)buf;
+    MigrationState *s;
+    MigrationJoin *join;
+    MigrationJoinConn *conn;
+    int i;
+    GroupFTMember *gft_member;
+
+    if (size < 14)
+        return 0;
+
+    //printf("%02x %02x %02x %02x %02x %02x\n", p[0], p[1], p[2], p[3], p[4], p[5]);
+
+    if (p[0] == (char)0xff &&
+        p[1] == (char)0xff &&
+        p[2] == (char)0xff &&
+        p[3] == (char)0xff &&
+        p[4] == (char)0xff &&
+        p[5] == (char)0xff &&
+        p[12] == (char)0x08 &&
+        p[13] == (char)0x06) {
+        return 1;
+    }
+
+    s = migrate_get_current();
+    join = &s->join;
+
+    if (join->number == 0)
+        return 0;
+
+    for (i = 0; i < MIG_MAX_JOIN; ++i) {
+        conn = &join->conn[i];
+        if (conn->r_sock) {
+            gft_member = &group_ft_members[conn->gft_id];
+            char *pp = gft_member->master_mac;
+            if (!memcmp(pp, p, 6))
+                return 1;
+        }
+    }
+
+    return 0;
 }

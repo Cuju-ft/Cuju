@@ -1,7 +1,7 @@
 /*
  * Event Tap functions for QEMU
  *
- * Copyright (c) 2010 Nippon Telegraph and Telephone Corporation. 
+ * Copyright (c) 2010 Nippon Telegraph and Telephone Corporation.
  *
  * This work is licensed under the terms of the GNU GPL, version 2.  See
  * the COPYING file in the top-level directory.
@@ -62,7 +62,7 @@ typedef struct NetListFlushRequest {
 
 typedef struct EventTapIOport {
     uint32_t address;
-    uint32_t data;    
+    uint32_t data;
     int      index;
 } EventTapIOport;
 
@@ -115,7 +115,7 @@ typedef struct EventTapBlkReq {
 typedef struct EventTapLog {
     int mode;
     union {
-        EventTapIOport ioport ;    
+        EventTapIOport ioport ;
         EventTapMMIO mmio;
     };
     union {
@@ -188,7 +188,7 @@ static void event_tap_free_log(EventTapLog *log)
     QTAILQ_INSERT_HEAD(&event_pool, log, node);
 }
 
-static int event_tap_alloc_net_req(EventTapNetReq *net_req, 
+static int event_tap_alloc_net_req(EventTapNetReq *net_req,
                                    NetClientState *vc,
                                    const struct iovec *iov, int iovcnt,
                                    NetPacketSent *sent_cb, bool async)
@@ -308,7 +308,7 @@ void event_tap_fill_buffer(QEMUIOVector *dst, int64_t sector_num)
             if ( sector_num >= blk_req->reqs[0].offset+blk_req->reqs[0].bytes
                     || blk_req->reqs[0].offset >= sector_num + nb_sectors )
                 continue;
-            
+
             /* keep copy from all logs to get the newest data */
             if (sector_num <= blk_req->reqs[0].offset) {
                 size = (sector_num + nb_sectors - blk_req->reqs[0].offset) * 512;
@@ -316,7 +316,7 @@ void event_tap_fill_buffer(QEMUIOVector *dst, int64_t sector_num)
                     size = blk_req->qiov[0].size;
                 qemu_iovec_copy_sup(dst, (blk_req->reqs[0].offset - sector_num) * 512,
                                     &blk_req->qiov[0], 0, size);
-               
+
             } else {
                 size = (blk_req->reqs[0].offset + blk_req->reqs[0].bytes - sector_num)
                             * 512;
@@ -324,7 +324,7 @@ void event_tap_fill_buffer(QEMUIOVector *dst, int64_t sector_num)
                     size = dst->size;
                 qemu_iovec_copy_sup(dst, 0, &blk_req->qiov[0],
                                     (sector_num - blk_req->reqs[0].offset) * 512, size);
-        
+
             }
         }
 
@@ -336,7 +336,7 @@ void event_tap_fill_buffer(QEMUIOVector *dst, int64_t sector_num)
             if ( sector_num >= blk_req->reqs[0].offset+blk_req->reqs[0].bytes
                     || blk_req->reqs[0].offset >= sector_num + nb_sectors )
                 continue;
-           
+
             /* keep copy from all logs to get the newest data */
             if (sector_num <= blk_req->reqs[0].offset) {
                 size = (sector_num + nb_sectors - blk_req->reqs[0].offset) * 512;
@@ -344,7 +344,7 @@ void event_tap_fill_buffer(QEMUIOVector *dst, int64_t sector_num)
                     size = blk_req->qiov[0].size;
                 qemu_iovec_copy_sup(dst, (blk_req->reqs[0].offset - sector_num) * 512,
                                     &blk_req->qiov[0], 0, size);
-                
+
             } else {
                 size = (blk_req->reqs[0].offset + blk_req->reqs[0].bytes - sector_num)
                             * 512;
@@ -352,7 +352,7 @@ void event_tap_fill_buffer(QEMUIOVector *dst, int64_t sector_num)
                     size = dst->size;
                 qemu_iovec_copy_sup(dst, 0, &blk_req->qiov[0],
                                     (sector_num - blk_req->reqs[0].offset) * 512, size);
-            
+
 
             }
         }
@@ -364,7 +364,7 @@ void event_tap_fill_buffer(QEMUIOVector *dst, int64_t sector_num)
             if ( sector_num >= blk_req->reqs[0].offset+blk_req->reqs[0].bytes
                     || blk_req->reqs[0].offset >= sector_num + nb_sectors )
                 continue;
-            
+
             /* keep copy from all logs to get the newest data */
             if (sector_num <= blk_req->reqs[0].offset) {
                 size = (sector_num + nb_sectors - blk_req->reqs[0].offset) * 512;
@@ -393,12 +393,11 @@ void qemu_send_packet_proxy(NetClientState *vc, const uint8_t *buf, int size)
     if (event_tap_state != EVENT_TAP_ON) {
         goto out;
 	}
-    //TODO: support gft
-    /*
+
     if (gft_packet_can_send(buf, size)) {
         goto out;
 	}
-    */
+
     iov.iov_base = (uint8_t*)buf;
     iov.iov_len = size;
 
@@ -426,12 +425,9 @@ ssize_t qemu_sendv_packet_async_proxy(NetClientState *vc,
 		size += iov[i].iov_len;
 	}
 
-    // TODO: support gft
-    /*
 	if (gft_packet_can_send(iov->iov_base, iov->iov_len)) {
         goto out;
 	}
-    */
 
 #ifdef CONFIG_EPOCH_OUTPUT_TRIGGER
     extern kvmft_notify_new_output();
@@ -559,7 +555,7 @@ static int event_tap_flush_one_net(EventTapLogList *list)
     assert ((log->mode & ~EVENT_TAP_TYPE_MASK) == EVENT_TAP_NET);
 
     event_tap_net_flush(&log->net_req);
-	
+
     event_tap_free_log(log);
 
     return list->head >= list->tail;
@@ -972,7 +968,7 @@ void event_tap_init(void)
     QTAILQ_INIT(event_list_old);
 
     QTAILQ_INIT(&event_list_pending);
-    QTAILQ_INIT(&event_pool);    
+    QTAILQ_INIT(&event_pool);
 
     vmstate = qemu_add_vm_change_state_handler(event_tap_replay, NULL);
 }
