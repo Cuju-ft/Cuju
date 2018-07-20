@@ -865,11 +865,11 @@ static int kvm_extend_dirty_bitmap(struct kvm_memory_slot *memslot)
 #ifndef CONFIG_S390
     size_t array_size;
     int ret;
- 
+
     ret = shared_page_array_extend(&memslot->epoch_dirty_bitmaps);
     if (ret < 0)
         return ret;
- 
+
     ret = shared_page_array_extend(&memslot->epoch_gfn_to_put_offs);
     if (ret < 0)
         return ret;
@@ -3328,6 +3328,12 @@ static long kvm_vm_ioctl(struct file *filp,
                                   req.interrupted,
                                   req.conn_index,
                                   req.max_conn);
+    break;
+  }
+  case KVMFT_RESTORE_PREVIOUS_EPOCH: {
+    printk ( KERN_INFO "in kvmft before calling previous epoch \n",__func__);
+    r = -EFAULT;
+    r = kvmft_restore_previous_epoch(kvm,argp);
     break;
   }
 #ifdef KVM_COALESCED_MMIO_PAGE_OFFSET
