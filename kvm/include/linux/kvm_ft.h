@@ -40,10 +40,10 @@ struct kvmft_dirty_list {
     __u32 pages[];
 };
 
-struct kvm_collect_log {    
+struct kvm_collect_log {
     __u32 cur_index;
     __u32 is_last;
-};  
+};
 
 struct zerocopy_callback_arg {
 	struct kvm *kvm;
@@ -81,7 +81,7 @@ struct kvmft_context {
     bool log_full;
 
     // array of (struct kvmft_dirty_list *)
-    struct kvmft_dirty_list **page_nums_snapshot_k;  
+    struct kvmft_dirty_list **page_nums_snapshot_k;
     // array of (struct page*)
     struct page **page_nums_snapshot_page;
 
@@ -89,7 +89,7 @@ struct kvmft_context {
 
     // array of
     //  [k1,k2,...,kn], kx points to a kernel page, size is shared_log_size
-    void ***shared_pages_snapshot_k;  
+    void ***shared_pages_snapshot_k;
     // array of
     //  [struct page*, struct page*, ...]
     struct page ***shared_pages_snapshot_pages;
@@ -127,6 +127,7 @@ int kvmft_fire_timer(struct kvm_vcpu *vcpu, int moff);
 struct kvm_shmem_report_trackable;
 int kvm_shm_report_trackable(struct kvm *kvm,
 						struct kvm_shmem_report_trackable *t);
+int kvmft_restore_previous_epoch(struct kvm * kvm,void * __user bitmap);
 int kvm_shm_collect_trackable_dirty(struct kvm *kvm,
 						void * __user bitmap);
 int kvm_start_kernel_transfer(struct kvm *kvm,
