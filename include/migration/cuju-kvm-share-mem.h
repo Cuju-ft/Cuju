@@ -1,4 +1,4 @@
-/* 
+/*
  * Cuju
  * (a.k.a. Fault Tolerance, Continuous Replication, or Checkpointing)
  *
@@ -68,6 +68,5 @@ void kvm_shmem_load_ram_with_hdr(void *buf, int size, void *hdr_buf, int hdr_siz
 void kvm_shmem_load_ram(void *buf, int size);
 void* kvm_shmem_map_pfn(unsigned long pfn, unsigned long size);
 void kvm_shmem_unmap_pfn(void *ptr, unsigned long size);
-
-
+int kvm_vm_ioctl_proxy(void *s);
 #endif

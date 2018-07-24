@@ -90,6 +90,8 @@ void* virtio_blk_get_temp_list(void)
 
 static void virtio_blk_handle_write(VirtIOBlockReq *req, MultiReqBuffer *mrb);
 static void virtio_blk_submit_multireq(BlockBackend *blk, MultiReqBuffer *mrb);
+static void virtio_blk_rw_complete(void *opaque, int ret);
+static void virtio_blk_req_complete(VirtIOBlockReq *req, unsigned char status);
 
 static void virtio_blk_flush_bh(void *opaque)
 {

@@ -175,7 +175,7 @@ static QemuCond ft_cond;
 
 static MigrationState **migration_states;
 int migration_states_count = 0;
-int migrate_get_index(MigrationState *s);
+static int migrate_get_index(MigrationState *s);
 static void migrate_run(MigrationState *s);
 
 // Group FT
@@ -215,7 +215,7 @@ MigrationState *migrate_by_index(int index)
     return migration_states[index];
 }
 
-int migrate_get_index(MigrationState *s)
+static int migrate_get_index(MigrationState *s)
 {
     int i;
     for (i = 0; i < migration_states_count; i++) {
@@ -2667,7 +2667,7 @@ static void gft_master_wait_all_migration_done(void *opaque)
     } else {
         if (!group_ft_wait_all.timer)
             group_ft_wait_all.timer = timer_new_ms(QEMU_CLOCK_REALTIME,
-                gft_master_wait_all_migration_done, NULL);
+                (QEMUTimerCB *) gft_master_wait_all_migration_done, NULL);
         printf("wait for other migrations..\n");
         timer_mod(group_ft_wait_all.timer, qemu_clock_get_ms(QEMU_CLOCK_REALTIME) + 1000);
     }
