@@ -7,7 +7,7 @@
  *  Wei-Chen Liao       <ms0472904@gmail.com>
  *  Po-Jui Tsao         <pjtsao@itri.org.tw>
  *  Yu-Shiang Lin       <YuShiangLin@itri.org.tw>
- *  
+ *
  *
  */
 
@@ -29,6 +29,7 @@
 #include "qom/cpu.h"
 #include "exec/memory.h"
 #include "exec/address-spaces.h"
+#include "migration/cuju-kvm-share-mem.h"
 #include "migration/cuju-ft-trans-file.h"
 #include "io/channel-socket.h"
 #include <linux/kvm.h>
@@ -41,8 +42,9 @@ int cuju_is_load = 0;
 QemuMutex cuju_load_mutex;
 QemuCond cuju_load_cond;
 
-extern void kvm_shmem_load_ram(void *buf, int size);
-extern void kvm_shmem_load_ram_with_hdr(void *buf, int size, void *hdr_buf, int hdr_size);
+//extern int qemu_loadvm_dev(QEMUFile *f);
+//extern void kvm_shmem_load_ram(void *buf, int size);
+//extern void kvm_shmem_load_ram_with_hdr(void *buf, int size, void *hdr_buf, int hdr_size);
 
 char *blk_server = NULL;
 
@@ -758,19 +760,25 @@ out:
 static int cuju_ft_trans_close(void *opaque)
 {
     Error *local_err = NULL;
-
     CujuQEMUFileFtTrans *s = opaque;
-    int ret;
+    int ret = -1;
 
     printf("%s\n", __func__);
 
     trace_cuju_ft_trans_close();
-    ret = s->close(s->opaque);
-    if (s->is_sender)
-        g_free(s->buf);
 
+    if (!s){
+    vm_stop_mig();
+    kvm_vm_ioctl_proxy((void *) s);
+    //kvm_vm_ioctl(kvm_state, KVMFT_RESTORE_PREVIOUS_EPOCH, (void *) s);
+    bdrv_drain_all();
+    bdrv_invalidate_cache_all(&local_err);
+    qemu_announce_self();
 
-    if (!s->is_sender) {
+    vm_start_mig();
+
+    }else if (!s->is_sender) {
+        ret = s->close(s->opaque);
         qemu_mutex_lock(&cuju_load_mutex);
         while (cuju_is_load == 1)
             qemu_cond_wait(&cuju_load_cond, &cuju_load_mutex);
