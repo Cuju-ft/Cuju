@@ -1502,7 +1502,10 @@ int vm_stop(RunState state)
 }
 
 bool ft_stopped_cpus;
-
+/**
+ * vm_start_mig : a light weight versin of vm_start
+ *
+ */
 void vm_stop_mig(void)
 {
     ft_stopped_cpus = true;
