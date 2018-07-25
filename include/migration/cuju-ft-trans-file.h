@@ -6,7 +6,7 @@
  *  Yi-feng Sun         <pkusunyifeng@gmail.com>
  *  Wei-Chen Liao       <ms0472904@gmail.com>
  *  Po-Jui Tsao         <pjtsao@itri.org.tw>
- *  Yu-Shiang Lin       <YuShiangLin@itri.org.tw> 
+ *  Yu-Shiang Lin       <YuShiangLin@itri.org.tw>
  *
  */
 
@@ -198,5 +198,7 @@ extern QemuCond cuju_load_cond;
 void cuju_socket_set_nodelay(int fd);
 void cuju_socket_unset_nodelay(int fd);
 void cuju_socket_set_quickack(int fd);
+void qmp_migrate_pause(void);
+void qmp_migrate_resume(void);
 
 #endif
