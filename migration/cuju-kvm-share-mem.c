@@ -1090,7 +1090,9 @@ int kvm_shmem_mark_page_dirty(void *ptr, unsigned long gfn)
     }
     return 0;
 }
-
+/**
+ * @ram_fd is the corresponing socket
+ */
 static int kvm_start_kernel_transfer(int trans_index, int ram_fd, int conn_index, int max_conn)
 {
     struct kvm_shmem_start_kernel_transfer req;
@@ -1130,7 +1132,10 @@ static int kvm_start_kernel_transfer(int trans_index, int ram_fd, int conn_index
 
     return ret;
 }
-
+/**
+ * Send a header followed by full page
+ * return the length of data sent (header + page)
+ */
 static inline int transfer_flat_page(int fd, unsigned int gfn, void *page)
 {
     struct __attribute__((__packed__)) c16x8_header {
@@ -1160,7 +1165,10 @@ static void thread_set_realtime(void)
         exit(-1);
     }
 }
-
+/**
+ * Used to do initial migration
+ * Will call kvm_start_kernel_transfer
+ */
 static void* trans_ram_conn_thread_func(void *opaque)
 {
     struct trans_ram_conn_descriptor *d = opaque;
@@ -1204,7 +1212,10 @@ static void* trans_ram_conn_thread_func(void *opaque)
 
     return NULL;
 }
-
+/**
+ * called in vl.c, after __migrate_init
+ * create qemu thread (1) with function trans_ram_conn_thread_func
+ */
 void trans_ram_init(void)
 {
     int i;
