@@ -852,8 +852,15 @@ STEXI
 Inject an NMI on the default CPU (x86/s390) or all CPUs (ppc64).
 
 ETEXI
+    {
+        .name       = "info_migrate",
+        .args_type  = "",
+        .params     = "",
+        .help       = "get migration info",
+        .cmd = hmp_info_migrate,
+    },
 
-   {
+    {
         .name       = "migrate_pause",
         .args_type  = "",
         .params     = "",

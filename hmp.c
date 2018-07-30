@@ -38,6 +38,7 @@
 #include "qemu/error-report.h"
 #include "hw/intc/intc.h"
 #include "migration/migration.h"
+#include "migration/group_ft.h"
 
 #ifdef CONFIG_SPICE
 #include <spice/enums.h>
@@ -154,6 +155,7 @@ void hmp_info_mice(Monitor *mon, const QDict *qdict)
     qapi_free_MouseInfoList(mice_list);
 }
 
+extern enum GFT_STATUS gft_status;
 void hmp_info_migrate(Monitor *mon, const QDict *qdict)
 {
     MigrationInfo *info;
@@ -162,6 +164,17 @@ void hmp_info_migrate(Monitor *mon, const QDict *qdict)
     info = qmp_query_migrate(NULL);
     caps = qmp_query_migrate_capabilities(NULL);
 
+    switch(gft_status){
+        case GFT_PRE:
+            monitor_printf(mon,"GFT STATUS PRE\n");
+            break;
+        case GFT_START:
+            monitor_printf(mon,"GFT STATUS START\n");
+            break;
+        case GFT_WAIT:
+            monitor_printf(mon,"GFT STATUS WAIT\n");
+            break;
+    }
     /* do not display parameters during setup */
     if (info->has_status && caps) {
         monitor_printf(mon, "capabilities: ");

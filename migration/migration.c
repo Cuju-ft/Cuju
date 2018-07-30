@@ -201,6 +201,8 @@ extern int my_gft_id;
 
 int qio_ft_sock_fd = 0;
 
+enum GFT_STATUS gft_status;
+
 bool migration_paused = false;
 static QemuMutex mig_mutex; // protect migration_paused
 static QemuCond mig_cond;
@@ -939,6 +941,7 @@ MigrationInfo *qmp_query_migrate(Error **errp)
     MigrationInfo *info = g_malloc0(sizeof(*info));
     MigrationState *s = migrate_get_current();
 
+    printf("in func %s \n",__func__);
     switch (s->state) {
     case MIGRATION_STATUS_NONE:
         /* no migration has happened ever */
@@ -2406,6 +2409,7 @@ static void kvmft_flush_output(MigrationState *s)
 }
 /**
  * gft_master_read_master : fill the r_file buffer and process one byte commands
+ * will also trigger ft when detect len <0
  *
  **/
 static void gft_master_read_master(void *opaque)
@@ -3372,8 +3376,6 @@ static void migrate_run(MigrationState *s)
 
     if (!gft_can_run(s))
         return;
-    event_tap_start_epoch(s->ft_event_tap_net_list,
-        s->ft_event_tap_list, NULL, NULL);
     if(migration_paused){
         printf("Migration_Paused, return!!\n");
         return;
@@ -3385,7 +3387,8 @@ static void migrate_run(MigrationState *s)
     assert(!kvm_shmem_flip_sharing(s->cur_off));
 
     migrate_schedule(s);
-
+    event_tap_start_epoch(s->ft_event_tap_net_list,
+        s->ft_event_tap_list, NULL, NULL);
 
     cuju_qemu_set_last_cmd(s->file, CUJU_QEMU_VM_TRANSACTION_BEGIN);
 
