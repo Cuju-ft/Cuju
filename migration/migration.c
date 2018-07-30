@@ -201,6 +201,10 @@ extern int my_gft_id;
 
 int qio_ft_sock_fd = 0;
 
+bool migration_paused = false;
+static QemuMutex mig_mutex; // protect migration_paused
+static QemuCond mig_cond;
+
 // At the time setting up FT, current will pointer to 2nd MigrationState.
 static int migration_states_current;
 
@@ -1332,7 +1336,7 @@ bool migration_in_postcopy_after_devices(MigrationState *s)
 }
 /**
  * migration_new : setup for MigrationState
- * s->state = MIG_STATE_SETUP
+ * s->state = MIGRATION_STATUS_NONE
  * initializae bitmap
  */
 static MigrationState* migration_new(void)
@@ -1348,8 +1352,8 @@ static MigrationState* migration_new(void)
     return s;
 }
 /* Called in vl.c before trans_ram_init
- * 1. allocate space for migration_stats
- * 2. set migration_states_current / count
+ * 1. allocate space for migration_states
+ * 2. set migration_states_current / migration_states_count
  * */
 void __migrate_init(void)
 {
@@ -2492,7 +2496,7 @@ static void gft_master_read_master(void *opaque)
     }
 }
 /**
- * gft_master_try_get_notfiy : This function trys to get notification from all rsocks
+ * gft_master_try_get_notify : This function trys to get notification from all rsocks
  **/
 static void gft_master_try_get_notify(MigrationState *s)
 {
@@ -2513,7 +2517,7 @@ static void gft_master_try_get_notify(MigrationState *s)
  * Create Connection with group member
  * corresponds with gft_master_accept_other_master_one
  * use inet_connect to connect to w_sock of group member , store in join->conn.r_sock
- * index represents the ucurrent mgiration_state's numbers
+ * index represents the current migration_state's numbers
  **/
 static struct MigrationJoinConn* gft_master_connect_other_master(
                 MigrationState *s, int target_gft_id)
@@ -3240,14 +3244,14 @@ int cuju_get_fd_from_QIOChannel(QIOChannel *ioc) {
     return sioc->fd;
 }
 /**
- * setup_slave_receiver :
+ * cuju_setup_slave_receiver :
  * is_sender set to 0 for slave
  * corresponds to ft_setup_migrate_state in migration.c
- * c probably used to monitor connection liveness, ft_trans_incoming will close qemu_file if error
+ * dev_fd probably used to monitor connection liveness, ft_trans_incoming will close qemu_file if error
  *
  * @s : socket returned from inet_listen
  * @dev_fd : main connection between master / slave
- * @ram_fd : first element of ram_fd array
+ * @ram_fd : ram_fd array
  */
 static QEMUFile *cuju_setup_slave_receiver(int s, QEMUFile *devf, QEMUFile *ramf)
 {
@@ -3348,7 +3352,12 @@ static bool gft_can_run(MigrationState *s)
     FTPRINTF("%s(%lf) %d run\n", __func__, time_in_double(), s->cur_off);
     return true;
 }
-
+/**
++ * migrate_run : resume vm execution for an epoch long
++ * set hrtimer event by kvm_shm_start_timer
++ * s->join.state set to MIG_JOIN_GFT_EPOCH_COMMIT (meaning the commit of previous epoch ? )
++ * join.state must be MIG_JOIN_GFT_EPOCH_COMMIT before the snapshot of next epoch
++ */
 static void migrate_run(MigrationState *s)
 {
     static unsigned long run_serial = 0;
@@ -3363,7 +3372,12 @@ static void migrate_run(MigrationState *s)
 
     if (!gft_can_run(s))
         return;
-
+    event_tap_start_epoch(s->ft_event_tap_net_list,
+        s->ft_event_tap_list, NULL, NULL);
+    if(migration_paused){
+        printf("Migration_Paused, return!!\n");
+        return;
+    }
     migrate_set_ft_state(s, CUJU_FT_TRANSACTION_RUN);
     s->run_serial = ++run_serial;
 
@@ -3372,8 +3386,6 @@ static void migrate_run(MigrationState *s)
 
     migrate_schedule(s);
 
-    event_tap_start_epoch(s->ft_event_tap_net_list,
-        s->ft_event_tap_list, NULL, NULL);
 
     cuju_qemu_set_last_cmd(s->file, CUJU_QEMU_VM_TRANSACTION_BEGIN);
 
@@ -3647,7 +3659,8 @@ static void gft_master_accept_other_master(void *opaque)
  * */
 static void gft_master_read_leader(void *opaque)
 {
-    int cmd, fd = (uintptr_t)opaque;
+    int cmd;
+    uintptr_t fd = (uintptr_t)opaque;
     assert(read(fd, &cmd, sizeof(cmd)) == sizeof(cmd));
     assert(cmd == MIG_JOIN_GFT_MIGRATION_ALL);
     qemu_set_fd_handler(fd, NULL, NULL, NULL);
@@ -3758,7 +3771,7 @@ err:
 }
 /** Called in vl.c
  * gft_init: init the socket for accepting input
- * register gft_master_accept_leader to dealt with commands sent by qmp_gft_leader_init
+ * register gft_master_accept_leader to deal with commands sent by qmp_gft_leader_init
  *
  **/
 int gft_init(int port)
@@ -3767,7 +3780,6 @@ int gft_init(int port)
     Error *err = NULL;
 
     sprintf(host_port, "0:%d", port);
-    printf("%s on %s\n",__func__,host_port);
     SocketAddress* sa = socket_parse(host_port, &err);
     if (err) {
         error_report_err(err);
@@ -3779,6 +3791,8 @@ int gft_init(int port)
     // group_ft_master_sock = inet_listen(host_port, NULL, 256, SOCK_STREAM, 0, &err);
     if (group_ft_master_sock <= 0)
         return -1;
+    qemu_mutex_init(&mig_mutex);
+    qemu_cond_init(&mig_cond);
 
     qemu_set_fd_handler(group_ft_master_sock,
                         gft_master_accept_leader,
@@ -3788,7 +3802,7 @@ int gft_init(int port)
     return 0;
 }
 /**
- * gft_leader_braocast_all_migration_done : iterate all group_ft_sockets
+ * gft_leader_broadcast_all_migration_done : iterate all group_ft_sockets
  * and send MIG_JOIN_GFT_MIGRATION_ALL to all nodes, which will be read by gft_master_read_leader
  *
  */
@@ -3808,14 +3822,15 @@ static void gft_leader_broadcast_all_migration_done(void)
     FTPRINTF("%s\n", __func__);
 }
 /**
- * gft_leader_read_master : callback used by leader to wait for completion of all gruop nodes
+ * gft_leader_read_master : callback used by leader to wait for completion of all group nodes
  * expect MIG_JOIN_GFT_MIGRATION_DONE from individual nodes
  * when receive enough acks, broadcast migrate_done to all nodes
  *
  */
 static void gft_leader_read_master(void *opaque)
 {
-    int cmd, fd;
+    int cmd;
+    uintptr_t fd;
     fd = (uintptr_t)opaque;
     assert(read(fd, &cmd, sizeof(cmd)) == sizeof(cmd));
     assert(cmd == MIG_JOIN_GFT_MIGRATION_DONE);
@@ -3963,4 +3978,77 @@ int gft_packet_can_send(const uint8_t *buf, int size)
     }
 
     return 0;
+}
+
+void print_fds(void){
+    int i;
+    MigrationState * s = migrate_get_current();
+    MigrationState * n = migrate_get_next(s);
+    MigrationJoin *join = &s->join;
+    MigrationJoinConn *conn;
+
+    printf("Master Socket = %d,max = %d\n",group_ft_master_sock,MIG_MAX_JOIN);// = inet_listen(host_port, NULL, 256, SOCK_STREAM, 0, &err);
+
+    for (i = 0; i < group_ft_members_size_tmp; ++i) {
+        printf("group_ft_sockets[%d] = %d\n",i,group_ft_sockets[i]);
+    }
+    printf("Current Migration State \n");
+    printf("s->fd = %d, s->ram_fds[0]=%d \n",s->fd,s->ram_fds[0]);
+    printf("Printing Read Sockets");
+    for (i = 0; i < MIG_MAX_JOIN; ++i) {
+        conn = &join->conn[i];
+        printf("\t%d",conn->r_sock);
+    }
+    printf("\n");
+    printf("Printing Write Sockets");
+    for (i = 0; i < MIG_MAX_JOIN; ++i) {
+        conn = &join->conn[i];
+            printf("\t%d",conn->w_sock);
+    }
+    printf("\n");
+
+    printf("Next Migration State \n");
+    printf("n->fd = %d, n->ram_fds[0]=%d \n",n->fd,n->ram_fds[0]);
+    join = &n->join;
+
+    printf("Printing Read Sockets");
+    for (i = 0; i < MIG_MAX_JOIN; ++i) {
+        conn = &join->conn[i];
+        printf("\t%d",conn->r_sock);
+    }
+    printf("\n");
+    printf("Printing Write Sockets");
+    for (i = 0; i < MIG_MAX_JOIN; ++i) {
+        conn = &join->conn[i];
+        printf("\t%d",conn->w_sock);
+    }
+    printf("\n");
+
+
+}
+void qmp_migrate_pause(void);
+void qmp_migrate_resume(void);
+
+void qmp_migrate_pause(void){
+
+    print_fds();
+    //qmp_fd = now_fd;
+    //printf("qmp_fd = %d\n",qmp_fd);
+
+    printf("setting migration_paused to true\n");
+
+    migration_paused = true;
+    //migrate_pause.notify = migration_pause_notifier;
+    //add_migration_state_change_notifier(&migrate_pause) ;
+    printf("migrate pause notifier added\n");
+    qemu_iohandler_ft_pause(true);
+}
+
+void qmp_migrate_resume(void){
+    printf("in func %s\n",__func__);
+
+    migration_paused = false;
+    //qemu_iohandler_ft_pause(false);
+    migrate_run(migrate_token_owner);
+
 }

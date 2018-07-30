@@ -297,11 +297,11 @@ int qemu_chr_fe_write(CharBackend *be, const uint8_t *buf, int len)
     }
 
     qemu_mutex_unlock(&s->chr_write_lock);
-    
+
     if (s->replay && replay_mode == REPLAY_MODE_RECORD) {
         replay_char_write_event_save(ret, ret < 0 ? 0 : ret);
     }
-    
+
     return ret;
 }
 
@@ -1186,7 +1186,7 @@ typedef struct FDCharDriver {
 static int fd_chr_write(CharDriverState *chr, const uint8_t *buf, int len)
 {
     FDCharDriver *s = chr->opaque;
-    
+
     return io_channel_send(s->ioc_out, buf, len);
 }
 
@@ -2650,7 +2650,7 @@ static CharDriverState *qemu_chr_open_stdio(const char *id,
         }
     } else {
         DWORD   dwId;
-            
+
         stdio->hInputReadyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
         stdio->hInputDoneEvent  = CreateEvent(NULL, FALSE, FALSE, NULL);
         if (stdio->hInputReadyEvent == INVALID_HANDLE_VALUE
@@ -3125,6 +3125,7 @@ static gboolean tcp_chr_read(QIOChannel *chan, GIOCondition cond, void *opaque)
 {
     CharDriverState *chr = opaque;
     TCPCharDriver *s = chr->opaque;
+    QIOChannelSocket *listen_fd = s->listen_ioc;
     uint8_t buf[READ_BUF_LEN];
     int len, size;
 
@@ -3138,6 +3139,7 @@ static gboolean tcp_chr_read(QIOChannel *chan, GIOCondition cond, void *opaque)
     if (size == 0 || size == -1) {
         /* connection closed */
         tcp_chr_disconnect(chr);
+        qemu_set_fd_survive_ft_pause(listen_fd->fd,true);
     } else if (size > 0) {
         if (s->do_telnetopt)
             tcp_chr_process_IAC_bytes(chr, s, buf, &size);
@@ -3170,7 +3172,7 @@ static void tcp_chr_connect(void *opaque)
 {
     CharDriverState *chr = opaque;
     TCPCharDriver *s = chr->opaque;
-
+    QIOChannelSocket *listen_fd = s->listen_ioc;
     g_free(chr->filename);
     chr->filename = sockaddr_to_str(
         &s->sioc->localAddr, s->sioc->localAddrLen,
@@ -3184,6 +3186,7 @@ static void tcp_chr_connect(void *opaque)
                                            tcp_chr_read,
                                            chr, NULL);
     }
+    qemu_set_fd_survive_ft_pause(listen_fd->fd,true);
     qemu_chr_be_generic_open(chr);
 }
 
@@ -4729,8 +4732,10 @@ static CharDriverState *qmp_chardev_open_socket(const char *id,
 
     chr->filename = SocketAddress_to_str("disconnected:",
                                          addr, is_listen, is_telnet);
-
+    //QIOChannelSocket *listen_fd = s->listen_ioc;
+    //printf("listen_fd = %d\n",listen_fd->fd);
     if (is_listen) {
+//        qemu_set_fd_survive_ft_pause(listen_fd->fd,true);
         if (is_telnet) {
             s->do_telnetopt = 1;
         }

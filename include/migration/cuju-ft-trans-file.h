@@ -198,7 +198,5 @@ extern QemuCond cuju_load_cond;
 void cuju_socket_set_nodelay(int fd);
 void cuju_socket_unset_nodelay(int fd);
 void cuju_socket_set_quickack(int fd);
-void qmp_migrate_pause(void);
-void qmp_migrate_resume(void);
 
 #endif
