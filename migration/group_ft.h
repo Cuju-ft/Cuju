@@ -7,6 +7,12 @@
 #define IP_LEN          16
 #define MAC_LEN         6
 
+enum GFT_STATUS{
+    GFT_PRE = 0,
+    GFT_START,
+    GFT_WAIT,
+};
+
 /// This is the enum for GFT status, stored in MigrationState->join.state
 enum MIG_JOIN_GFT_STATE{
  MIG_JOIN_GFT_ZERO               , ///< Simply used to maintain same numbering
