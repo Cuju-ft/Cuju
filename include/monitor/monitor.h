@@ -30,6 +30,7 @@ int monitor_read_block_device_key(Monitor *mon, const char *device,
                                   void *opaque);
 
 int monitor_get_fd(Monitor *mon, const char *fdname, Error **errp);
+void monitor_list_fd(Monitor *mon);
 int monitor_fd_param(Monitor *mon, const char *fdname, Error **errp);
 
 void monitor_vprintf(Monitor *mon, const char *fmt, va_list ap)

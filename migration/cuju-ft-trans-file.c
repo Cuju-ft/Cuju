@@ -1182,8 +1182,8 @@ static const QEMUFileOps cuju_ops = {
 /**
  * cuju_qemu_fopen_ops_ft_trans : open qemu file and set is_sender
  * set ft_trans_put_buffer / ft_trans_get_buffer , ft_trans_close, ft_trans_rate_limit
- * state set to QEMU_VM_TRANSACTION_INIT
- * last_cmd set to QEMU_VM_TRANSACTION_COMMIT
+ * state set to CUJU_QEMU_VM_TRANSACTION_INIT
+ * last_cmd set to CUJU_QEMU_VM_TRANSACTION_COMMIT
  */
 QEMUFile *cuju_qemu_fopen_ops_ft_trans(void *opaque,
                                   CujuFtTransPutBufferFunc *put_buffer,
@@ -1285,12 +1285,4 @@ void cuju_socket_set_quickack(int fd)
 {
     int i = 1;
     setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, (void *)&i, sizeof(i));
-}
-
-void qmp_migrate_pause(void){
-    printf("in function %s\n",__func__);
-}
-
-void qmp_migrate_resume(void){
-    printf("in function %s\n",__func__);
 }
