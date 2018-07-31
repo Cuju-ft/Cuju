@@ -1,0 +1,292 @@
+#include "kvm_blk.h"
+#include "error.h"
+#include "qemu/sockets.h"
+#include "qemu/main-loop.h"
+#include "qemu/queue.h"
+#include "qapi/error.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "block/block_int.h"
+#include "qemu/atomic.h"
+#include "block/block.h"
+#include "qemu/osdep.h"
+
+extern QTAILQ_HEAD(, BlockDriverState) all_bdrv_states;
+
+
+#define BLK_SERVER_SESSION_INIT_BUF  4096000
+
+KvmBlkSession *kvm_blk_session = NULL;
+bool kvm_blk_is_server = false;
+
+uint32_t write_request_id = 0;
+
+uint32_t debug_flag = 0;
+static inline int kvm_blk_recv_header(KvmBlkSession *s)
+{
+    int retval;
+    int err;
+
+retry:
+   retval = recv(s->sockfd, (void *)(&s->recv_hdr) + s->input_buf_tail,sizeof(s->recv_hdr) - s->input_buf_tail, 0); 
+   err = errno;
+    if (retval == 0) {
+        if (debug_flag == 1) {
+          debug_printf("disconn %d\n", s->sockfd);
+        }
+        return -ENOTCONN;
+    }
+    if (retval < 0) {
+      //debug_printf("errno is %d\n", err);
+        if (err == EINTR)
+            goto retry;
+        return -err;
+    }
+    s->input_buf_tail += retval;
+    if (s->input_buf_tail != sizeof(s->recv_hdr))
+        goto retry;
+
+    s->input_buf_tail = 0;
+    s->input_buf_head = 0;
+
+    if (debug_flag == 1) {
+         debug_printf("\n\nreceived header, cmd %d paylen %d\n", s->recv_hdr.cmd, s->recv_hdr.payload_len);
+    }
+
+    if (s->recv_hdr.payload_len > 0)
+        s->is_payload = 1;
+    else
+        s->is_payload = 0;
+
+    return sizeof(s->recv_hdr);
+}
+
+
+static void kvm_blk_read_ready(void *opaque)
+{
+    int retval, err;
+    KvmBlkSession *s = opaque;
+    assert(!qemu_iohandler_is_ft_paused());
+    if (debug_flag == 1) {
+        debug_printf("read ready called %p is_payload %d.\n", s, s->is_payload);
+    }
+
+    do {
+        if (s->is_payload == 0) {
+            retval = kvm_blk_recv_header(s);
+            if (retval == -EAGAIN || retval == -EWOULDBLOCK)
+                break;
+            if (retval < 0) {
+                printf("%s %d\n", __func__, retval);
+                perror("blk-server: recv header:");
+                //abort();
+                goto clear;
+            }
+            if (s->recv_hdr.payload_len == 0) {
+                s->cmd_handler(s);
+                continue;
+            }
+            // we got payload, fall throught.
+        }
+
+        if (s->recv_hdr.payload_len > s->input_buf_size) {
+            s->input_buf_size = s->recv_hdr.payload_len;
+            s->input_buf = g_realloc(s->input_buf, s->recv_hdr.payload_len);
+        }
+        retval = recv(s->sockfd, s->input_buf + s->input_buf_tail,
+                      s->recv_hdr.payload_len - s->input_buf_tail, 0);
+        err = errno;
+        if (retval == 0) {
+            printf("%s: disconn.\n", __func__);
+            goto clear;
+        }
+        if (retval < 0) {
+            if (err == EINTR)
+                continue;
+            if (err == EAGAIN)
+                break;
+            perror("blk-server: recv header:");
+            goto clear;
+        }
+        s->input_buf_tail += retval;
+        if (s->input_buf_tail == s->recv_hdr.payload_len) {
+            s->cmd_handler(s);
+            s->input_buf_head = 0;
+            s->input_buf_tail = 0;
+            s->is_payload = 0;
+        }
+    } while (1);
+    return;
+clear:
+    //debug_printf("handler cleared.\n");
+    qemu_set_fd_handler(s->sockfd, 0, 0, 0);
+    //qemu_aio_set_fd_handler(s->sockfd, NULL, NULL, NULL, NULL);
+    if (s->close_handler)
+        s->close_handler(s);
+}
+static void kvm_blk_write_ready(void *opaque)
+{
+    int retval;
+    KvmBlkSession *s = opaque;
+    if (unlikely(s->sockfd == -1))
+    return;
+    qemu_set_fd_handler(s->sockfd, CUJU_IO_HANDLER_KEEP, NULL, s);
+    if (debug_flag == 1) {
+        debug_printf("%p write ready called, %d.\n", s,
+                    s->output_buf_tail - s->output_buf_head);
+    }
+
+    if (s->output_buf_tail - s->output_buf_head == 0)
+        return;
+
+    do {
+        retval = send(s->sockfd, s->output_buf + s->output_buf_head,
+                      s->output_buf_tail - s->output_buf_head, 0);
+
+    if (debug_flag == 1) {
+        debug_printf("send returns %d\n", retval);
+    }
+        if (retval <= 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            if (errno == EAGAIN) {
+                break;
+            }
+            printf("%s sockfd = %d\n", __func__, s->sockfd);
+            perror("blk-server send: ");
+            goto error;
+        }
+
+        s->output_buf_head += retval;
+    } while (s->output_buf_tail > s->output_buf_head);
+
+    if (s->output_buf_tail == s->output_buf_head) {
+        s->output_buf_head = 0;
+        s->output_buf_tail = 0;
+    } else
+        qemu_set_fd_handler(s->sockfd, CUJU_IO_HANDLER_KEEP, kvm_blk_write_ready, s);
+
+    return;
+error:
+    if (debug_flag == 1) {
+       debug_printf("clear called.\n");
+    }
+    qemu_set_fd_handler(s->sockfd, 0, 0, 0);
+
+}
+
+void kvm_blk_output_flush(KvmBlkSession *s)
+{
+    kvm_blk_write_ready(s);
+}
+
+static inline void kvm_blk_output_expand(KvmBlkSession *s, int len)
+{
+    if (s->output_buf_tail + len > s->output_buf_size) {
+        s->output_buf_size = s->output_buf_tail + len;
+        s->output_buf = g_realloc(s->output_buf, s->output_buf_size);
+    }
+}
+
+void kvm_blk_output_append(KvmBlkSession *s, void *buf, int len)
+{
+    kvm_blk_output_expand(s, len);
+    memcpy(s->output_buf + s->output_buf_tail, buf, len);
+    s->output_buf_tail += len;
+}
+void kvm_blk_output_append_iov(KvmBlkSession *s, QEMUIOVector *iov)
+{
+    kvm_blk_output_expand(s, iov->size);
+    qemu_iovec_to_buf(iov,0, s->output_buf + s->output_buf_tail,iov->size);
+    s->output_buf_tail += iov->size;
+    //debug_printf("iov size %d buf_size %d buf_tail %d\n",
+    //          (int)iov->size, s->output_buf_size, s->output_buf_tail);
+}
+
+int kvm_blk_recv(KvmBlkSession *s, void *buf, int len)
+{
+    if (len > s->input_buf_tail - s->input_buf_head)
+        len = s->input_buf_tail - s->input_buf_head;
+    if (len == 0)
+        return 0;
+    memcpy(buf, s->input_buf + s->input_buf_head, len);
+    s->input_buf_head += len;
+    return len;
+}
+
+void kvm_blk_input_to_iov(KvmBlkSession *s, QEMUIOVector *iov)
+{
+    qemu_iovec_from_buf(iov, 0,s->input_buf + s->input_buf_head,
+                            s->input_buf_tail - s->input_buf_head);
+}
+
+int kvm_blk_server_init(const char *p)
+{
+    int s;
+    Error *err = NULL;
+    //BlockDriverState *bs;
+
+    kvm_blk_is_server = true;
+    //bs = QTAILQ_FIRST(&all_bdrv_states);
+    //print("%s:, should match with client.\n",bs->filename);
+    SocketAddress* sa = socket_parse(p, &err);
+
+    if (err) {
+        error_report_err(err);
+    }
+    
+    s = socket_listen(sa, &err); 
+    if (err) {
+        error_report_err(err);
+    }
+    // s = inet_listen(host_port, NULL, 256, SOCK_STREAM, 0, &err);
+    if (s <= 0)
+        return -1;
+
+    printf("use %s\n",__func__);
+    qemu_set_fd_handler(s,NULL,NULL,(void *)(intptr_t)s);
+    printf("server test success\n" );
+    return 0;
+}
+int kvm_blk_client_init(const char *ipnport)
+{
+    int sockfd;
+    Error *err = NULL;
+    KvmBlkSession *s;
+    int retval;
+    printf("ipnport %s\n",ipnport);
+    sockfd = inet_connect(ipnport, &err);
+    printf("use %d\n",sockfd);
+    if (err) {
+        error_report_err(err);
+        return -1;
+    }
+
+    retval = send(sockfd, &write_request_id, sizeof(write_request_id), 0);
+    assert(retval == sizeof(write_request_id));
+
+    s = g_malloc0(sizeof(KvmBlkSession));
+    s->sockfd = sockfd;
+    s->bs = QTAILQ_FIRST(&all_bdrv_states);
+
+    s->output_buf_size = BLK_SERVER_SESSION_INIT_BUF;
+    s->output_buf = g_malloc(s->output_buf_size);
+
+    s->input_buf_size = BLK_SERVER_SESSION_INIT_BUF;
+    s->input_buf = g_malloc(s->input_buf_size);
+
+    QTAILQ_INIT(&s->request_list);
+    //s->cmd_handler = kvm_blk_client_handle_cmd;
+
+    socket_set_nodelay(sockfd);
+    qemu_set_nonblock(sockfd);
+
+    qemu_set_fd_handler(sockfd,kvm_blk_read_ready,NULL,s);
+
+    kvm_blk_session = s;
+    printf("use %s\n",__func__);
+    qemu_mutex_init(&s->mutex);
+    printf("client test success\n" );
+    return 0;
+}
