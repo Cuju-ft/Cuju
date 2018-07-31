@@ -4074,6 +4074,23 @@ contents of @code{iv.b64} to the second secret
 
 ETEXI
 
+DEF("blk-server", HAS_ARG, QEMU_OPTION_blk_server, \
+    "-blk-server ip:port     specify the block server and port\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -blk-server @var{ipnport}
+@findex -blk-server
+specify the block server and port, ip and port is @var{ipnport}.
+ETEXI
+
+DEF("blk-server-listen", HAS_ARG, QEMU_OPTION_blk_server_listen, \
+    "-blk-server-listen p     specify the block server listen port\n",
+    QEMU_ARCH_ALL)
+STEXI
+@item -blk-server-listen @var{port}
+@findex -blk-server-listen
+specify the block server listening port, on @var{port}.
+ETEXI
 
 HXCOMM This is the last statement. Insert new options before this line!
 STEXI

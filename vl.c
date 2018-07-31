@@ -102,6 +102,7 @@ int main(int argc, char **argv)
 #include "qemu-options.h"
 #include "qmp-commands.h"
 #include "qemu/main-loop.h"
+#include "kvm_blk.h"
 #ifdef CONFIG_VIRTFS
 #include "fsdev/qemu-fsdev.h"
 #endif
@@ -127,12 +128,14 @@ int main(int argc, char **argv)
 #include "sysemu/replay.h"
 #include "qapi/qmp/qerror.h"
 #include "sysemu/iothread.h"
+
 #ifdef __linux__
 #include <pty.h>
 #include <malloc.h>
 
 #include <linux/ppdev.h>
 #include <linux/parport.h>
+
 #endif
 
 #define MAX_VIRTIO_CONSOLES 1
@@ -3012,7 +3015,7 @@ static int global_init_func(void *opaque, QemuOpts *opts, Error **errp)
     return 0;
 }
 
-
+extern char *blk_server;
 int main(int argc, char **argv, char **envp)
 {
     int i;
@@ -3050,6 +3053,7 @@ int main(int argc, char **argv, char **envp)
     Error *main_loop_err = NULL;
     Error *err = NULL;
     bool list_data_dirs = false;
+    const char *blk_server_listen = NULL;
 
     kvmft_pre_init();
 
@@ -3938,6 +3942,12 @@ int main(int argc, char **argv, char **envp)
                 }
                 incoming = optarg;
                 break;
+            case QEMU_OPTION_blk_server:
+                blk_server = (char *)optarg;
+                break;
+            case QEMU_OPTION_blk_server_listen:
+                blk_server_listen = optarg;
+                break;
             case QEMU_OPTION_nodefaults:
                 has_defaults = 0;
                 break;
@@ -4525,7 +4535,16 @@ int main(int argc, char **argv, char **envp)
     default_drive(default_sdcard, snapshot, IF_SD, 0, SD_OPTS);
 
     parse_numa_opts(machine_class);
-
+    printf("blk_server:%s\n",blk_server_listen );
+    if (blk_server_listen) {
+        int ret = kvm_blk_server_init(blk_server_listen);
+        printf("server_ret:%d\n",ret );
+        if (ret < 0)
+          exit(ret);
+        os_setup_post();
+        main_loop();
+        exit(0);
+    }
     if (qemu_opts_foreach(qemu_find_opts("mon"),
                           mon_init_func, NULL, NULL)) {
         exit(1);
@@ -4728,6 +4747,14 @@ int main(int argc, char **argv, char **envp)
 #endif
     assert(!gft_init(ft_join_port));
 	printf("VM init finished\n");
+
+    printf("incoming:%s\n", incoming);
+    if (!incoming && blk_server) {
+        int ret = kvm_blk_client_init(blk_server);
+        printf("client_ret:%d\n", ret);
+        if (ret < 0)
+          exit(ret);
+    }
 
     main_loop();
     replay_disable_events();
