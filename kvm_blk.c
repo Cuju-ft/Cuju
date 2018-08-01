@@ -277,7 +277,7 @@ int kvm_blk_client_init(const char *ipnport)
     s->input_buf = g_malloc(s->input_buf_size);
 
     QTAILQ_INIT(&s->request_list);
-    //s->cmd_handler = kvm_blk_client_handle_cmd;
+    s->cmd_handler = kvm_blk_client_handle_cmd;
 
     socket_set_nodelay(sockfd);
     qemu_set_nonblock(sockfd);

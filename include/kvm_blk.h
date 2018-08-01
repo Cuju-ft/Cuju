@@ -183,6 +183,8 @@ int kvm_blk_rw_co(BlockDriverState *bs, int64_t sector_num, uint8_t *buf,
 void kvm_blk_epoch_start(KvmBlkSession *s);
 // commit all pending request after the epoch mark.
 void kvm_blk_epoch_commit(KvmBlkSession *s);
+void kvm_blk_epoch_timer(KvmBlkSession *s);
+void kvm_blk_notify_ft(KvmBlkSession *s);
 
 static inline void kvm_blk_set_ack_cb(KvmBlkSession *s,
                                     BLK_ACK_CB cb, void *opaque) {

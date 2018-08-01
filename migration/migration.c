@@ -45,7 +45,7 @@
 #include "migration/event-tap.h"
 #include "hw/virtio/virtio-blk.h"
 #include "migration/group_ft.h"
-
+#include "kvm_blk.h"
 //#define DEBUG_MIGRATION
 
 #ifdef DEBUG_MIGRATION
@@ -2376,10 +2376,10 @@ static void migrate_ft_trans_flush_cb(void *opaque)
 
 static void kvmft_flush_output(MigrationState *s)
 {
-	/* TODO blk server
+	//TODO blk server
     if (kvm_blk_session)
         kvm_blk_epoch_commit(kvm_blk_session);
-	*/
+	
 
     virtio_blk_commit_temp_list(s->virtio_blk_temp_list);
     s->virtio_blk_temp_list = NULL;
@@ -3369,6 +3369,9 @@ static void migrate_timer(void *opaque)
     qemu_mutex_lock_iothread();
     vm_stop_mig();
     qemu_iohandler_ft_pause(true);
+
+    if (kvm_blk_session)
+        kvm_blk_epoch_timer(kvm_blk_session);
 
 #ifdef ENABLE_DIRTY_PAGE_TRACKING
     dirty_page_tracking_backup(s->cur_off);
