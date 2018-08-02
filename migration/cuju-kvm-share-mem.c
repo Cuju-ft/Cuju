@@ -137,7 +137,7 @@ bool cuju_supported(void)
 }
 
 void qmp_cuju_adjust_epoch(uint32_t epoch, Error **errp) {
-    printf("new epoch size is %u ms.\n", epoch);
+    printf("new epoch size is %u us.\n", epoch);
     epoch_time_in_us = epoch;
 
     uint32_t value = epoch_time_in_us;
