@@ -2403,6 +2403,15 @@ static int __diff_to_buf(unsigned long gfn, struct page *page1,
 
     kernel_fpu_end();
 
+    if (block == buf + sizeof(*header)) {
+       #ifdef ft_debug_mode_enable
+        printk("warning: not found diff page\n");
+       #endif
+        memset(header->h, 0xff, 16 * sizeof(__u8));
+        memcpy(block, page, 4096);
+        block += 4096;
+    }
+
     kunmap_atomic(backup);
     kunmap_atomic(page);
 
