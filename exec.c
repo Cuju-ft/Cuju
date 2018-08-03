@@ -2017,8 +2017,6 @@ static void notdirty_mem_write(void *opaque, hwaddr ram_addr,
         tb_lock();
         tb_invalidate_phys_page_fast(ram_addr, size);
     }
-    // for CUJU-FT
-    kvm_shmem_mark_page_dirty(qemu_map_ram_ptr(NULL, ram_addr), ram_addr>>TARGET_PAGE_BITS) ;
 
     switch (size) {
     case 1:
@@ -3460,9 +3458,6 @@ static inline void address_space_stl_internal(AddressSpace *as,
         /* RAM case */
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
 
-		// for CUJU-FT
-        kvm_shmem_mark_page_dirty(ptr, addr>>TARGET_PAGE_BITS);
-
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
             stl_le_p(ptr, val);
@@ -3572,9 +3567,6 @@ static inline void address_space_stw_internal(AddressSpace *as,
     } else {
         /* RAM case */
         ptr = qemu_map_ram_ptr(mr->ram_block, addr1);
-
-		// for CUJU-FT
-        kvm_shmem_mark_page_dirty(ptr, addr>>TARGET_PAGE_BITS);
 
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:

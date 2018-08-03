@@ -218,8 +218,6 @@ static int FNAME(update_accessed_dirty_bits)(struct kvm_vcpu *vcpu,
 		index = offset_in_page(ptep_user) / sizeof(pt_element_t);
 		if (!(pte & PT_GUEST_ACCESSED_MASK)) {
 			trace_kvm_mmu_set_accessed_bit(table_gfn, index, sizeof(pte));
-			// ignore pte, right, ptep_user is hva of table_gfn
-			kvmft_page_dirty(vcpu->kvm, table_gfn, ptep_user, 1, NULL);
 			pte |= PT_GUEST_ACCESSED_MASK;
 		}
 		if (level == walker->level && write_fault &&
@@ -245,7 +243,7 @@ static int FNAME(update_accessed_dirty_bits)(struct kvm_vcpu *vcpu,
 		 */
 		if (unlikely(!walker->pte_writable[level - 1]))
 			continue;
-
+			
 		ret = FNAME(cmpxchg_gpte)(vcpu, mmu, ptep_user, index, orig_pte, pte);
 		if (ret)
 			return ret;
