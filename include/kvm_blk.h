@@ -85,7 +85,6 @@ struct kvm_blk_request {
 
     BlockRequest *reqs;
     int num_reqs;
-    int is_multiple;
 
     int ret_fast_read;
 
@@ -173,8 +172,7 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockDriverState *bs,
                                         int nb_sectors,
                                         BlockCompletionFunc *cb,
                                         void *opaque);
-int kvm_blk_aio_multiwrite(BlockDriverState *bs, BlockRequest *reqs,
-                              int num_reqs);
+int kvm_blk_aio_write(BlockDriverState *bs,BlockRequest *reqs, int num_reqs);
 
 int kvm_blk_rw_co(BlockDriverState *bs, int64_t sector_num, uint8_t *buf,
                       int nb_sectors, bool is_write);

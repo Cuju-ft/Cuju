@@ -28,6 +28,7 @@
 #endif
 #include "hw/virtio/virtio-bus.h"
 #include "hw/virtio/virtio-access.h"
+#include "migration/event-tap.h"
 
 
 #define HEAD_LIST_INIT_SIZE  64
@@ -596,7 +597,7 @@ static inline void submit_requests(BlockBackend *blk, MultiReqBuffer *mrb,
     }
 
     if (is_write) {
-        blk_aio_pwritev(blk, sector_num << BDRV_SECTOR_BITS, qiov, 0,
+        blk_aio_pwritev_proxy(blk, sector_num << BDRV_SECTOR_BITS, qiov, 0,
                         virtio_blk_rw_complete, mrb->reqs[start]);
     } else {
         blk_aio_preadv(blk, sector_num << BDRV_SECTOR_BITS, qiov, 0,

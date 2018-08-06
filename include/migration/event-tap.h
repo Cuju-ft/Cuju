@@ -42,5 +42,9 @@ void *event_tap_net_list_new(void);
 bool event_tap_net_list_empty(void *net_list);
 int event_tap_load(QEMUFile *f, void *opaque, int version_id);
 void event_tap_save(QEMUFile *f, void *opaque);
-
+int blk_aio_pwritev_proxy(BlockBackend *blk, int64_t offset,
+                            QEMUIOVector *qiov, BdrvRequestFlags flags,
+                            BlockCompletionFunc *cb, void *opaque);
+void bdrv_event_tap(BlockDriverState *bs, BlockRequest *reqs,
+                           int num_reqs, bool is_multiwrite);
 #endif

@@ -220,16 +220,89 @@ void kvm_blk_input_to_iov(KvmBlkSession *s, QEMUIOVector *iov)
     qemu_iovec_from_buf(iov, 0,s->input_buf + s->input_buf_head,
                             s->input_buf_tail - s->input_buf_head);
 }
+static void kvm_blk_accept(void *opaque)
+{
+    struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+    int s = (intptr_t)opaque;
+    int c;
+    KvmBlkSession *session;
+    int retval;
+    uint32_t wid = -1;
 
+    do {
+        c = qemu_accept(s, (struct sockaddr *)&addr, &addrlen);
+        printf("c = \"%d\"\n", c);
+    } while (c == -1 && socket_error() == EINTR);
+
+    if (debug_flag == 1) {
+        debug_printf("accepted blk client %d.\n", c);
+    }
+
+    if (c == -1) {
+        fprintf(stderr, "could not accept blk client.\n");
+        goto out;
+    }
+
+    // get previous session
+    printf("\n\n********** wid = %d **********\n\n", wid);
+    session = kvm_blk_serv_wait_prev(wid);
+    //if (session)
+    //    g_free(session);
+
+    session = g_malloc0(sizeof(KvmBlkSession));
+
+    // read latest write_request_id
+    retval = recv(c, &wid, sizeof(wid), 0);    
+    if (debug_flag == 1) {
+        debug_printf("accepted wid %d\n", wid);
+    }
+    assert(retval == sizeof(wid));
+
+    session->sockfd = c;
+    session->ft_mode = 0;
+
+    session->bs = QTAILQ_FIRST(&all_bdrv_states);
+    if (!session->bs) {
+        fprintf(stderr, "%s: no aviablable block device.\n", __func__);
+        return;
+    }
+
+    session->output_buf_size = BLK_SERVER_SESSION_INIT_BUF;
+    session->output_buf = g_malloc(session->output_buf_size);
+
+    session->input_buf_size = BLK_SERVER_SESSION_INIT_BUF;
+    session->input_buf = g_malloc(session->input_buf_size);
+
+    session->cmd_handler = kvm_blk_serv_handle_cmd;
+    session->close_handler = kvm_blk_serv_handle_close;
+
+    kvm_blk_server_internal_init(session);
+    
+    socket_set_nodelay(c);
+    qemu_set_nonblock(c);
+    qemu_set_fd_handler(c, kvm_blk_read_ready,
+                       NULL, session);
+    //qemu_aio_set_fd_handler(c, kvm_blk_read_ready,
+    //                    kvm_blk_write_ready, NULL, session);
+
+    kvm_blk_session = session;
+
+    return;
+out:
+    qemu_set_fd_handler(s, NULL, NULL, NULL);
+    //qemu_aio_set_fd_handler(s, NULL, NULL, NULL, NULL);
+    close(s);
+}
 int kvm_blk_server_init(const char *p)
 {
     int s;
     Error *err = NULL;
-    //BlockDriverState *bs;
+    BlockDriverState *bs;
 
     kvm_blk_is_server = true;
-    //bs = QTAILQ_FIRST(&all_bdrv_states);
-    //print("%s:, should match with client.\n",bs->filename);
+    bs = QTAILQ_FIRST(&all_bdrv_states);
+    printf("%s:, should match with client.\n",bs->filename);
     SocketAddress* sa = socket_parse(p, &err);
 
     if (err) {
@@ -245,7 +318,7 @@ int kvm_blk_server_init(const char *p)
         return -1;
 
     printf("use %s\n",__func__);
-    qemu_set_fd_handler(s,NULL,NULL,(void *)(intptr_t)s);
+    qemu_set_fd_handler(s,kvm_blk_accept,NULL,(void *)(intptr_t)s);
     printf("server test success\n" );
     return 0;
 }

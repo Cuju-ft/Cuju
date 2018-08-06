@@ -41,7 +41,6 @@ int kvm_blk_client_handle_cmd(void *opaque)
 
 		int i;
 		int ret = s->recv_hdr.payload_len;
-		assert(br->is_multiple);
 		for (i = 0; i < br->num_reqs; ++i)
 			br->reqs[i].cb(br->reqs[i].opaque, ret);
 		goto out;
@@ -88,7 +87,7 @@ int kvm_blk_rw_co(BlockDriverState *bs, int64_t sector_num, uint8_t *buf,
 
 	br = kvm_blk_aio_readv(bs, sector_num, &qiov, nb_sectors, NULL, NULL);
 	while (br->cb == NULL)
-		aio_poll(bdrv_get_aio_context(bs), true);
+		aio_poll(qemu_get_aio_context(), true);
 	return 0;
 }
 
@@ -143,9 +142,7 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockDriverState *bs,
 	return br;
 }
 
-int kvm_blk_aio_multiwrite(BlockDriverState *bs,
-        BlockRequest *reqs, int num_reqs)
-{
+int kvm_blk_aio_write(BlockDriverState *bs,BlockRequest *reqs, int num_reqs){
 	KvmBlkSession *s = kvm_blk_session;
 	struct kvm_blk_read_control c;
 	struct kvm_blk_request *br;
@@ -154,7 +151,6 @@ int kvm_blk_aio_multiwrite(BlockDriverState *bs,
 	assert(s->bs = bs);
 
 	br = g_malloc0(sizeof(*br));
-	br->is_multiple = 1;
 	br->num_reqs = num_reqs;
 
 	br->reqs = g_malloc(sizeof(BlockRequest) * num_reqs);
