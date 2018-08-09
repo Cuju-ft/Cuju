@@ -771,6 +771,7 @@ static int cuju_ft_trans_close(void *opaque)
     trace_cuju_ft_trans_close();
 
     if (!s){
+    /*
     vm_stop_mig();
     kvm_vm_ioctl_proxy((void *) s);
     //kvm_vm_ioctl(kvm_state, KVMFT_RESTORE_PREVIOUS_EPOCH, (void *) s);
@@ -779,6 +780,7 @@ static int cuju_ft_trans_close(void *opaque)
     qemu_announce_self();
 
     vm_start_mig();
+    */
 
     }else if (!s->is_sender) {
         ret = s->close(s->opaque);

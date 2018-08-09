@@ -27,7 +27,12 @@ struct kvm_shmem_child;
 struct kvm_vcpu;
 struct kvm_vcpu_get_shared_all_state;
 struct kvmft_set_master_slave_sockets;
-
+/**
+ * kvmft_dirty_list : structure member of kvm_context
+ * put_off = length of list
+ * pages, guest frame numbers of dirty pages , actual content stored in shared_pages_k
+ *
+ */
 struct kvmft_dirty_list {
     volatile __u32 put_off;     // [spcl_put_off, put_off) stores dirty pages tracked by fault
     __u32 dirty_stop_num;
@@ -71,7 +76,12 @@ struct kvmft_master_slave_conn_info {
     struct task_struct **kthreads;
     wait_queue_head_t *events;
 };
-
+/**
+ * kvmft_context : structure member of kvm
+ * page_nums_snapshot_k[2] is the array of dirty gfn
+ * shared_pages_snapshot_k[2] is the array of actual content / backup of dirty pages
+ *
+ */
 struct kvmft_context {
     unsigned long shared_page_num;
     unsigned long shared_watermark;
