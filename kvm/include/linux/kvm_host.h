@@ -328,7 +328,7 @@ struct kvm_vcpu {
 	ktime_t hrtimer_remaining;
 	bool hrtimer_running;
 	bool hrtimer_pending;
-
+	unsigned long epoch_time_in_us;
 };
 
 static inline struct kvm_vcpu *hrtimer_to_vcpu(struct hrtimer *timer)
