@@ -275,6 +275,13 @@ void kvmft_pre_init(void)
 }
 
 // called in vl.c
+
+/**
+ * kvm_share_mem_init : intialize dirty page tracking structures in kvm
+ * call kvm_shmem_alloc_pages to allocate page in kernel
+ * mmap the reutrn value to ram_fd = fopen(/dev/mem )
+ *
+ */
 void kvm_share_mem_init(unsigned long ram_size)
 {
     struct kvm_shmem_init shmem_init;
@@ -1230,7 +1237,7 @@ void trans_ram_init(void)
                             QEMU_THREAD_JOINABLE);
     }
 
-#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
+/*#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
     QTAILQ_INIT(&trans_ram_waiting_list);
     qemu_mutex_init(&trans_ram_mutex);
     qemu_cond_init(&trans_ram_cond);
@@ -1238,7 +1245,7 @@ void trans_ram_init(void)
                         kvmft_transfer_func_userspace,
                         (void *)0,
                         QEMU_THREAD_JOINABLE);
-#endif
+#endif */
 }
 
 void trans_ram_add(MigrationState *s)
@@ -1247,18 +1254,18 @@ void trans_ram_add(MigrationState *s)
 
     dirty_pages_userspace_commit();
 
-#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
+/*#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
     qemu_mutex_lock(&trans_ram_mutex);
     QTAILQ_INSERT_TAIL(&trans_ram_waiting_list, s, node);
     qemu_mutex_unlock(&trans_ram_mutex);
     qemu_cond_signal(&trans_ram_cond);
-#else
+#else*/
 
     qemu_mutex_lock(&d->mutex);
     QTAILQ_INSERT_TAIL(&d->list, s, nodes[0]);
     qemu_mutex_unlock(&d->mutex);
     qemu_cond_signal(&d->cond);
-#endif
+//#endif
 }
 
 void kvm_shmem_send_dirty_kernel(MigrationState *s)
@@ -1268,10 +1275,10 @@ void kvm_shmem_send_dirty_kernel(MigrationState *s)
     kvmft_assert_ram_hash_and_dlist(dlist->pages, dlist->put_off);
     s->dirty_pfns_len = dlist->put_off;
 
-#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
+/*#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
     s->dirty_pfns = g_malloc(sizeof(s->dirty_pfns[0]) * s->dirty_pfns_len);
     memcpy(s->dirty_pfns, dlist->pages, sizeof(s->dirty_pfns[0]) * s->dirty_pfns_len);
-#endif
+#endif */
 
     trans_ram_add(s);
 }

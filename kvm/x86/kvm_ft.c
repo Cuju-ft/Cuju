@@ -306,7 +306,11 @@ int kvm_shm_extend(struct kvm *kvm, struct kvm_shmem_extend *ext)
 
     return 0;
 }
-
+/**
+ * kvm_shm_alloc_page : allocate pages in kernel
+ * a[index1][index2] corresponds to page_array[i][j] in qemu
+ * allocate one page at a time
+ */
 struct page *kvm_shm_alloc_page(struct kvm *kvm,
         struct kvm_shm_alloc_pages *param)
 {
@@ -318,13 +322,13 @@ struct page *kvm_shm_alloc_page(struct kvm *kvm,
 
     if (page) {
         if (param->index1 > ctx->max_desc_count || param->index2 >= ctx->shared_page_num) {
-            printk("%s index1 %d index2 %d\n", __func__, param->index1, param->index2);
+            printk(KERN_ERR"%s index1 %d index2 %d\n", __func__, param->index1, param->index2);
             __free_pages(page, param->order);
             return NULL;
         }
         ctx->shared_pages_snapshot_k[param->index1][param->index2] =
             pfn_to_virt(page_to_pfn(page));
-        ctx->shared_pages_snapshot_pages[param->index1][param->index2] = page;
+        ctx->shared_pages_snapshot_pages[param->index2][param->index2] = page;
     }
 out:
     return page;

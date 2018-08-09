@@ -25,6 +25,7 @@
 #include "migration/migration.h"
 #include <linux/kvm.h>
 
+#include "qemu/sockets.h"
 #define DEBUG_EVENT_TAP
 
 #ifdef DEBUG_EVENT_TAP
