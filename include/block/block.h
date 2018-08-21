@@ -572,7 +572,6 @@ typedef struct BlockRequest {
     };
     BlockCompletionFunc *cb;
     void *opaque;
-    BlockBackend *backend;
     int error;
 } BlockRequest;
 

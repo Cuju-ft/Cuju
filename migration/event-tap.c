@@ -973,36 +973,121 @@ void event_tap_init(void)
 
     vmstate = qemu_add_vm_change_state_handler(event_tap_replay, NULL);
 }
-int blk_aio_pwritev_proxy(BlockBackend *blk, int64_t offset,
+BlockAIOCB *blk_aio_preadv_proxy(BlockBackend *blk, int64_t offset,
+                           QEMUIOVector *qiov, BdrvRequestFlags flags,
+                           BlockCompletionFunc *cb, void *opaque){
+    if (kvm_blk_session) {
+        // we no longer track block r/w requests because virtio-blk is taking care of it.
+        kvm_blk_aio_readv(blk, offset, qiov, flags, cb, opaque);
+        return &dummy_acb;
+    }
+
+    goto out;
+
+    if (bdrv_direct_rw)
+      goto out;
+    if (event_tap_state == EVENT_TAP_ON) {
+        EventTapLog *log;
+        EventTapBlkReq *blk_req;
+        int fast_read = 0;
+
+        QTAILQ_FOREACH(log, &event_list_pending, node) {
+            if ( (log->mode & ~EVENT_TAP_TYPE_MASK) == EVENT_TAP_BLK ) {
+                blk_req = &log->blk_req;
+                if ( offset >= blk_req->reqs[0].offset+blk_req->reqs[0].qiov->size/512
+                        || blk_req->reqs[0].offset >= offset + qiov->size/512 )
+                    continue;
+                //printf("%s existing %lld:%d read %lld:%d\n", __func__,
+                //    blk_req->reqs[0].sector, blk_req->reqs[0].nb_sectors,
+                //    sector_num, nb_sectors);
+                if ( offset >= blk_req->reqs[0].offset && (offset + qiov->size)
+                                <= (blk_req->reqs[0].offset + blk_req->reqs[0].qiov->size/512) ) {
+                    qemu_iovec_copy_sup(qiov, 0, &blk_req->qiov[0],
+                                    (offset - blk_req->reqs[0].offset) * 512,
+                                    qiov->size);
+                    fast_read = 1;
+                }
+            }
+        }
+
+        QTAILQ_FOREACH(log, event_list_old, node) {
+            if ( (log->mode & ~EVENT_TAP_TYPE_MASK) == EVENT_TAP_BLK ) {
+                blk_req = &log->blk_req;
+                if ( offset >= blk_req->reqs[0].offset+blk_req->reqs[0].qiov->size/512
+                        || blk_req->reqs[0].offset >= offset + qiov->size/512 )
+                    continue;
+                //printf("%s existing %lld:%d read %lld:%d\n", __func__,
+                //    blk_req->reqs[0].sector, blk_req->reqs[0].nb_sectors,
+                //    sector_num, nb_sectors);
+                if ( offset >= blk_req->reqs[0].offset && (offset + qiov->size/512)
+                                <= (blk_req->reqs[0].offset + blk_req->reqs[0].qiov->size/512) ) {
+                    qemu_iovec_copy_sup(qiov, 0, &blk_req->qiov[0],
+                                    (offset - blk_req->reqs[0].offset) * 512,
+                                    qiov->size );
+                    fast_read = 1;
+                }
+            }
+        }
+
+        QTAILQ_FOREACH(log, event_list, node) {
+            if ( (log->mode & ~EVENT_TAP_TYPE_MASK) == EVENT_TAP_BLK ) {
+                blk_req = &log->blk_req;
+                if ( offset >= blk_req->reqs[0].offset+blk_req->reqs[0].qiov->size/512
+                        || blk_req->reqs[0].offset >= offset + qiov->size/512 )
+                    continue;
+                //printf("%s existing %lld:%d read %lld:%d\n", __func__,
+                //    blk_req->reqs[0].sector, blk_req->reqs[0].nb_sectors,
+                //    sector_num, nb_sectors);
+                if ( offset >= blk_req->reqs[0].offset && (offset + qiov->size/512)
+                                <= (blk_req->reqs[0].offset + blk_req->reqs[0].qiov->size/512) ) {
+                    qemu_iovec_copy_sup(qiov, 0, &blk_req->qiov[0],
+                                    (offset - blk_req->reqs[0].offset) * 512,
+                                    qiov->size);
+                    fast_read = 1;
+                }
+            }
+        }
+
+        if (fast_read == 1) {
+            EventTapBlkReadReq *req = g_malloc0(sizeof(EventTapBlkReadReq));
+            req->req.offset = offset;
+            req->req.qiov->size = qiov->size/512;
+            req->req.qiov = qiov;
+            req->req.cb = cb;
+            req->req.opaque = opaque;
+            req->bh = qemu_bh_new(event_tap_bh_read_fast, req);
+            qemu_bh_schedule(req->bh);
+            //printf("%s fast copy\n", __func__);
+            return &dummy_acb;
+        }
+    }
+out:
+    return blk_aio_preadv(blk, offset<< BDRV_SECTOR_BITS, qiov, flags, cb, opaque);
+}
+
+BlockAIOCB *blk_aio_pwritev_proxy(BlockBackend *blk, int64_t offset,
                             QEMUIOVector *qiov, BdrvRequestFlags flags,
                             BlockCompletionFunc *cb, void *opaque)
 {
-    BlockRequest reqs;
-    reqs.offset = offset;
-    reqs.qiov = qiov;
-    reqs.flags = flags;
-    reqs.cb = cb;
-    reqs.opaque = opaque;
-    reqs.req = 1;
-
     if (kvm_blk_session)
             printf("%d\n",kvm_blk_session->id );
-        return kvm_blk_aio_write(blk_bs(blk), &reqs, 1);
+        kvm_blk_aio_write(blk, offset, qiov, flags, cb, opaque);
+        return &dummy_acb;
         
     if (bdrv_direct_rw)
       goto out;
-/*
-    if (event_tap_state == EVENT_TAP_ON) {
-
-        bdrv_event_tap(blk_bs(blk), &reqs, 1, 1);
-        return 0;
-    }
-    */
 out:
-    blk_aio_pwritev(blk, offset, qiov,flags,cb,opaque);
-    return 1;
+    return blk_aio_pwritev(blk, offset, qiov,flags,cb,opaque);
+    
 
 
+}
+void event_tap_bh_read_fast(void *p)
+{
+    EventTapBlkReadReq *req = p;
+    req->req.cb(req->req.opaque, 0);
+    qemu_bh_delete(req->bh);
+    g_free(req);
 }
 /*
 void bdrv_event_tap(BlockDriverState *bs, BlockRequest *reqs,

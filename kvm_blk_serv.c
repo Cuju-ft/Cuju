@@ -1,5 +1,6 @@
 #include "kvm_blk.h"
 #include "qemu/thread.h"
+#include "qemu/typedefs.h"
 extern uint32_t debug_flag;
 void kvm_blk_server_internal_init(KvmBlkSession *s)
 {
@@ -46,19 +47,18 @@ static int kvm_blk_fast_readv(KvmBlkSession *s, struct kvm_blk_request *br)
             if (br->sector >= r->offset && br->sector+br->nb_sectors <= r->offset+r->qiov->size) {
                 ret = KVM_BLK_RW_FAST;
                 dst_skip = 0;
-                src_skip = (br->sector - r->offset) * 512;
-                len = br->nb_sectors * 512;
+                src_skip = (br->sector - r->offset) ;
+                len = br->nb_sectors ;
             } else if (br->sector < r->offset && br->sector+br->nb_sectors > r->offset) {
                 ret = KVM_BLK_RW_PARTIAL;
-                dst_skip = (r->offset - br->sector) * 512;
+                dst_skip = (r->offset - br->sector) ;
                 src_skip = 0;
                 len = MIN(br->sector+br->nb_sectors,r->offset+r->qiov->size) - r->offset;
-                len *= 512;
             } else if (br->sector >= r->offset && br->sector < r->offset+r->qiov->size
                         && br->sector+br->nb_sectors > r->offset+r->qiov->size) {
                 ret = KVM_BLK_RW_PARTIAL;
                 dst_skip = 0;
-                src_skip = (br->sector - r->offset) * 512;
+                src_skip = (br->sector - r->offset) ;
                 len = r->offset + r->qiov->size - br->sector;
             } else {
                 continue;
@@ -100,7 +100,7 @@ static void kvm_blk_rw_cb(void *opaque, int ret)
         case KVM_BLK_CMD_READ: {
 			if (br->ret_fast_read == KVM_BLK_RW_PARTIAL)
 				kvm_blk_fast_readv(s, br);
-            s->send_hdr.payload_len = br->nb_sectors * 512;
+            s->send_hdr.payload_len = br->nb_sectors;
             kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
             kvm_blk_output_append_iov(s, &br->iov);            
             if (debug_flag == 1) {
@@ -166,8 +166,10 @@ static void __kvm_blk_flush_all(KvmBlkSession *s)
 	struct kvm_blk_request *br;
 
     // between issue and epoch_timer
-    
+    struct BlockBackend *blk ;
+    blk = blk_new();
     br = s->issue;
+
     do {
 		br = QTAILQ_NEXT(br, node);
         assert(br);
@@ -178,8 +180,17 @@ static void __kvm_blk_flush_all(KvmBlkSession *s)
 		if (br->cmd == KVM_BLK_CMD_WRITE) {
             // TODO nasty hack, mark br as busy by setting its cb.
             //br->cb = (BlockCompletionFunc *)1;
-            blk_aio_pwritev(br->reqs->backend, br->reqs->offset, br->reqs->qiov,
-            br->reqs->flags, br->reqs->cb, br->reqs->opaque);
+            blk_insert_bs(blk, s->bs);
+            blk_aio_pwritev(blk, br->reqs->offset, br->reqs->qiov,
+            0, br->reqs->cb, br->reqs->opaque);
+        }
+        if (br->cmd == KVM_BLK_CMD_READ) {
+
+            // TODO nasty hack, mark br as busy by setting its cb.
+            br->cb = (BlockCompletionFunc *)1;
+            blk_insert_bs(blk, s->bs);
+            blk_aio_preadv(blk, br->reqs->offset , br->reqs->qiov,
+            0, br->reqs->cb, br->reqs->opaque);
         }
 	} while (1);
 
@@ -193,6 +204,8 @@ KvmBlkSession* kvm_blk_serv_wait_prev(uint32_t wid)
 {
     KvmBlkSession *s = kvm_blk_session;
 	struct kvm_blk_request *br;
+    struct BlockBackend *blk ;
+    blk = blk_new();
     printf("\nflag 0\n");
 	if (!s)
 		return NULL;
@@ -228,8 +241,9 @@ again:
 
     QTAILQ_FOREACH(br, &s->request_list, node) {
         // TODO nasty hack, mark br as busy by setting its cb.
-        //br->cb = (BlockCompletionFunc *)1;
-        blk_aio_pwritev(br->reqs->backend, br->reqs->offset, br->reqs->qiov,
+        br->cb = (BlockCompletionFunc *)1;
+        blk_insert_bs(blk, s->bs);
+        blk_aio_pwritev(blk, br->reqs->offset, br->reqs->qiov,
             br->reqs->flags, br->reqs->cb, br->reqs->opaque);
     }
     printf("\nflag 5\n");
@@ -277,42 +291,35 @@ int kvm_blk_serv_handle_cmd(void *opaque)
     KvmBlkSession *s = opaque;
     struct kvm_blk_request *br = NULL;
     int ret = 0;
-
+    struct BlockBackend *blk ;
+    blk = blk_new();
 
     if (debug_flag == 1) {
         debug_printf("received cmd %d len %d id num_req %d (%d)\n", s->recv_hdr.cmd,
                       s->recv_hdr.payload_len, s->recv_hdr.num_reqs, s->recv_hdr.id);
     }
-
     switch (s->recv_hdr.cmd) {
     case KVM_BLK_CMD_READ: {
         struct kvm_blk_read_control c;
 		void *new_buf;
 		int len;
-
         ret = kvm_blk_recv(s, &c, sizeof(c));
-        //debug_printf("read kvm_blk_read_control, %d %d\n", ret,
-         //             (int)sizeof(c));
         if (ret != sizeof(c))
             return -EINVAL;
         if (debug_flag == 1) {
             printf("client read: %ld %d\n", (long)c.sector_num, c.nb_sectors);
         }
-
         br = g_malloc0(sizeof(struct kvm_blk_request));
         br->sector = c.sector_num;
         br->nb_sectors = c.nb_sectors;
         br->cmd = s->recv_hdr.cmd;
         br->id = s->recv_hdr.id;
         br->session = s;
-
         qemu_iovec_init(&br->iov, 1);
-		len = c.nb_sectors * 512;
+		len = c.nb_sectors ;
 		new_buf = g_malloc(len);
 		qemu_iovec_add(&br->iov, new_buf, len);
-
         QTAILQ_INSERT_TAIL(&s->request_list, br, node);
-
 		// if the read request can be satisfied by pending write requests.
 		if (s->ft_mode) {
 			ret = kvm_blk_fast_readv(s, br);
@@ -324,60 +331,46 @@ int kvm_blk_serv_handle_cmd(void *opaque)
 		}
 		// if ret == KVM_BLK_RW_PARTIAL, after read from disk,
 		// we need to renew partially from write request list.
-        BdrvChild *parent = s->bs->opaque;
-        bdrv_aio_readv(parent, c.sector_num, &br->iov, c.nb_sectors,
+        blk_insert_bs(blk, s->bs);
+        blk_aio_preadv(blk, c.sector_num, &br->iov,0,
                         kvm_blk_rw_cb, br);
         ret = 0;
 
         break;
     }
     case KVM_BLK_CMD_WRITE: {
+ 
         struct kvm_blk_read_control c;
-        int i;
-
+        void *new_buf;
+        int len;
+        ret = kvm_blk_recv(s, &c, sizeof(c));
+        if (ret != sizeof(c))
+            return -EINVAL;
+        if (debug_flag == 1) {
+            printf("client write: %ld %d\n", (long)c.sector_num, c.nb_sectors);
+        }
         br = g_malloc0(sizeof(struct kvm_blk_request));
+        br->sector = c.sector_num;
+        br->nb_sectors = c.nb_sectors;
         br->cmd = s->recv_hdr.cmd;
         br->id = s->recv_hdr.id;
         br->session = s;
-        br->num_reqs = s->recv_hdr.num_reqs;
-        br->reqs = g_malloc0(br->num_reqs * sizeof(BlockRequest));
-
-        for (i = 0; i < s->recv_hdr.num_reqs; ++i) {
-            BlockRequest *r = &br->reqs[i];
-            void *new_buf;
-            int len;
-
-            ret = kvm_blk_recv(s, &c, sizeof(c));
-            if (ret != sizeof(c))
-                return -EINVAL;
-            if (debug_flag == 1) {
-                printf("client write: %ld %d\n", (long)c.sector_num, c.nb_sectors);
-            }
-
-            r->offset = c.sector_num;
-            r->qiov->size = c.nb_sectors;
-            r->qiov = g_malloc0(sizeof(QEMUIOVector));
-            r->cb = kvm_blk_rw_cb;
-            r->opaque = br;
-
-            len = c.nb_sectors * 512;
-
-            qemu_iovec_init(r->qiov, 1);
-            new_buf = g_malloc(len);
-            ret = kvm_blk_recv(s, new_buf, len);
+        qemu_iovec_init(&br->iov, 1);
+        len = c.nb_sectors ;
+        new_buf = g_malloc(len);
+        ret = kvm_blk_recv(s, new_buf, len);
             //debug_printf("read buf, expect %d get %d\n", len, ret);
             if (ret != len)
                 return -EINVAL;
-            qemu_iovec_add(r->qiov, new_buf, len);
-        }
-
+            qemu_iovec_add(&br->iov, new_buf, len);
         QTAILQ_INSERT_TAIL(&s->request_list, br, node);
 
         if (!s->ft_mode) {
-            ret = kvm_blk_aio_write(s->bs, br->reqs, br->num_reqs);
-            //debug_printf("bdrv_aio_multiwrite returns %d\n", ret);
-        }
 
+            blk_insert_bs(blk, s->bs);
+            blk_aio_pwritev(blk, c.sector_num , &br->iov,0,
+                        kvm_blk_rw_cb, br);
+        }
         break;
     }
 

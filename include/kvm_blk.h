@@ -82,7 +82,7 @@ struct kvm_blk_request {
     QEMUIOVector *piov;
 
     int32_t id;
-
+    BdrvRequestFlags flags;
     BlockRequest *reqs;
     int num_reqs;
 
@@ -95,7 +95,7 @@ typedef struct kvm_blk_session {
     int sockfd;
     int is_payload;
     BlockDriverState *bs;
-
+    
     void *output_buf;
     int output_buf_size;
     int output_buf_tail;  // where to start put new bytes.
@@ -117,7 +117,7 @@ typedef struct kvm_blk_session {
     BLK_ACK_CB ack_cb;
     void *ack_cb_opaque;
 
-    QTAILQ_HEAD(request_list, kvm_blk_request) request_list;;
+    QTAILQ_HEAD(request_list, kvm_blk_request) request_list;
 
     QemuMutex mutex;
 
@@ -134,7 +134,7 @@ struct kvm_blk_read_control {
 
 struct kvm_blk_bh {
     QEMUBH *bh;
-    KvmBlkSession *session;
+    KvmBlkSession *session; 
 };
 
 // ret value passed for kvm_blk_rw_cb
@@ -165,17 +165,13 @@ int kvm_blk_recv(KvmBlkSession *s, void *buf, int len);
 
 // put everything inside input_buf to iov.
 void kvm_blk_input_to_iov(KvmBlkSession *s, QEMUIOVector *iov);
-
-struct kvm_blk_request *kvm_blk_aio_readv(BlockDriverState *bs,
+struct kvm_blk_request *kvm_blk_aio_readv(BlockBackend *blk,
                                         int64_t sector_num,
                                         QEMUIOVector *iov,
-                                        int nb_sectors,
+                                        BdrvRequestFlags flags,
                                         BlockCompletionFunc *cb,
                                         void *opaque);
-int kvm_blk_aio_write(BlockDriverState *bs,BlockRequest *reqs, int num_reqs);
-
-int kvm_blk_rw_co(BlockDriverState *bs, int64_t sector_num, uint8_t *buf,
-                      int nb_sectors, bool is_write);
+int kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov,BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque);
 
 // insert an epoch mark in serv's pending request list.
 void kvm_blk_epoch_start(KvmBlkSession *s);

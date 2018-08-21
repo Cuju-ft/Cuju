@@ -77,8 +77,6 @@ static void kvm_blk_read_ready(void *opaque)
             if (retval == -EAGAIN || retval == -EWOULDBLOCK)
                 break;
             if (retval < 0) {
-                printf("%s %d\n", __func__, retval);
-                perror("blk-server: recv header:");
                 //abort();
                 goto clear;
             }
@@ -153,7 +151,6 @@ static void kvm_blk_write_ready(void *opaque)
             if (errno == EAGAIN) {
                 break;
             }
-            printf("%s sockfd = %d\n", __func__, s->sockfd);
             perror("blk-server send: ");
             goto error;
         }
@@ -244,11 +241,7 @@ static void kvm_blk_accept(void *opaque)
         goto out;
     }
 
-    // get previous session
-    printf("\n\n********** wid = %d **********\n\n", wid);
     session = kvm_blk_serv_wait_prev(wid);
-    //if (session)
-    //    g_free(session);
 
     session = g_malloc0(sizeof(KvmBlkSession));
 
@@ -278,7 +271,6 @@ static void kvm_blk_accept(void *opaque)
     session->close_handler = kvm_blk_serv_handle_close;
 
     kvm_blk_server_internal_init(session);
-    
     socket_set_nodelay(c);
     qemu_set_nonblock(c);
     qemu_set_fd_handler(c, kvm_blk_read_ready,
@@ -317,9 +309,7 @@ int kvm_blk_server_init(const char *p)
     if (s <= 0)
         return -1;
 
-    printf("use %s\n",__func__);
     qemu_set_fd_handler(s,kvm_blk_accept,NULL,(void *)(intptr_t)s);
-    printf("server test success\n" );
     return 0;
 }
 int kvm_blk_client_init(const char *ipnport)
@@ -328,9 +318,7 @@ int kvm_blk_client_init(const char *ipnport)
     Error *err = NULL;
     KvmBlkSession *s;
     int retval;
-    printf("ipnport %s\n",ipnport);
     sockfd = inet_connect(ipnport, &err);
-    printf("use %d\n",sockfd);
     if (err) {
         error_report_err(err);
         return -1;
@@ -358,8 +346,6 @@ int kvm_blk_client_init(const char *ipnport)
     qemu_set_fd_handler(sockfd,kvm_blk_read_ready,NULL,s);
 
     kvm_blk_session = s;
-    printf("use %s\n",__func__);
     qemu_mutex_init(&s->mutex);
-    printf("client test success\n" );
     return 0;
 }

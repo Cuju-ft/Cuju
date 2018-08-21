@@ -20,6 +20,7 @@
 #include "qemu/sockets.h"
 #ifdef CONFIG_EPOLL_CREATE1
 #include <sys/epoll.h>
+#include "kvm_blk.h"
 #endif
 
 struct AioHandler
@@ -244,11 +245,12 @@ void aio_set_fd_handler(AioContext *ctx,
             is_new = true;
         }
         /* Update handler with latest information */
-        node->io_read = io_read;
-        node->io_write = io_write;
+        //node->io_read = io_read;
+        //node->io_write = io_write;
         node->opaque = opaque;
         node->is_external = is_external;
-
+        node->io_read = (io_read == CUJU_IO_HANDLER_KEEP ? node->io_read : io_read);
+        node->io_write = (io_write == CUJU_IO_HANDLER_KEEP ? node->io_write : io_write);
         node->pfd.events = (io_read ? G_IO_IN | G_IO_HUP | G_IO_ERR : 0);
         node->pfd.events |= (io_write ? G_IO_OUT | G_IO_ERR : 0);
     }

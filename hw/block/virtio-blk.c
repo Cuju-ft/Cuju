@@ -594,13 +594,15 @@ static inline void submit_requests(BlockBackend *blk, MultiReqBuffer *mrb,
         block_acct_merge_done(blk_get_stats(blk),
                               is_write ? BLOCK_ACCT_WRITE : BLOCK_ACCT_READ,
                               num_reqs - 1);
+
     }
 
     if (is_write) {
-        blk_aio_pwritev_proxy(blk, sector_num << BDRV_SECTOR_BITS, qiov, 0,
-                        virtio_blk_rw_complete, mrb->reqs[start]);
+        blk_aio_pwritev_proxy(blk, sector_num<< BDRV_SECTOR_BITS , qiov, 0,
+                       virtio_blk_rw_complete, mrb->reqs[start]);
     } else {
-        blk_aio_preadv(blk, sector_num << BDRV_SECTOR_BITS, qiov, 0,
+
+        blk_aio_preadv_proxy(blk, sector_num<< BDRV_SECTOR_BITS, qiov, 0,
                        virtio_blk_rw_complete, mrb->reqs[start]);
     }
 }
@@ -628,7 +630,6 @@ static void virtio_blk_submit_multireq(BlockBackend *blk, MultiReqBuffer *mrb)
     int i = 0, start = 0, num_reqs = 0, niov = 0, nb_sectors = 0;
     uint32_t max_transfer;
     int64_t sector_num = 0;
-
     if (mrb->num_reqs == 1) {
         submit_requests(blk, mrb, 0, 1, -1);
         mrb->num_reqs = 0;

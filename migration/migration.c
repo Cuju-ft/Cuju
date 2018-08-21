@@ -2983,8 +2983,8 @@ static void *migration_thread(void *opaque)
         cuju_ft_trans_set_buffer_mode(1);
 
 		//TODO blk_server support
-        //if (kvm_blk_session)
-        //	kvm_blk_notify_ft(kvm_blk_session);
+        if (kvm_blk_session)
+        	kvm_blk_notify_ft(kvm_blk_session);
 
 		//memory_global_dirty_log_start();  //For debug
         kvm_shmem_start_ft();

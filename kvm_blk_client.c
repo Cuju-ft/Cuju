@@ -59,9 +59,9 @@ int kvm_blk_client_handle_cmd(void *opaque)
 		goto out;
 	}
 	
-	if (s->recv_hdr.payload_len != br->nb_sectors*512) {
+	if (s->recv_hdr.payload_len != br->nb_sectors) {
 		fprintf(stderr, "%s expect %d, get %d\n", __func__,
-				br->nb_sectors*512, s->recv_hdr.payload_len);
+				br->nb_sectors, s->recv_hdr.payload_len);
 	}
 
 	kvm_blk_input_to_iov(s, br->piov);
@@ -72,29 +72,10 @@ out:
   	return ret;
 }
 
-int kvm_blk_rw_co(BlockDriverState *bs, int64_t sector_num, uint8_t *buf,
-                      int nb_sectors, bool is_write)
-{
-	struct kvm_blk_request *br;
-	QEMUIOVector qiov;
-    struct iovec iov = {
-        .iov_base = (void *)buf,
-        .iov_len = nb_sectors * BDRV_SECTOR_SIZE,
-    };
-    qemu_iovec_init_external(&qiov, &iov, 1);
-
-	assert(!is_write);
-
-	br = kvm_blk_aio_readv(bs, sector_num, &qiov, nb_sectors, NULL, NULL);
-	while (br->cb == NULL)
-		aio_poll(qemu_get_aio_context(), true);
-	return 0;
-}
-
-struct kvm_blk_request *kvm_blk_aio_readv(BlockDriverState *bs,
+struct kvm_blk_request *kvm_blk_aio_readv(BlockBackend *blk,
                                         int64_t sector_num,
                                         QEMUIOVector *iov,
-                                        int nb_sectors,
+                                        BdrvRequestFlags flags,
                                         BlockCompletionFunc *cb,
                                         void *opaque)
 {
@@ -102,28 +83,25 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockDriverState *bs,
 	struct kvm_blk_read_control c;
 	struct kvm_blk_request *br;
 
-	assert(s->bs = bs);
-
+	assert(s->bs = blk_bs(blk));
 	br = g_malloc0(sizeof(*br));
 	br->sector = sector_num;
-	br->nb_sectors = nb_sectors;
+	br->nb_sectors = iov->size;
 	br->cmd = KVM_BLK_CMD_READ;
 	br->session = s;
-	
+	br->flags = flags;
 	br->piov = iov;
 	br->cb = cb;
 	br->opaque = opaque;
 
 	c.sector_num = sector_num;
-	c.nb_sectors = nb_sectors;
+	c.nb_sectors = iov->size;
 
     qemu_mutex_lock(&s->mutex);
-
 	++s->id;
 	br->id = s->id;
 
 	QTAILQ_INSERT_TAIL(&s->request_list, br, node);
-
 	s->send_hdr.cmd = KVM_BLK_CMD_READ;
 	s->send_hdr.payload_len = sizeof(c);
 	s->send_hdr.id = s->id;
@@ -132,7 +110,6 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockDriverState *bs,
 	kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
   	kvm_blk_output_append(s, &c, sizeof(c));
   	kvm_blk_output_flush(s);
-
     qemu_mutex_unlock(&s->mutex);
 
     if (debug_flag == 1) {
@@ -142,62 +119,43 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockDriverState *bs,
 	return br;
 }
 
-int kvm_blk_aio_write(BlockDriverState *bs,BlockRequest *reqs, int num_reqs){
+int kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque){
 	KvmBlkSession *s = kvm_blk_session;
 	struct kvm_blk_read_control c;
 	struct kvm_blk_request *br;
-	int i, total_len;
 
-	assert(s->bs = bs);
-
+	assert(s->bs = blk_bs(blk));
 	br = g_malloc0(sizeof(*br));
-	br->num_reqs = num_reqs;
-
-	br->reqs = g_malloc(sizeof(BlockRequest) * num_reqs);
-	memcpy(br->reqs, reqs, sizeof(BlockRequest) * num_reqs);
-
+	br->sector = sector_num;
+	br->nb_sectors = iov->size;
 	br->cmd = KVM_BLK_CMD_WRITE;
 	br->session = s;
-    
-	total_len = 0;
-	total_len += sizeof(c) * num_reqs;
-	for (i = 0; i < num_reqs; ++i) {
-		total_len += reqs[i].qiov->size;
-	}
+	br->flags = flags;
+	br->piov = iov;
+	br->cb = cb;
+	br->opaque = opaque;
 
+	c.sector_num = sector_num;
+	c.nb_sectors = iov->size;
     qemu_mutex_lock(&s->mutex);
-
-    write_request_id = s->id;
+	++s->id;
+	br->id = ++s->id;
     printf("********** write_request_id %d **********\n", write_request_id);
 
-	br->id = ++s->id;
 	QTAILQ_INSERT_TAIL(&s->request_list, br, node);
 
 	s->send_hdr.cmd = KVM_BLK_CMD_WRITE;
-	s->send_hdr.payload_len = total_len;
+	s->send_hdr.payload_len = sizeof(c);
 	s->send_hdr.id = s->id;
-	s->send_hdr.num_reqs = num_reqs;
+	s->send_hdr.num_reqs = 1;
 	kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
 
-	for (i = 0; i < num_reqs; ++i) {
-		c.sector_num = reqs[i].offset;
-		c.nb_sectors = reqs[i].qiov->size;
+	kvm_blk_output_append(s, &c, sizeof(c));
 
-		kvm_blk_output_append(s, &c, sizeof(c));
-		kvm_blk_output_append_iov(s, reqs[i].qiov);
-
-        if (debug_flag == 1) {
-			debug_printf("wants to write %ld %d %d\n", (long)c.sector_num,
-						c.nb_sectors, s->id);
-		}
-	}
 	kvm_blk_output_flush(s);
 
     qemu_mutex_unlock(&s->mutex);
-
-    // for quick write
-    for (i = 0; i < num_reqs; ++i)
-		reqs[i].cb(reqs[i].opaque, 0);
+	cb(opaque, 0);
 
 	return 0;
 }
