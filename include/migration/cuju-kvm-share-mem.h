@@ -45,6 +45,7 @@ int kvm_shmem_mark_page_dirty_range(MemoryRegion *mr, hwaddr addr, hwaddr length
 int kvm_shmem_mark_page_dirty(void *ptr, unsigned long gfn);
 void kvm_shmem_send_dirty_kernel(MigrationState *s);
 void kvm_shmem_start_timer(void);
+void kvm_shmem_cancel_timer(void);
 int kvm_shmem_flip_sharing(int cur_index);
 
 int kvmft_fire_timer(int moff);
