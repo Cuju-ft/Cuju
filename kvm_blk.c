@@ -74,6 +74,9 @@ static void kvm_blk_read_ready(void *opaque)
     do {
         if (s->is_payload == 0) {
             retval = kvm_blk_recv_header(s);
+            if(s->recv_hdr.cmd==KVM_BLK_CMD_WRITE){
+                printf("inputheaderper-->%d/%d/%d/%d\n",s->input_buf_size,s->input_buf_tail,s->input_buf_head,retval );
+            }
             if (retval == -EAGAIN || retval == -EWOULDBLOCK)
                 break;
             if (retval < 0) {
@@ -91,8 +94,14 @@ static void kvm_blk_read_ready(void *opaque)
             s->input_buf_size = s->recv_hdr.payload_len;
             s->input_buf = g_realloc(s->input_buf, s->recv_hdr.payload_len);
         }
+        if(s->recv_hdr.cmd==KVM_BLK_CMD_WRITE){
+            printf("sendpre-->%d/%d/%d/%d\n",s->input_buf_size,s->input_buf_tail,s->input_buf_head,retval );
+        }
         retval = recv(s->sockfd, s->input_buf + s->input_buf_tail,
                       s->recv_hdr.payload_len - s->input_buf_tail, 0);
+        if(s->recv_hdr.cmd==KVM_BLK_CMD_WRITE){
+            printf("sendper-->%d/%d/%d/%d\n",s->input_buf_size,s->input_buf_tail,s->input_buf_head,retval );
+        }
         err = errno;
         if (retval == 0) {
             printf("%s: disconn.\n", __func__);
@@ -114,6 +123,9 @@ static void kvm_blk_read_ready(void *opaque)
             s->is_payload = 0;
         }
     } while (1);
+    if(s->recv_hdr.cmd==KVM_BLK_CMD_WRITE){
+            printf("recend-->%d/%d/%d/%d\n",s->input_buf_size,s->input_buf_tail,s->input_buf_head,retval );
+        }
     return;
 clear:
     //debug_printf("handler cleared.\n");
@@ -138,8 +150,12 @@ static void kvm_blk_write_ready(void *opaque)
         return;
 
     do {
+        if(s->send_hdr.cmd==KVM_BLK_CMD_WRITE)  
+            printf("pre-->%d/%d/%d\n",s->output_buf_size,s->output_buf_tail,s->output_buf_head );
         retval = send(s->sockfd, s->output_buf + s->output_buf_head,
                       s->output_buf_tail - s->output_buf_head, 0);
+        if(s->send_hdr.cmd==KVM_BLK_CMD_WRITE)  
+            printf("per-->%d/%d/%d/%d\n",s->output_buf_size,s->output_buf_tail,s->output_buf_head,retval);
 
     if (debug_flag == 1) {
         debug_printf("send returns %d\n", retval);
@@ -163,6 +179,10 @@ static void kvm_blk_write_ready(void *opaque)
         s->output_buf_tail = 0;
     } else
         qemu_set_fd_handler(s->sockfd, CUJU_IO_HANDLER_KEEP, kvm_blk_write_ready, s);
+
+
+    if(s->send_hdr.cmd==KVM_BLK_CMD_WRITE)  
+            printf("endsend-->%d/%d/%d/%d\n",s->output_buf_size,s->output_buf_tail,s->output_buf_head,retval);
 
     return;
 error:

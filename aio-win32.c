@@ -87,8 +87,6 @@ void aio_set_fd_handler(AioContext *ctx,
 
         /* Update handler with latest information */
         node->opaque = opaque;
-        //node->io_read = io_read;
-        //node->io_write = io_write;
         node->is_external = is_external;
         node->io_read = (io_read == CUJU_IO_HANDLER_KEEP ? node->io_read : io_read);
         node->io_write = (io_write == CUJU_IO_HANDLER_KEEP ? node->io_write : io_write);

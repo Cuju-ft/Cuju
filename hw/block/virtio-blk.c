@@ -631,6 +631,8 @@ static void virtio_blk_submit_multireq(BlockBackend *blk, MultiReqBuffer *mrb)
     uint32_t max_transfer;
     int64_t sector_num = 0;
     if (mrb->num_reqs == 1) {
+        if(mrb->is_write)
+            printf("num_reqs..........%d\n", mrb->num_reqs);
         submit_requests(blk, mrb, 0, 1, -1);
         mrb->num_reqs = 0;
         return;
@@ -655,6 +657,8 @@ static void virtio_blk_submit_multireq(BlockBackend *blk, MultiReqBuffer *mrb)
                 req->qiov.size > max_transfer ||
                 nb_sectors > (max_transfer -
                               req->qiov.size) / BDRV_SECTOR_SIZE) {
+                if(mrb->is_write)
+                    printf("num_reqs..........%d\n", mrb->num_reqs);
                 submit_requests(blk, mrb, start, num_reqs, niov);
                 num_reqs = 0;
             }
@@ -670,7 +674,8 @@ static void virtio_blk_submit_multireq(BlockBackend *blk, MultiReqBuffer *mrb)
         niov += req->qiov.niov;
         num_reqs++;
     }
-
+if(mrb->is_write)
+                    printf("num_reqs..........%d\n", mrb->num_reqs);
     submit_requests(blk, mrb, start, num_reqs, niov);
     mrb->num_reqs = 0;
 }

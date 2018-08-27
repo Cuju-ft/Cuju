@@ -38,12 +38,6 @@ int kvm_blk_client_handle_cmd(void *opaque)
 	if (s->recv_hdr.cmd == KVM_BLK_CMD_WRITE) {
         // for quick write
         goto out;
-
-		int i;
-		int ret = s->recv_hdr.payload_len;
-		for (i = 0; i < br->num_reqs; ++i)
-			br->reqs[i].cb(br->reqs[i].opaque, ret);
-		goto out;
 	}
 
 	// handle SYNC_READ
@@ -135,23 +129,28 @@ int kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, Bd
 	br->cb = cb;
 	br->opaque = opaque;
 
-	c.sector_num = sector_num;
-	c.nb_sectors = iov->size;
+
     qemu_mutex_lock(&s->mutex);
 	++s->id;
 	br->id = ++s->id;
+	write_request_id = s->id;
     printf("********** write_request_id %d **********\n", write_request_id);
 
 	QTAILQ_INSERT_TAIL(&s->request_list, br, node);
 
 	s->send_hdr.cmd = KVM_BLK_CMD_WRITE;
-	s->send_hdr.payload_len = sizeof(c);
+	s->send_hdr.payload_len = sizeof(c)+iov->size;
 	s->send_hdr.id = s->id;
 	s->send_hdr.num_reqs = 1;
+
+
 	kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
+	
+	c.sector_num = sector_num;
+	c.nb_sectors = iov->size;
 
 	kvm_blk_output_append(s, &c, sizeof(c));
-
+	kvm_blk_output_append_iov(s, iov);
 	kvm_blk_output_flush(s);
 
     qemu_mutex_unlock(&s->mutex);

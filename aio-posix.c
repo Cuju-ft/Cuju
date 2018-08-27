@@ -244,9 +244,7 @@ void aio_set_fd_handler(AioContext *ctx,
             g_source_add_poll(&ctx->source, &node->pfd);
             is_new = true;
         }
-        /* Update handler with latest information */
-        //node->io_read = io_read;
-        //node->io_write = io_write;
+
         node->opaque = opaque;
         node->is_external = is_external;
         node->io_read = (io_read == CUJU_IO_HANDLER_KEEP ? node->io_read : io_read);

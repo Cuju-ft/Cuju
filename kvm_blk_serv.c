@@ -15,20 +15,15 @@ static void _kvm_blk_free_read_iov(struct kvm_blk_request *br)
 
 static void _kvm_blk_free_write_iov(struct kvm_blk_request *br)
 {
-	int i;
-	for (i = 0; i < br->num_reqs; ++i) {
-		BlockRequest *r = &br->reqs[i];
-		g_free(r->qiov->iov[0].iov_base);
-		qemu_iovec_destroy(r->qiov);
-		g_free(r->qiov);
-	}
-	g_free(br->reqs);
+		g_free(br->piov->iov[0].iov_base);
+		qemu_iovec_destroy(br->piov);
+		g_free(br->piov);
 }
 
 static int kvm_blk_fast_readv(KvmBlkSession *s, struct kvm_blk_request *br)
 {
 	struct kvm_blk_request *var;
-	int i, ret = KVM_BLK_RW_NONE;
+	int  ret = KVM_BLK_RW_NONE;
 
 	assert(br->cmd == KVM_BLK_CMD_READ);
 
@@ -41,31 +36,28 @@ static int kvm_blk_fast_readv(KvmBlkSession *s, struct kvm_blk_request *br)
         if (var->cmd != KVM_BLK_CMD_WRITE)
             continue;
 
-        for (i = 0; i < var->num_reqs; ++i) {
-            BlockRequest *r = &var->reqs[i];
             int src_skip, dst_skip, len;
-            if (br->sector >= r->offset && br->sector+br->nb_sectors <= r->offset+r->qiov->size) {
+            if (br->sector >= var->sector && br->sector+br->nb_sectors <= var->sector+var->nb_sectors) {
                 ret = KVM_BLK_RW_FAST;
                 dst_skip = 0;
-                src_skip = (br->sector - r->offset) ;
+                src_skip = (br->sector - var->sector) ;
                 len = br->nb_sectors ;
-            } else if (br->sector < r->offset && br->sector+br->nb_sectors > r->offset) {
+            } else if (br->sector < var->sector && br->sector+br->nb_sectors > var->sector) {
                 ret = KVM_BLK_RW_PARTIAL;
-                dst_skip = (r->offset - br->sector) ;
+                dst_skip = (var->sector - br->sector) ;
                 src_skip = 0;
-                len = MIN(br->sector+br->nb_sectors,r->offset+r->qiov->size) - r->offset;
-            } else if (br->sector >= r->offset && br->sector < r->offset+r->qiov->size
-                        && br->sector+br->nb_sectors > r->offset+r->qiov->size) {
+                len = MIN(br->sector+br->nb_sectors,var->sector+var->nb_sectors) - var->sector;
+            } else if (br->sector >= var->sector && br->sector < var->sector+var->nb_sectors
+                        && br->sector+br->nb_sectors > var->sector+var->nb_sectors) {
                 ret = KVM_BLK_RW_PARTIAL;
                 dst_skip = 0;
-                src_skip = (br->sector - r->offset) ;
-                len = r->offset + r->qiov->size - br->sector;
+                src_skip = (br->sector - var->sector) ;
+                len = var->sector + var->nb_sectors - br->sector;
             } else {
                 continue;
             }
             assert(dst_skip >= 0 && src_skip >= 0 && len > 0);
-            qemu_iovec_copy_sup(&br->iov, dst_skip, r->qiov, src_skip, len);
-        }
+            qemu_iovec_copy_sup(&br->iov, dst_skip, var->piov, src_skip, len);
 	} while (1);
 out:
 	return ret;
@@ -181,16 +173,16 @@ static void __kvm_blk_flush_all(KvmBlkSession *s)
             // TODO nasty hack, mark br as busy by setting its cb.
             //br->cb = (BlockCompletionFunc *)1;
             blk_insert_bs(blk, s->bs);
-            blk_aio_pwritev(blk, br->reqs->offset, br->reqs->qiov,
-            0, br->reqs->cb, br->reqs->opaque);
+            blk_aio_pwritev(blk, br->sector, br->piov,
+            0, br->cb, br->opaque);
         }
         if (br->cmd == KVM_BLK_CMD_READ) {
 
             // TODO nasty hack, mark br as busy by setting its cb.
             br->cb = (BlockCompletionFunc *)1;
             blk_insert_bs(blk, s->bs);
-            blk_aio_preadv(blk, br->reqs->offset , br->reqs->qiov,
-            0, br->reqs->cb, br->reqs->opaque);
+            blk_aio_preadv(blk, br->sector , br->piov,
+            0, br->cb, br->opaque);
         }
 	} while (1);
 
@@ -243,8 +235,8 @@ again:
         // TODO nasty hack, mark br as busy by setting its cb.
         br->cb = (BlockCompletionFunc *)1;
         blk_insert_bs(blk, s->bs);
-        blk_aio_pwritev(blk, br->reqs->offset, br->reqs->qiov,
-            br->reqs->flags, br->reqs->cb, br->reqs->opaque);
+        blk_aio_pwritev(blk, br->sector, br->piov,
+            br->flags, br->cb, br->opaque);
     }
     printf("\nflag 5\n");
 
@@ -349,26 +341,33 @@ int kvm_blk_serv_handle_cmd(void *opaque)
         if (debug_flag == 1) {
             printf("client write: %ld %d\n", (long)c.sector_num, c.nb_sectors);
         }
+
         br = g_malloc0(sizeof(struct kvm_blk_request));
-        br->sector = c.sector_num;
-        br->nb_sectors = c.nb_sectors;
         br->cmd = s->recv_hdr.cmd;
         br->id = s->recv_hdr.id;
         br->session = s;
-        qemu_iovec_init(&br->iov, 1);
+        br->num_reqs = s->recv_hdr.num_reqs;
+
+
+        br->sector = c.sector_num;
+        br->nb_sectors = c.nb_sectors;
+        br->piov  = g_malloc0(sizeof(QEMUIOVector));
+        qemu_iovec_init(br->piov, 1);
         len = c.nb_sectors ;
         new_buf = g_malloc(len);
         ret = kvm_blk_recv(s, new_buf, len);
             //debug_printf("read buf, expect %d get %d\n", len, ret);
             if (ret != len)
                 return -EINVAL;
-            qemu_iovec_add(&br->iov, new_buf, len);
+
+        
+        qemu_iovec_add(br->piov, new_buf, len);
         QTAILQ_INSERT_TAIL(&s->request_list, br, node);
 
         if (!s->ft_mode) {
 
             blk_insert_bs(blk, s->bs);
-            blk_aio_pwritev(blk, c.sector_num , &br->iov,0,
+            blk_aio_pwritev(blk, c.sector_num , br->piov,0,
                         kvm_blk_rw_cb, br);
         }
         break;
