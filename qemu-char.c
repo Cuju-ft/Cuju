@@ -3180,7 +3180,6 @@ static void tcp_chr_connect(void *opaque)
         s->is_listen, s->is_telnet);
 
     s->connected = 1;
-    printf("in func %s, fd = %d\n",__func__,listen_fd->fd);
     if (s->ioc) {
         chr->fd_in_tag = io_add_watch_poll(chr, s->ioc,
                                            tcp_chr_read_poll,
