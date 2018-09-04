@@ -171,11 +171,12 @@ static void __kvm_blk_flush_all(KvmBlkSession *s)
 
 		if (br->cmd == KVM_BLK_CMD_WRITE) {
             // TODO nasty hack, mark br as busy by setting its cb.
-            //br->cb = (BlockCompletionFunc *)1;
+            br->cb = (BlockCompletionFunc *)1;
             blk_insert_bs(blk, s->bs);
             blk_aio_pwritev(blk, br->sector, br->piov,
-            0, br->cb, br->opaque);
+            0, kvm_blk_rw_cb, br);
         }
+        /*
         if (br->cmd == KVM_BLK_CMD_READ) {
 
             // TODO nasty hack, mark br as busy by setting its cb.
@@ -183,7 +184,7 @@ static void __kvm_blk_flush_all(KvmBlkSession *s)
             blk_insert_bs(blk, s->bs);
             blk_aio_preadv(blk, br->sector , br->piov,
             0, br->cb, br->opaque);
-        }
+        }*/
 	} while (1);
 
     QTAILQ_REMOVE(&s->request_list, s->issue, node);
@@ -236,7 +237,7 @@ again:
         br->cb = (BlockCompletionFunc *)1;
         blk_insert_bs(blk, s->bs);
         blk_aio_pwritev(blk, br->sector, br->piov,
-            br->flags, br->cb, br->opaque);
+            br->flags, kvm_blk_rw_cb, br);
     }
     printf("\nflag 5\n");
 
@@ -347,7 +348,7 @@ int kvm_blk_serv_handle_cmd(void *opaque)
         br->id = s->recv_hdr.id;
         br->session = s;
         br->num_reqs = s->recv_hdr.num_reqs;
-
+        br->opaque = opaque;
 
         br->sector = c.sector_num;
         br->nb_sectors = c.nb_sectors;

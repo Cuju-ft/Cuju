@@ -33,6 +33,7 @@
 #include "io/channel-socket.h"
 #include <linux/kvm.h>
 #include "migration/migration.h"
+#include "kvm_blk.h"
 
 static QemuMutex *cuju_buf_desc_mutex = NULL;
 static QemuCond *cuju_buf_desc_cond = NULL;
@@ -802,7 +803,13 @@ static int cuju_ft_trans_close(void *opaque)
 		}
 
         qemu_announce_self();
-
+        if (blk_server) {
+            int ret = kvm_blk_client_init(blk_server);
+            if (ret < 0) {
+                printf("%s kvm_blk_client_init %d\n", __func__, ret);
+                exit(ret);
+            }
+        }
         cuju_ft_mode = CUJU_FT_TRANSACTION_HANDOVER;
         vm_start();
         printf("%s vm_started.\n", __func__);

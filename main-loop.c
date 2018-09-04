@@ -36,7 +36,7 @@
 
 #include "qemu/compatfd.h"
 
-//int io_thread_fd = -1;  TODO find io thread fd
+//int io_thread_fd = -1;  //TODO find io thread fd
 
 /* If we have signalfd, we mask out the signals we want to handle and then
  * use signalfd to listen for them.  We rely on whatever the current signal

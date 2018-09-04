@@ -38,6 +38,10 @@ int kvm_blk_client_handle_cmd(void *opaque)
 	if (s->recv_hdr.cmd == KVM_BLK_CMD_WRITE) {
         // for quick write
         goto out;
+
+		int ret = s->recv_hdr.payload_len;
+			br->cb(br->opaque, ret);
+		goto out;
 	}
 
 	// handle SYNC_READ
@@ -94,7 +98,6 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockBackend *blk,
     qemu_mutex_lock(&s->mutex);
 	++s->id;
 	br->id = s->id;
-
 	QTAILQ_INSERT_TAIL(&s->request_list, br, node);
 	s->send_hdr.cmd = KVM_BLK_CMD_READ;
 	s->send_hdr.payload_len = sizeof(c);

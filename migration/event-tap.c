@@ -1069,15 +1069,15 @@ BlockAIOCB *blk_aio_pwritev_proxy(BlockBackend *blk, int64_t offset,
                             QEMUIOVector *qiov, BdrvRequestFlags flags,
                             BlockCompletionFunc *cb, void *opaque)
 {
-    if (kvm_blk_session)
-            printf("%d\n",kvm_blk_session->id );
+    if (kvm_blk_session){
         kvm_blk_aio_write(blk, offset, qiov, flags, cb, opaque);
         return &dummy_acb;
-        
+    }
     if (bdrv_direct_rw)
       goto out;
 out:
-    return blk_aio_pwritev(blk, offset, qiov,flags,cb,opaque);
+    blk_aio_pwritev(blk, offset, qiov, flags, cb, opaque);
+    return &dummy_acb;
     
 
 

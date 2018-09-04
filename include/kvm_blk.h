@@ -83,7 +83,6 @@ struct kvm_blk_request {
 
     int32_t id;
     BdrvRequestFlags flags;
-    BlockRequest *reqs;
     int num_reqs;
 
     int ret_fast_read;
