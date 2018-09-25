@@ -660,12 +660,9 @@ static inline int gather_512(char *orig_page, char *curr_page, char *output)
   return header;
 }
 
-#define VMFT_CPUSET_DIR	"/dev/cgroup/vmft/"
-
 
 static void compress_init(void)
 {
-	struct stat statbuf;
     int i;
     char *x1;
     char *x2;
@@ -711,11 +708,6 @@ static void compress_init(void)
     x1[0] = 0;
     printf("cmp_32 %d (should 0)\n", memcmp_sse2_32(x1, x2));
 #endif
-
-	if (stat(VMFT_CPUSET_DIR, &statbuf) != 0) {
-		printf("%s: not found cgroup in %s\n", __func__, VMFT_CPUSET_DIR);
-		exit(-1);
-	}
 
 	compress_buf = memalign(4096, 4096);
 
