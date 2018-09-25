@@ -2887,16 +2887,11 @@ static void migrate_timer(void *opaque)
     vm_stop_mig();
     qemu_iohandler_ft_pause(true);
 
-#ifdef ENABLE_DIRTY_PAGE_TRACKING
-    dirty_page_tracking_backup(s->cur_off);
-#endif
-
     s->flush_vs_commit1 = false;
     s->transfer_start_time = time_in_double();
     s->ram_len = 0;
     kvm_shmem_send_dirty_kernel(s);
 
-    dirty_page_tracking_logs_commit(s);
     dirty_page_tracking_logs_start_transfer(s);
 
     //extern int kvmft_protect_speculative_and_prepare_next_speculative(int cur_index);

@@ -990,7 +990,8 @@ int kvmft_page_dirty(struct kvm *kvm, unsigned long gfn,
         return -1;
     }
 
-    if (unlikely(put_index >= dlist->dirty_stop_num))
+	//Now collect the largest collectable dirty pages
+	if (unlikely(put_index >= ctx->shared_watermark))
 		ctx->log_full = true;
 
 #ifdef ENABLE_PRE_DIFF
@@ -3176,6 +3177,21 @@ void kvm_shm_exit(struct kvm *kvm)
         kfree(ctx->spcl_backup_dirty_list);
 
     master_slave_conn_free(kvm);
+}
+
+unsigned long kvm_get_put_off(struct kvm *kvm, int cur_index){
+	struct kvmft_dirty_list *dlist;
+    struct kvmft_context *ctx = &kvm->ft_context;
+	dlist = ctx->page_nums_snapshot_k[cur_index];
+	return dlist->put_off;
+}
+
+int kvm_reset_put_off(struct kvm *kvm, int cur_index){
+    struct kvmft_dirty_list *dlist;
+    struct kvmft_context *ctx = &kvm->ft_context;
+    dlist = ctx->page_nums_snapshot_k[cur_index];
+	dlist->put_off = 0;
+    return 0;
 }
 
 int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
