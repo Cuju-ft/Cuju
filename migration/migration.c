@@ -2332,10 +2332,7 @@ static void gft_broadcast_commit2(MigrationState *s)
     for (i = 0; i < MIG_MAX_JOIN; ++i) {
         conn = &join->conn[i];
         if (conn->w_sock) {
-        //if (conn->w_sock && last_send_cmd != MIG_JOIN_GFT_EPOCH_COMMIT2) {
-            last_send_cmd = MIG_JOIN_GFT_EPOCH_COMMIT2;
             FTPRINTF("%s migrationState %d sending commit2\n", __func__, migrate_get_index(s));
-//            printf("%s migrationState %d sending commit2\n", __func__, migrate_get_index(s));
             GFT_SEND_CMD(conn->w_file, MIG_JOIN_GFT_EPOCH_COMMIT2);
 //            printf("send commit2 done\n");
         }
