@@ -133,6 +133,7 @@ out:
 static void __kvm_blk_wait_read_done(KvmBlkSession *s)
 {
 	struct kvm_blk_request *br;
+    struct BlockBackend *blk ;
 	do {
 		QTAILQ_FOREACH(br, &s->request_list, node) {
 			if (br->ret_fast_read == KVM_BLK_RW_PARTIAL) {
@@ -141,8 +142,12 @@ static void __kvm_blk_wait_read_done(KvmBlkSession *s)
 		}
 		if (!br)
 			break;
-		aio_poll(qemu_get_aio_context(), true);
+        blk = blk_new();
+        blk_insert_bs(blk, br->session->bs);
+        aio_poll(blk_get_aio_context(blk), true);
+        blk_unref(blk);
 	} while (1);
+    g_free(br);
 }
 
 static void __kvm_blk_server_ack_commit(KvmBlkSession *s)
@@ -159,7 +164,6 @@ static void __kvm_blk_flush_all(KvmBlkSession *s)
 
     // between issue and epoch_timer
     struct BlockBackend *blk ;
-    blk = blk_new();
     br = s->issue;
 
     do {
@@ -172,19 +176,12 @@ static void __kvm_blk_flush_all(KvmBlkSession *s)
 		if (br->cmd == KVM_BLK_CMD_WRITE) {
             // TODO nasty hack, mark br as busy by setting its cb.
             br->cb = (BlockCompletionFunc *)1;
-            blk_insert_bs(blk, s->bs);
+            blk = blk_new();
+            blk_insert_bs(blk, br->session->bs);
             blk_aio_pwritev(blk, br->sector, br->piov,
             0, kvm_blk_rw_cb, br);
+            blk_unref(blk);
         }
-        /*
-        if (br->cmd == KVM_BLK_CMD_READ) {
-
-            // TODO nasty hack, mark br as busy by setting its cb.
-            br->cb = (BlockCompletionFunc *)1;
-            blk_insert_bs(blk, s->bs);
-            blk_aio_preadv(blk, br->sector , br->piov,
-            0, br->cb, br->opaque);
-        }*/
 	} while (1);
 
     QTAILQ_REMOVE(&s->request_list, s->issue, node);
@@ -198,7 +195,6 @@ KvmBlkSession* kvm_blk_serv_wait_prev(uint32_t wid)
     KvmBlkSession *s = kvm_blk_session;
 	struct kvm_blk_request *br;
     struct BlockBackend *blk ;
-    blk = blk_new();
     printf("\nflag 0\n");
 	if (!s)
 		return NULL;
@@ -208,7 +204,6 @@ KvmBlkSession* kvm_blk_serv_wait_prev(uint32_t wid)
 
     printf("\nflag 2\n");
     // drop all write request behind wid;    
-    printf("\n\ndropping~~~~~~~~~~~\n\n");
 again:
     QTAILQ_FOREACH(br, &s->request_list, node) {
         if (br->cmd != KVM_BLK_CMD_WRITE) {
@@ -216,35 +211,35 @@ again:
             g_free(br);
             goto again;
         }
-        printf("\nflag 3\n");
         // TODO nasty hacking, pending write request.
         if (br->cb) {
-            aio_poll(qemu_get_aio_context(), true);
+            blk = blk_new();
+            blk_insert_bs(blk, br->session->bs);
+            aio_poll(blk_get_aio_context(blk), true);
+            blk_unref(blk);
+            g_free(br);
             goto again;
         }
-        printf("\n\n********** br->id = %d **********\n\n", br->id);
         if (br->id > wid) {
-            printf("\nflag QQ\n");
             QTAILQ_REMOVE(&s->request_list, br, node);
             g_free(br);
             goto again;
         }
     }
-    printf("\nflag 4\n");
+
 
     QTAILQ_FOREACH(br, &s->request_list, node) {
         // TODO nasty hack, mark br as busy by setting its cb.
         br->cb = (BlockCompletionFunc *)1;
-        blk_insert_bs(blk, s->bs);
+        blk = blk_new();
+        blk_insert_bs(blk, br->session->bs);
         blk_aio_pwritev(blk, br->sector, br->piov,
             br->flags, kvm_blk_rw_cb, br);
+        blk_unref(blk);
     }
-    printf("\nflag 5\n");
-
-    while (!QTAILQ_EMPTY(&s->request_list))
+    while (!QTAILQ_EMPTY(&s->request_list)){
         aio_poll(qemu_get_aio_context(), true);
-    printf("\nflag 6\n");
-
+    }
     // reset buf.
     s->output_buf_tail = s->output_buf_head = 0;
     s->input_buf_tail = s->input_buf_head = 0;
@@ -270,9 +265,6 @@ void kvm_blk_serv_handle_close(void *opaque)
         s->input_buf_tail = 0;
         s->is_payload = 0;
     }
-
-	//qemu_aio_set_fd_handler(s->sockfd, NULL, NULL, NULL, NULL);
-    printf("%s close %d\n", __func__, s->sockfd);
     close(s->sockfd);
     s->sockfd = -1;
 }
@@ -285,7 +277,6 @@ int kvm_blk_serv_handle_cmd(void *opaque)
     struct kvm_blk_request *br = NULL;
     int ret = 0;
     struct BlockBackend *blk ;
-    blk = blk_new();
 
     if (debug_flag == 1) {
         debug_printf("received cmd %d len %d id num_req %d (%d)\n", s->recv_hdr.cmd,
@@ -324,9 +315,11 @@ int kvm_blk_serv_handle_cmd(void *opaque)
 		}
 		// if ret == KVM_BLK_RW_PARTIAL, after read from disk,
 		// we need to renew partially from write request list.
+        blk = blk_new();
         blk_insert_bs(blk, s->bs);
         blk_aio_preadv(blk, c.sector_num, &br->iov,0,
                         kvm_blk_rw_cb, br);
+        blk_unref(blk);
         ret = 0;
 
         break;
@@ -357,7 +350,6 @@ int kvm_blk_serv_handle_cmd(void *opaque)
         len = c.nb_sectors ;
         new_buf = g_malloc(len);
         ret = kvm_blk_recv(s, new_buf, len);
-            //debug_printf("read buf, expect %d get %d\n", len, ret);
             if (ret != len)
                 return -EINVAL;
 
@@ -366,10 +358,12 @@ int kvm_blk_serv_handle_cmd(void *opaque)
         QTAILQ_INSERT_TAIL(&s->request_list, br, node);
 
         if (!s->ft_mode) {
-
+            blk = blk_new();
             blk_insert_bs(blk, s->bs);
             blk_aio_pwritev(blk, c.sector_num , br->piov,0,
                         kvm_blk_rw_cb, br);
+            blk_unref(blk);
+
         }
         break;
     }

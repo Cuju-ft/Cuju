@@ -10,7 +10,7 @@
 #include "qemu/atomic.h"
 #include "block/block.h"
 #include "qemu/osdep.h"
-
+#include "migration/migration.h"
 extern QTAILQ_HEAD(, BlockDriverState) all_bdrv_states;
 
 
@@ -37,7 +37,6 @@ retry:
         return -ENOTCONN;
     }
     if (retval < 0) {
-      //debug_printf("errno is %d\n", err);
         if (err == EINTR)
             goto retry;
         return -err;
@@ -70,16 +69,14 @@ static void kvm_blk_read_ready(void *opaque)
     if (debug_flag == 1) {
         debug_printf("read ready called %p is_payload %d.\n", s, s->is_payload);
     }
-
     do {
         if (s->is_payload == 0) {
-
             retval = kvm_blk_recv_header(s);
-        
             if (retval == -EAGAIN || retval == -EWOULDBLOCK)
                 break;
             if (retval < 0) {
-                //abort();
+                printf("%s %d\n", __func__, retval);
+                perror("blk-server: recv header:");
                 goto clear;
             }
             if (s->recv_hdr.payload_len == 0) {
@@ -118,9 +115,7 @@ static void kvm_blk_read_ready(void *opaque)
     } while (1);
     return;
 clear:
-    //debug_printf("handler cleared.\n");
     qemu_set_fd_handler(s->sockfd, 0, 0, 0);
-    //qemu_aio_set_fd_handler(s->sockfd, NULL, NULL, NULL, NULL);
     if (s->close_handler)
         s->close_handler(s);
 }
@@ -129,7 +124,7 @@ static void kvm_blk_write_ready(void *opaque)
     int retval;
     KvmBlkSession *s = opaque;
     if (unlikely(s->sockfd == -1))
-    return;
+        return;
     qemu_set_fd_handler(s->sockfd, CUJU_IO_HANDLER_KEEP, NULL, s);
     if (debug_flag == 1) {
         debug_printf("%p write ready called, %d.\n", s,
@@ -169,6 +164,7 @@ error:
     if (debug_flag == 1) {
        debug_printf("clear called.\n");
     }
+printf("set null 2\n" );
     qemu_set_fd_handler(s->sockfd, 0, 0, 0);
 
 }
@@ -197,8 +193,6 @@ void kvm_blk_output_append_iov(KvmBlkSession *s, QEMUIOVector *iov)
     kvm_blk_output_expand(s, iov->size);
     qemu_iovec_to_buf(iov,0, s->output_buf + s->output_buf_tail,iov->size);
     s->output_buf_tail += iov->size;
-    //debug_printf("iov size %d buf_size %d buf_tail %d\n",
-    //          (int)iov->size, s->output_buf_size, s->output_buf_tail);
 }
 
 int kvm_blk_recv(KvmBlkSession *s, void *buf, int len)
@@ -229,7 +223,6 @@ static void kvm_blk_accept(void *opaque)
 
     do {
         c = qemu_accept(s, (struct sockaddr *)&addr, &addrlen);
-        printf("c = \"%d\"\n", c);
     } while (c == -1 && socket_error() == EINTR);
 
     if (debug_flag == 1) {
@@ -251,10 +244,9 @@ static void kvm_blk_accept(void *opaque)
         debug_printf("accepted wid %d\n", wid);
     }
     assert(retval == sizeof(wid));
-
+    printf("sockfd = %d\n",c );
     session->sockfd = c;
     session->ft_mode = 0;
-
     session->bs = QTAILQ_FIRST(&all_bdrv_states);
     if (!session->bs) {
         fprintf(stderr, "%s: no aviablable block device.\n", __func__);
@@ -275,15 +267,10 @@ static void kvm_blk_accept(void *opaque)
     qemu_set_nonblock(c);
     qemu_set_fd_handler(c, kvm_blk_read_ready,
                        NULL, session);
-    //qemu_aio_set_fd_handler(c, kvm_blk_read_ready,
-    //                    kvm_blk_write_ready, NULL, session);
-
     kvm_blk_session = session;
-
     return;
 out:
     qemu_set_fd_handler(s, NULL, NULL, NULL);
-    //qemu_aio_set_fd_handler(s, NULL, NULL, NULL, NULL);
     close(s);
 }
 int kvm_blk_server_init(const char *p)
@@ -301,14 +288,13 @@ int kvm_blk_server_init(const char *p)
         error_report_err(err);
     }
     
-    s = socket_listen(sa, &err); 
+    s = socket_listen(sa, &err);
     if (err) {
         error_report_err(err);
     }
-    // s = inet_listen(host_port, NULL, 256, SOCK_STREAM, 0, &err);
     if (s <= 0)
         return -1;
-
+    assert(!qemu_iohandler_is_ft_paused());
     qemu_set_fd_handler(s,kvm_blk_accept,NULL,(void *)(intptr_t)s);
     return 0;
 }
@@ -318,12 +304,25 @@ int kvm_blk_client_init(const char *ipnport)
     Error *err = NULL;
     KvmBlkSession *s;
     int retval;
-    sockfd = inet_connect(ipnport, &err);
+    QIOChannelSocket *sioc = NULL;
+    //gft_init(4445);
+    SocketAddress* sa = socket_parse(ipnport, &err);
     if (err) {
         error_report_err(err);
         return -1;
     }
-
+    sioc = qio_channel_socket_new();
+    qio_channel_set_name(QIO_CHANNEL(sioc), "blkserver");
+    trace_qio_channel_socket_connect_sync(sioc, sa);
+    qio_channel_socket_connect_sync(sioc,
+                                    sa,
+                                    &err);
+    if (err) {
+        error_report_err(err);
+        return -1;
+    }
+    sockfd = sioc->fd;
+    printf("sockfd  = %d\n",sockfd );
     retval = send(sockfd, &write_request_id, sizeof(write_request_id), 0);
     assert(retval == sizeof(write_request_id));
 
@@ -338,11 +337,11 @@ int kvm_blk_client_init(const char *ipnport)
     s->input_buf = g_malloc(s->input_buf_size);
 
     QTAILQ_INIT(&s->request_list);
-    s->cmd_handler = kvm_blk_client_handle_cmd;
 
+    s->cmd_handler = kvm_blk_client_handle_cmd;
     socket_set_nodelay(sockfd);
     qemu_set_nonblock(sockfd);
-
+    assert(!qemu_iohandler_is_ft_paused());
     qemu_set_fd_handler(sockfd,kvm_blk_read_ready,NULL,s);
 
     kvm_blk_session = s;

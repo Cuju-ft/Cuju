@@ -46,7 +46,7 @@
 #include "hw/virtio/virtio-blk.h"
 #include "migration/group_ft.h"
 #include "kvm_blk.h"
-//#define DEBUG_MIGRATION
+//#define DEBUG_MIGRATION 1
 
 #ifdef DEBUG_MIGRATION
 #define DPRINTF(fmt, ...) \
@@ -2815,6 +2815,7 @@ static void ft_setup_migrate_state(MigrationState *s, int index)
                                       1, -1, -1);
 
     s->file->free_buf_on_flush = true;
+    s->file->free_buf_on_flush = true;
     cuju_qemu_set_last_cmd(s->file, CUJU_QEMU_VM_TRANSACTION_BEGIN);
 
     s->state = MIG_STATE_ACTIVE;
@@ -3369,7 +3370,6 @@ static void migrate_timer(void *opaque)
     qemu_mutex_lock_iothread();
     vm_stop_mig();
     qemu_iohandler_ft_pause(true);
-
     if (kvm_blk_session)
         kvm_blk_epoch_timer(kvm_blk_session);
 
@@ -3385,10 +3385,7 @@ static void migrate_timer(void *opaque)
     dirty_page_tracking_logs_commit(s);
     dirty_page_tracking_logs_start_transfer(s);
 
-    //extern int kvmft_protect_speculative_and_prepare_next_speculative(int cur_index);
-    //assert(!kvmft_protect_speculative_and_prepare_next_speculative(s->cur_off));
     assert(!kvmft_write_protect_dirty_pages(s->cur_off));
-    //assert(!kvm_shm_sync_dirty_bitmap_batch(s->cur_off));
     assert(!kvm_shm_clear_dirty_bitmap(s->cur_off));
 
     s->time_buf_off = sprintf(s->time_buf, "%p", s);

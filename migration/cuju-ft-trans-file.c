@@ -755,31 +755,30 @@ out:
     return ret;
 }
 
-
+bool trans_close = false;
 static int cuju_ft_trans_close(void *opaque)
 {
     Error *local_err = NULL;
-
+    trans_close = true;
     CujuQEMUFileFtTrans *s = opaque;
     int ret;
 
     printf("%s\n", __func__);
-
+    
     trace_cuju_ft_trans_close();
     ret = s->close(s->opaque);
     if (s->is_sender)
         g_free(s->buf);
-
-
     if (!s->is_sender) {
         qemu_mutex_lock(&cuju_load_mutex);
         while (cuju_is_load == 1)
             qemu_cond_wait(&cuju_load_cond, &cuju_load_mutex);
         qemu_mutex_unlock(&cuju_load_mutex);
-
-        if (s != last_cuju_ft_trans)
+        //if (s->index==0){
+        if(s != last_cuju_ft_trans)
             return 0;
-
+        /*if(s != last_cuju_ft_trans)
+            return 0;*/
         //qemu_aio_flush()  is deprecated
         bdrv_drain_all();
         bdrv_invalidate_cache_all(&local_err);
@@ -803,13 +802,7 @@ static int cuju_ft_trans_close(void *opaque)
 		}
 
         qemu_announce_self();
-        if (blk_server) {
-            int ret = kvm_blk_client_init(blk_server);
-            if (ret < 0) {
-                printf("%s kvm_blk_client_init %d\n", __func__, ret);
-                exit(ret);
-            }
-        }
+        
         cuju_ft_mode = CUJU_FT_TRANSACTION_HANDOVER;
         vm_start();
         printf("%s vm_started.\n", __func__);
@@ -884,7 +877,7 @@ int cuju_ft_trans_begin(void *opaque)
         }
 
         ret = cuju_ft_trans_send_header(s, CUJU_QEMU_VM_TRANSACTION_ACK, 0);
-        last_cuju_ft_trans = s;
+        //last_cuju_ft_trans = s;
         if (ret != sizeof(CujuFtTransHdr))
             ret = -EAGAIN;
 

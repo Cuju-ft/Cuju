@@ -31,7 +31,7 @@
 
 //-----------
 
-#define DEBUG_BLK_SERVER 1
+//#define DEBUG_BLK_SERVER 1
 
 #ifdef DEBUG_BLK_SERVER
 #define debug_printf(fmt, ...) \
@@ -170,7 +170,7 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockBackend *blk,
                                         BdrvRequestFlags flags,
                                         BlockCompletionFunc *cb,
                                         void *opaque);
-int kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov,BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque);
+struct kvm_blk_request *kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov,BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque);
 
 // insert an epoch mark in serv's pending request list.
 void kvm_blk_epoch_start(KvmBlkSession *s);

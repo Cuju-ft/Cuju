@@ -796,7 +796,8 @@ void qemu_system_vmstop_request(RunState state)
     qemu_mutex_unlock(&vmstop_lock);
     qemu_notify_event();
 }
-
+extern bool trans_close;
+extern char *blk_server;
 void vm_start(void)
 {
     RunState requested;
@@ -818,6 +819,13 @@ void vm_start(void)
         cpu_enable_ticks();
         runstate_set(RUN_STATE_RUNNING);
         vm_state_notify(1, RUN_STATE_RUNNING);
+        if (blk_server && trans_close) {
+            int ret = kvm_blk_client_init(blk_server);
+            if (ret < 0) {
+                printf("%s kvm_blk_client_init %d\n", __func__, ret);
+                exit(ret);
+            }
+        }
         resume_all_vcpus();
     }
 
@@ -3015,7 +3023,7 @@ static int global_init_func(void *opaque, QemuOpts *opts, Error **errp)
     return 0;
 }
 
-extern char *blk_server;
+
 int main(int argc, char **argv, char **envp)
 {
     int i;
@@ -4745,7 +4753,9 @@ int main(int argc, char **argv, char **envp)
 #ifdef KVM_SHARE_MEM
     kvm_share_mem_init(ram_size);
 #endif
-    assert(!gft_init(ft_join_port));
+    //printf("ft_join_port = **************%d\n",ft_join_port );
+    //assert(!gft_init(ft_join_port));
+
 	printf("VM init finished\n");
 
     printf("incoming:%s\n", incoming);

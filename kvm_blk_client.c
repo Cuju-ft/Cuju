@@ -38,10 +38,6 @@ int kvm_blk_client_handle_cmd(void *opaque)
 	if (s->recv_hdr.cmd == KVM_BLK_CMD_WRITE) {
         // for quick write
         goto out;
-
-		int ret = s->recv_hdr.payload_len;
-			br->cb(br->opaque, ret);
-		goto out;
 	}
 
 	// handle SYNC_READ
@@ -96,8 +92,8 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockBackend *blk,
 	c.nb_sectors = iov->size;
 
     qemu_mutex_lock(&s->mutex);
-	++s->id;
-	br->id = s->id;
+
+	br->id = ++s->id;
 	QTAILQ_INSERT_TAIL(&s->request_list, br, node);
 	s->send_hdr.cmd = KVM_BLK_CMD_READ;
 	s->send_hdr.payload_len = sizeof(c);
@@ -116,11 +112,10 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockBackend *blk,
 	return br;
 }
 
-int kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque){
+struct kvm_blk_request *kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque){
 	KvmBlkSession *s = kvm_blk_session;
 	struct kvm_blk_read_control c;
 	struct kvm_blk_request *br;
-
 	assert(s->bs = blk_bs(blk));
 	br = g_malloc0(sizeof(*br));
 	br->sector = sector_num;
@@ -132,13 +127,9 @@ int kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, Bd
 	br->cb = cb;
 	br->opaque = opaque;
 
-
     qemu_mutex_lock(&s->mutex);
-	++s->id;
 	br->id = ++s->id;
 	write_request_id = s->id;
-    printf("********** write_request_id %d **********\n", write_request_id);
-
 	QTAILQ_INSERT_TAIL(&s->request_list, br, node);
 
 	s->send_hdr.cmd = KVM_BLK_CMD_WRITE;
@@ -159,7 +150,7 @@ int kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, Bd
     qemu_mutex_unlock(&s->mutex);
 	cb(opaque, 0);
 
-	return 0;
+	return br;
 }
 
 
