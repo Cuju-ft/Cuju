@@ -2293,8 +2293,6 @@ static void gft_broadcast_commit2(MigrationState *s)
     MigrationJoinConn *conn;
     int i;
 
-    //printf("%s %d %x\n", __func__, join->number, join->bitmaps_commit2);
-
     if (join->number == 0)
         return;
 
@@ -2502,8 +2500,6 @@ static struct MigrationJoinConn* gft_master_connect_other_master(
     sprintf(host_port, "%s:%d", gft_member->master_host_ip,
             gft_member->master_host_gft_port);
 
-    printf("%s\n", host_port);
-
     for (i = 0; i < MIG_MAX_JOIN; ++i) {
         if (s->join.conn[i].r_sock == 0) {
             conn = &s->join.conn[i];
@@ -2530,7 +2526,6 @@ static struct MigrationJoinConn* gft_master_connect_other_master(
     conn->r_file = f;
     conn->r_sock = sd;
 
-    printf("%s send sock %d\n", __func__, sd);
     assert(send(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(recv(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(index == s->cur_off);
@@ -2549,7 +2544,6 @@ static struct MigrationJoinConn* gft_master_connect_other_master(
     conn->w_file = f;
     conn->w_sock = sd;
 
-    printf("%s send sock %d\n", __func__, sd);
     assert(send(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(recv(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(index == s->cur_off);
@@ -3698,6 +3692,7 @@ int gft_init(int port)
 
     sprintf(host_port, "0:%d", port);
     SocketAddress* sa = socket_parse(host_port, &err);
+    
     if (err) {
         error_report_err(err);
     }

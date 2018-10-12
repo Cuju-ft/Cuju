@@ -195,14 +195,11 @@ KvmBlkSession* kvm_blk_serv_wait_prev(uint32_t wid)
     KvmBlkSession *s = kvm_blk_session;
 	struct kvm_blk_request *br;
     struct BlockBackend *blk ;
-    printf("\nflag 0\n");
 	if (!s)
 		return NULL;
 
-    printf("\nflag 1\n");
     __kvm_blk_wait_read_done(s);
 
-    printf("\nflag 2\n");
     // drop all write request behind wid;    
 again:
     QTAILQ_FOREACH(br, &s->request_list, node) {
@@ -291,7 +288,7 @@ int kvm_blk_serv_handle_cmd(void *opaque)
         if (ret != sizeof(c))
             return -EINVAL;
         if (debug_flag == 1) {
-            printf("client read: %ld %d\n", (long)c.sector_num, c.nb_sectors);
+            debug_printf("client read: %ld %d\n", (long)c.sector_num, c.nb_sectors);
         }
         br = g_malloc0(sizeof(struct kvm_blk_request));
         br->sector = c.sector_num;
@@ -333,7 +330,7 @@ int kvm_blk_serv_handle_cmd(void *opaque)
         if (ret != sizeof(c))
             return -EINVAL;
         if (debug_flag == 1) {
-            printf("client write: %ld %d\n", (long)c.sector_num, c.nb_sectors);
+            debug_printf("client write: %ld %d\n", (long)c.sector_num, c.nb_sectors);
         }
 
         br = g_malloc0(sizeof(struct kvm_blk_request));
@@ -402,7 +399,7 @@ int kvm_blk_serv_handle_cmd(void *opaque)
     }
 
     default: {
-        printf("%s, unknown command: %d\n", __func__, s->recv_hdr.cmd);
+        debug_printf("%s, unknown command: %d\n", __func__, s->recv_hdr.cmd);
         break;
     }
 

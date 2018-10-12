@@ -819,13 +819,6 @@ void vm_start(void)
         cpu_enable_ticks();
         runstate_set(RUN_STATE_RUNNING);
         vm_state_notify(1, RUN_STATE_RUNNING);
-        if (blk_server && trans_close) {
-            int ret = kvm_blk_client_init(blk_server);
-            if (ret < 0) {
-                printf("%s kvm_blk_client_init %d\n", __func__, ret);
-                exit(ret);
-            }
-        }
         resume_all_vcpus();
     }
 
@@ -1997,6 +1990,7 @@ static void main_loop(void)
         dev_time += profile_getclock() - ti;
 #endif
     } while (!main_loop_should_exit());
+    
 }
 
 static void version(void)
@@ -4543,10 +4537,8 @@ int main(int argc, char **argv, char **envp)
     default_drive(default_sdcard, snapshot, IF_SD, 0, SD_OPTS);
 
     parse_numa_opts(machine_class);
-    printf("blk_server:%s\n",blk_server_listen );
     if (blk_server_listen) {
         int ret = kvm_blk_server_init(blk_server_listen);
-        printf("server_ret:%d\n",ret );
         if (ret < 0)
           exit(ret);
         os_setup_post();
@@ -4753,20 +4745,19 @@ int main(int argc, char **argv, char **envp)
 #ifdef KVM_SHARE_MEM
     kvm_share_mem_init(ram_size);
 #endif
-    //printf("ft_join_port = **************%d\n",ft_join_port );
-    //assert(!gft_init(ft_join_port));
+
+    assert(!gft_init(ft_join_port));
 
 	printf("VM init finished\n");
 
-    printf("incoming:%s\n", incoming);
     if (!incoming && blk_server) {
         int ret = kvm_blk_client_init(blk_server);
-        printf("client_ret:%d\n", ret);
         if (ret < 0)
           exit(ret);
     }
-
+   
     main_loop();
+
     replay_disable_events();
     iothread_stop_all();
 

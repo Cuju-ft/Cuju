@@ -75,7 +75,6 @@ static void kvm_blk_read_ready(void *opaque)
             if (retval == -EAGAIN || retval == -EWOULDBLOCK)
                 break;
             if (retval < 0) {
-                printf("%s %d\n", __func__, retval);
                 perror("blk-server: recv header:");
                 goto clear;
             }
@@ -94,7 +93,7 @@ static void kvm_blk_read_ready(void *opaque)
                       s->recv_hdr.payload_len - s->input_buf_tail, 0);
         err = errno;
         if (retval == 0) {
-            printf("%s: disconn.\n", __func__);
+            debug_printf("%s: disconn.\n", __func__);
             goto clear;
         }
         if (retval < 0) {
@@ -164,7 +163,6 @@ error:
     if (debug_flag == 1) {
        debug_printf("clear called.\n");
     }
-printf("set null 2\n" );
     qemu_set_fd_handler(s->sockfd, 0, 0, 0);
 
 }
@@ -218,7 +216,6 @@ static void kvm_blk_accept(void *opaque)
     int s = (intptr_t)opaque;
     int c;
     KvmBlkSession *session;
-    int retval;
     uint32_t wid = -1;
 
     do {
@@ -239,12 +236,10 @@ static void kvm_blk_accept(void *opaque)
     session = g_malloc0(sizeof(KvmBlkSession));
 
     // read latest write_request_id
-    retval = recv(c, &wid, sizeof(wid), 0);    
+    recv(c, &wid, sizeof(wid), 0);    
     if (debug_flag == 1) {
         debug_printf("accepted wid %d\n", wid);
     }
-    assert(retval == sizeof(wid));
-    printf("sockfd = %d\n",c );
     session->sockfd = c;
     session->ft_mode = 0;
     session->bs = QTAILQ_FIRST(&all_bdrv_states);
@@ -277,11 +272,8 @@ int kvm_blk_server_init(const char *p)
 {
     int s;
     Error *err = NULL;
-    BlockDriverState *bs;
-
     kvm_blk_is_server = true;
-    bs = QTAILQ_FIRST(&all_bdrv_states);
-    printf("%s:, should match with client.\n",bs->filename);
+
     SocketAddress* sa = socket_parse(p, &err);
 
     if (err) {
@@ -322,7 +314,6 @@ int kvm_blk_client_init(const char *ipnport)
         return -1;
     }
     sockfd = sioc->fd;
-    printf("sockfd  = %d\n",sockfd );
     retval = send(sockfd, &write_request_id, sizeof(write_request_id), 0);
     assert(retval == sizeof(write_request_id));
 

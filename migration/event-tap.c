@@ -997,9 +997,7 @@ BlockAIOCB *blk_aio_preadv_proxy(BlockBackend *blk, int64_t offset,
                 if ( offset >= blk_req->reqs[0].offset+blk_req->reqs[0].qiov->size/512
                         || blk_req->reqs[0].offset >= offset + qiov->size/512 )
                     continue;
-                //printf("%s existing %lld:%d read %lld:%d\n", __func__,
-                //    blk_req->reqs[0].sector, blk_req->reqs[0].nb_sectors,
-                //    sector_num, nb_sectors);
+
                 if ( offset >= blk_req->reqs[0].offset && (offset + qiov->size)
                                 <= (blk_req->reqs[0].offset + blk_req->reqs[0].qiov->size/512) ) {
                     qemu_iovec_copy_sup(qiov, 0, &blk_req->qiov[0],

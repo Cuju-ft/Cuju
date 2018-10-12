@@ -351,14 +351,12 @@ static int socket_trans_close(void *opaque)
 {
     QEMUFileSocketTrans *t = opaque;
     QEMUFileSocket *s = t->s;
-printf("socket_trans_close = %p\n",opaque );
     qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
     qemu_set_fd_handler(t->fd, NULL, NULL, NULL);
     qemu_del_vm_change_state_handler(t->e);
     close(s->fd);
     g_free(s);
     g_free(t);
-    printf("end socket_trans_close = %p\n",opaque );
     return 0;
 }
 

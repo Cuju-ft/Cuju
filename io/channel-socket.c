@@ -203,7 +203,6 @@ int qio_channel_socket_listen_sync(QIOChannelSocket *ioc,
 
     trace_qio_channel_socket_listen_sync(ioc, addr);
     fd = socket_listen(addr, errp);
-    printf("qio_channel_socket_listen_sync = %d\n",fd );
     if (fd < 0) {
         trace_qio_channel_socket_listen_fail(ioc);
         return -1;
@@ -215,7 +214,6 @@ int qio_channel_socket_listen_sync(QIOChannelSocket *ioc,
         return -1;
     }
     qio_channel_set_feature(QIO_CHANNEL(ioc), QIO_CHANNEL_FEATURE_LISTEN);
-    printf("qio_channel_socket_listen_sync = %d\n",fd );
     return 0;
 }
 

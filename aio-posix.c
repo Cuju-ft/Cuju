@@ -215,12 +215,7 @@ void aio_set_fd_handler(AioContext *ctx,
     node = find_aio_handler(ctx, fd);
 
     /* Are we deleting the fd handler? */
-    /*if (!io_read && !io_write &&( testfd != 1 || fd !=17)) {
-        if(fd == 17){
-            testfd++;
-        }*/
     if (!io_read && !io_write) {
-        //printf("null fd = %d\n",fd );
         if (node == NULL) {
             return;
         }
@@ -248,23 +243,12 @@ void aio_set_fd_handler(AioContext *ctx,
             g_source_add_poll(&ctx->source, &node->pfd);
             is_new = true;
         }
-        /*
-        if(fd == 17){
-            printf("fd = 17 io_read = %p io_write = %p node->io_read = %p\n",io_read,io_write,node->io_read);
-            if(!io_read && !io_write){
-                io_read = CUJU_IO_HANDLER_KEEP;
-            }
-        }
-        */
         node->io_read  = (io_read == CUJU_IO_HANDLER_KEEP ? node->io_read : io_read);
         node->io_write = (io_write == CUJU_IO_HANDLER_KEEP ? node->io_write : io_write);
         node->opaque = opaque;
         node->is_external = is_external;
         node->pfd.events = (io_read ? G_IO_IN | G_IO_HUP | G_IO_ERR : 0);
         node->pfd.events |= (io_write ? G_IO_OUT | G_IO_ERR : 0);
-        //if(fd == 17){
-            //printf("end fd = %d io_read = %p io_write = %p node->io_read = %p\n",fd ,io_read,io_write,node->io_read);
-        //}
     }
     aio_epoll_update(ctx, node, is_new);
     aio_notify(ctx);
