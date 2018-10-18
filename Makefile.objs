@@ -9,7 +9,7 @@ util-obj-y += qmp-introspect.o qapi-types.o qapi-visit.o qapi-event.o
 
 block-obj-y = async.o thread-pool.o
 block-obj-y += nbd/
-block-obj-y += block.o blockjob.o
+block-obj-y += block.o blockjob.o kvm_blk.o kvm_blk_client.o kvm_blk_serv.o
 block-obj-y += main-loop.o iohandler.o qemu-timer.o
 block-obj-$(CONFIG_POSIX) += aio-posix.o
 block-obj-$(CONFIG_WIN32) += aio-win32.o

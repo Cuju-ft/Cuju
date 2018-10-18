@@ -23,10 +23,10 @@ block-obj-$(CONFIG_LIBSSH2) += ssh.o
 block-obj-y += accounting.o dirty-bitmap.o
 block-obj-y += write-threshold.o
 block-obj-y += backup.o
+
 block-obj-$(CONFIG_REPLICATION) += replication.o
 
 block-obj-y += crypto.o
-
 common-obj-y += stream.o
 
 nfs.o-libs         := $(LIBNFS_LIBS)

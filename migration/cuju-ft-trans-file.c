@@ -33,6 +33,7 @@
 #include "io/channel-socket.h"
 #include <linux/kvm.h>
 #include "migration/migration.h"
+#include "kvm_blk.h"
 
 static QemuMutex *cuju_buf_desc_mutex = NULL;
 static QemuCond *cuju_buf_desc_cond = NULL;
@@ -754,32 +755,23 @@ out:
     return ret;
 }
 
-
 static int cuju_ft_trans_close(void *opaque)
 {
     Error *local_err = NULL;
-
     CujuQEMUFileFtTrans *s = opaque;
     int ret;
-
-    printf("%s\n", __func__);
-
+    
     trace_cuju_ft_trans_close();
     ret = s->close(s->opaque);
     if (s->is_sender)
         g_free(s->buf);
-
-
     if (!s->is_sender) {
         qemu_mutex_lock(&cuju_load_mutex);
         while (cuju_is_load == 1)
             qemu_cond_wait(&cuju_load_cond, &cuju_load_mutex);
         qemu_mutex_unlock(&cuju_load_mutex);
-
-        if (s != last_cuju_ft_trans)
+        if(s != last_cuju_ft_trans)
             return 0;
-
-        //qemu_aio_flush()  is deprecated
         bdrv_drain_all();
         bdrv_invalidate_cache_all(&local_err);
 
@@ -802,10 +794,17 @@ static int cuju_ft_trans_close(void *opaque)
 		}
 
         qemu_announce_self();
-
+        
+        vm_state_notify(1, RUN_STATE_RUNNING);
+        if (blk_server) {
+            int ret = kvm_blk_client_init(blk_server);
+            if (ret < 0) {
+                exit(ret);
+            }
+        }
+        
         cuju_ft_mode = CUJU_FT_TRANSACTION_HANDOVER;
         vm_start();
-        printf("%s vm_started.\n", __func__);
     }
 
     return ret;
@@ -1005,7 +1004,6 @@ void cuju_ft_trans_read_pages(void *opaque)
                 continue;
             if (errno == EAGAIN)
                 return;
-            printf("%s recv %d err.\n", __func__, s->ram_fd);
             perror("recv err: ");
             goto clear;
         }
@@ -1077,7 +1075,6 @@ int cuju_ft_trans_flush_output(void *opaque)
             ret = -EINVAL;
             goto out;
         }
-        //printf("%s %p received ACK1\n", __func__, s->file);
     }
 
     s->state = CUJU_QEMU_VM_TRANSACTION_CONTINUE;

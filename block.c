@@ -43,6 +43,7 @@
 #include "qemu/cutils.h"
 #include "qemu/id.h"
 #include "qapi/util.h"
+#include "kvm_blk.h"
 
 #ifdef CONFIG_BSD
 #include <sys/ioctl.h>
@@ -61,7 +62,7 @@
 static QTAILQ_HEAD(, BlockDriverState) graph_bdrv_states =
     QTAILQ_HEAD_INITIALIZER(graph_bdrv_states);
 
-static QTAILQ_HEAD(, BlockDriverState) all_bdrv_states =
+QTAILQ_HEAD(, BlockDriverState) all_bdrv_states =
     QTAILQ_HEAD_INITIALIZER(all_bdrv_states);
 
 static QLIST_HEAD(, BlockDriver) bdrv_drivers =

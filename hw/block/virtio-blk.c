@@ -28,6 +28,7 @@
 #endif
 #include "hw/virtio/virtio-bus.h"
 #include "hw/virtio/virtio-access.h"
+#include "migration/event-tap.h"
 
 
 #define HEAD_LIST_INIT_SIZE  64
@@ -216,10 +217,7 @@ static void virtio_blk_req_complete(VirtIOBlockReq *req, unsigned char status)
         QEMUIOVector qiov;
         qemu_iovec_init_external(&qiov, &req->elem.in_sg[0],
                                  req->elem.in_num -1);
-        if (qiov.size != req->qiov.size) {
-            printf("%s %d %d\n", __func__, (int)qiov.size, (int)req->qiov.size);
-        }
-        assert(qiov.size == req->qiov.size);
+
         qiov.nalloc = qiov.niov; // hack, stop qemu_iovec_copy from complaining
         qemu_iovec_copy_sup(&qiov, 0, &req->qiov, 0, qiov.size);
         qemu_iovec_free_by_external(&req->qiov);
@@ -596,10 +594,11 @@ static inline void submit_requests(BlockBackend *blk, MultiReqBuffer *mrb,
     }
 
     if (is_write) {
-        blk_aio_pwritev(blk, sector_num << BDRV_SECTOR_BITS, qiov, 0,
-                        virtio_blk_rw_complete, mrb->reqs[start]);
+        blk_aio_pwritev_proxy(blk, sector_num<< BDRV_SECTOR_BITS , qiov, 0,
+                       virtio_blk_rw_complete, mrb->reqs[start]);
     } else {
-        blk_aio_preadv(blk, sector_num << BDRV_SECTOR_BITS, qiov, 0,
+
+        blk_aio_preadv_proxy(blk, sector_num<< BDRV_SECTOR_BITS, qiov, 0,
                        virtio_blk_rw_complete, mrb->reqs[start]);
     }
 }
@@ -627,7 +626,6 @@ static void virtio_blk_submit_multireq(BlockBackend *blk, MultiReqBuffer *mrb)
     int i = 0, start = 0, num_reqs = 0, niov = 0, nb_sectors = 0;
     uint32_t max_transfer;
     int64_t sector_num = 0;
-
     if (mrb->num_reqs == 1) {
         submit_requests(blk, mrb, 0, 1, -1);
         mrb->num_reqs = 0;
@@ -668,7 +666,6 @@ static void virtio_blk_submit_multireq(BlockBackend *blk, MultiReqBuffer *mrb)
         niov += req->qiov.niov;
         num_reqs++;
     }
-
     submit_requests(blk, mrb, start, num_reqs, niov);
     mrb->num_reqs = 0;
 }

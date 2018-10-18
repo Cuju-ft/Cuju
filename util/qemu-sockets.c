@@ -605,7 +605,6 @@ InetSocketAddress *inet_parse(const char *str, Error **errp)
             addr->ipv4 = addr->has_ipv4 = true;
         }
     }
-
     addr->host = g_strdup(host);
     addr->port = g_strdup(port);
 
@@ -1070,7 +1069,6 @@ int socket_connect(SocketAddress *addr, Error **errp,
                    NonBlockingConnectHandler *callback, void *opaque)
 {
     int fd;
-
     switch (addr->type) {
     case SOCKET_ADDRESS_KIND_INET:
         fd = inet_connect_saddr(addr->u.inet.data, errp, callback, opaque);

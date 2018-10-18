@@ -45,8 +45,8 @@
 #include "migration/event-tap.h"
 #include "hw/virtio/virtio-blk.h"
 #include "migration/group_ft.h"
-
-//#define DEBUG_MIGRATION
+#include "kvm_blk.h"
+//#define DEBUG_MIGRATION 1
 
 #ifdef DEBUG_MIGRATION
 #define DPRINTF(fmt, ...) \
@@ -2293,8 +2293,6 @@ static void gft_broadcast_commit2(MigrationState *s)
     MigrationJoinConn *conn;
     int i;
 
-    //printf("%s %d %x\n", __func__, join->number, join->bitmaps_commit2);
-
     if (join->number == 0)
         return;
 
@@ -2376,10 +2374,10 @@ static void migrate_ft_trans_flush_cb(void *opaque)
 
 static void kvmft_flush_output(MigrationState *s)
 {
-	/* TODO blk server
+	//TODO blk server
     if (kvm_blk_session)
         kvm_blk_epoch_commit(kvm_blk_session);
-	*/
+	
 
     virtio_blk_commit_temp_list(s->virtio_blk_temp_list);
     s->virtio_blk_temp_list = NULL;
@@ -2502,8 +2500,6 @@ static struct MigrationJoinConn* gft_master_connect_other_master(
     sprintf(host_port, "%s:%d", gft_member->master_host_ip,
             gft_member->master_host_gft_port);
 
-    printf("%s\n", host_port);
-
     for (i = 0; i < MIG_MAX_JOIN; ++i) {
         if (s->join.conn[i].r_sock == 0) {
             conn = &s->join.conn[i];
@@ -2530,7 +2526,6 @@ static struct MigrationJoinConn* gft_master_connect_other_master(
     conn->r_file = f;
     conn->r_sock = sd;
 
-    printf("%s send sock %d\n", __func__, sd);
     assert(send(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(recv(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(index == s->cur_off);
@@ -2549,7 +2544,6 @@ static struct MigrationJoinConn* gft_master_connect_other_master(
     conn->w_file = f;
     conn->w_sock = sd;
 
-    printf("%s send sock %d\n", __func__, sd);
     assert(send(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(recv(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(index == s->cur_off);
@@ -2815,6 +2809,7 @@ static void ft_setup_migrate_state(MigrationState *s, int index)
                                       1, -1, -1);
 
     s->file->free_buf_on_flush = true;
+    s->file->free_buf_on_flush = true;
     cuju_qemu_set_last_cmd(s->file, CUJU_QEMU_VM_TRANSACTION_BEGIN);
 
     s->state = MIG_STATE_ACTIVE;
@@ -2983,8 +2978,8 @@ static void *migration_thread(void *opaque)
         cuju_ft_trans_set_buffer_mode(1);
 
 		//TODO blk_server support
-        //if (kvm_blk_session)
-        //	kvm_blk_notify_ft(kvm_blk_session);
+        if (kvm_blk_session)
+        	kvm_blk_notify_ft(kvm_blk_session);
 
 		//memory_global_dirty_log_start();  //For debug
         kvm_shmem_start_ft();
@@ -3369,6 +3364,8 @@ static void migrate_timer(void *opaque)
     qemu_mutex_lock_iothread();
     vm_stop_mig();
     qemu_iohandler_ft_pause(true);
+    if (kvm_blk_session)
+        kvm_blk_epoch_timer(kvm_blk_session);
 
 #ifdef ENABLE_DIRTY_PAGE_TRACKING
     dirty_page_tracking_backup(s->cur_off);
@@ -3382,10 +3379,7 @@ static void migrate_timer(void *opaque)
     dirty_page_tracking_logs_commit(s);
     dirty_page_tracking_logs_start_transfer(s);
 
-    //extern int kvmft_protect_speculative_and_prepare_next_speculative(int cur_index);
-    //assert(!kvmft_protect_speculative_and_prepare_next_speculative(s->cur_off));
     assert(!kvmft_write_protect_dirty_pages(s->cur_off));
-    //assert(!kvm_shm_sync_dirty_bitmap_batch(s->cur_off));
     assert(!kvm_shm_clear_dirty_bitmap(s->cur_off));
 
     s->time_buf_off = sprintf(s->time_buf, "%p", s);
@@ -3698,6 +3692,7 @@ int gft_init(int port)
 
     sprintf(host_port, "0:%d", port);
     SocketAddress* sa = socket_parse(host_port, &err);
+    
     if (err) {
         error_report_err(err);
     }

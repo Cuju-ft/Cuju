@@ -20,6 +20,7 @@
 #include "qemu/sockets.h"
 #ifdef CONFIG_EPOLL_CREATE1
 #include <sys/epoll.h>
+#include "kvm_blk.h"
 #endif
 
 struct AioHandler
@@ -42,7 +43,7 @@ static bool ft_pause;
 
 /* The fd number threashold to switch to epoll */
 #define EPOLL_ENABLE_THRESHOLD 64
-
+int testfd = 0;
 static void aio_epoll_disable(AioContext *ctx)
 {
     ctx->epoll_available = false;
@@ -218,7 +219,6 @@ void aio_set_fd_handler(AioContext *ctx,
         if (node == NULL) {
             return;
         }
-
         g_source_remove_poll(&ctx->source, &node->pfd);
 
         /* If the lock is held, just mark the node as deleted */
@@ -234,7 +234,7 @@ void aio_set_fd_handler(AioContext *ctx,
             deleted = true;
         }
     } else {
-        if (node == NULL) {
+       if (node == NULL) {
             /* Alloc and insert if it's not already there */
             node = g_new0(AioHandler, 1);
             node->pfd.fd = fd;
@@ -243,16 +243,13 @@ void aio_set_fd_handler(AioContext *ctx,
             g_source_add_poll(&ctx->source, &node->pfd);
             is_new = true;
         }
-        /* Update handler with latest information */
-        node->io_read = io_read;
-        node->io_write = io_write;
+        node->io_read  = (io_read == CUJU_IO_HANDLER_KEEP ? node->io_read : io_read);
+        node->io_write = (io_write == CUJU_IO_HANDLER_KEEP ? node->io_write : io_write);
         node->opaque = opaque;
         node->is_external = is_external;
-
         node->pfd.events = (io_read ? G_IO_IN | G_IO_HUP | G_IO_ERR : 0);
         node->pfd.events |= (io_write ? G_IO_OUT | G_IO_ERR : 0);
     }
-
     aio_epoll_update(ctx, node, is_new);
     aio_notify(ctx);
     if (deleted) {
@@ -338,7 +335,7 @@ bool aio_dispatch(AioContext *ctx)
     node = QLIST_FIRST(&ctx->aio_handlers);
     while (node) {
         // For CUJU-FT
-        if (qemu_iohandler_is_ft_paused() && !node->mig_survive) {
+        if (qemu_iohandler_is_ft_paused() && !node->mig_survive) { 
             node = QLIST_NEXT(node, node);
             continue;
         }
@@ -362,6 +359,7 @@ bool aio_dispatch(AioContext *ctx)
                 progress = true;
             }
         }
+
         if (!node->deleted &&
             (revents & (G_IO_OUT | G_IO_ERR)) &&
             aio_node_check(ctx, node->is_external) &&

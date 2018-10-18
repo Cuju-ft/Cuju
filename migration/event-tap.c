@@ -24,6 +24,7 @@
 #include "migration/cuju-ft-trans-file.h"
 #include "migration/migration.h"
 #include <linux/kvm.h>
+#include "kvm_blk.h"
 
 #define DEBUG_EVENT_TAP
 
@@ -44,7 +45,7 @@
     do { } while (0)
 #endif
 
-
+static int bdrv_direct_rw = 1;
 
 
 static int bdrv_write_through = 0;
@@ -972,3 +973,190 @@ void event_tap_init(void)
 
     vmstate = qemu_add_vm_change_state_handler(event_tap_replay, NULL);
 }
+BlockAIOCB *blk_aio_preadv_proxy(BlockBackend *blk, int64_t offset,
+                           QEMUIOVector *qiov, BdrvRequestFlags flags,
+                           BlockCompletionFunc *cb, void *opaque){
+    if (kvm_blk_session) {
+        // we no longer track block r/w requests because virtio-blk is taking care of it.
+        kvm_blk_aio_readv(blk, offset, qiov, flags, cb, opaque);
+        return &dummy_acb;
+    }
+
+    goto out;
+
+    if (bdrv_direct_rw)
+      goto out;
+    if (event_tap_state == EVENT_TAP_ON) {
+        EventTapLog *log;
+        EventTapBlkReq *blk_req;
+        int fast_read = 0;
+
+        QTAILQ_FOREACH(log, &event_list_pending, node) {
+            if ( (log->mode & ~EVENT_TAP_TYPE_MASK) == EVENT_TAP_BLK ) {
+                blk_req = &log->blk_req;
+                if ( offset >= blk_req->reqs[0].offset+blk_req->reqs[0].qiov->size/512
+                        || blk_req->reqs[0].offset >= offset + qiov->size/512 )
+                    continue;
+
+                if ( offset >= blk_req->reqs[0].offset && (offset + qiov->size)
+                                <= (blk_req->reqs[0].offset + blk_req->reqs[0].qiov->size/512) ) {
+                    qemu_iovec_copy_sup(qiov, 0, &blk_req->qiov[0],
+                                    (offset - blk_req->reqs[0].offset) * 512,
+                                    qiov->size);
+                    fast_read = 1;
+                }
+            }
+        }
+
+        QTAILQ_FOREACH(log, event_list_old, node) {
+            if ( (log->mode & ~EVENT_TAP_TYPE_MASK) == EVENT_TAP_BLK ) {
+                blk_req = &log->blk_req;
+                if ( offset >= blk_req->reqs[0].offset+blk_req->reqs[0].qiov->size/512
+                        || blk_req->reqs[0].offset >= offset + qiov->size/512 )
+                    continue;
+                //printf("%s existing %lld:%d read %lld:%d\n", __func__,
+                //    blk_req->reqs[0].sector, blk_req->reqs[0].nb_sectors,
+                //    sector_num, nb_sectors);
+                if ( offset >= blk_req->reqs[0].offset && (offset + qiov->size/512)
+                                <= (blk_req->reqs[0].offset + blk_req->reqs[0].qiov->size/512) ) {
+                    qemu_iovec_copy_sup(qiov, 0, &blk_req->qiov[0],
+                                    (offset - blk_req->reqs[0].offset) * 512,
+                                    qiov->size );
+                    fast_read = 1;
+                }
+            }
+        }
+
+        QTAILQ_FOREACH(log, event_list, node) {
+            if ( (log->mode & ~EVENT_TAP_TYPE_MASK) == EVENT_TAP_BLK ) {
+                blk_req = &log->blk_req;
+                if ( offset >= blk_req->reqs[0].offset+blk_req->reqs[0].qiov->size/512
+                        || blk_req->reqs[0].offset >= offset + qiov->size/512 )
+                    continue;
+                //printf("%s existing %lld:%d read %lld:%d\n", __func__,
+                //    blk_req->reqs[0].sector, blk_req->reqs[0].nb_sectors,
+                //    sector_num, nb_sectors);
+                if ( offset >= blk_req->reqs[0].offset && (offset + qiov->size/512)
+                                <= (blk_req->reqs[0].offset + blk_req->reqs[0].qiov->size/512) ) {
+                    qemu_iovec_copy_sup(qiov, 0, &blk_req->qiov[0],
+                                    (offset - blk_req->reqs[0].offset) * 512,
+                                    qiov->size);
+                    fast_read = 1;
+                }
+            }
+        }
+
+        if (fast_read == 1) {
+            EventTapBlkReadReq *req = g_malloc0(sizeof(EventTapBlkReadReq));
+            req->req.offset = offset;
+            req->req.qiov->size = qiov->size/512;
+            req->req.qiov = qiov;
+            req->req.cb = cb;
+            req->req.opaque = opaque;
+            req->bh = qemu_bh_new(event_tap_bh_read_fast, req);
+            qemu_bh_schedule(req->bh);
+            //printf("%s fast copy\n", __func__);
+            return &dummy_acb;
+        }
+    }
+out:
+    return blk_aio_preadv(blk, offset<< BDRV_SECTOR_BITS, qiov, flags, cb, opaque);
+}
+
+BlockAIOCB *blk_aio_pwritev_proxy(BlockBackend *blk, int64_t offset,
+                            QEMUIOVector *qiov, BdrvRequestFlags flags,
+                            BlockCompletionFunc *cb, void *opaque)
+{
+    if (kvm_blk_session){
+        kvm_blk_aio_write(blk, offset, qiov, flags, cb, opaque);
+        return &dummy_acb;
+    }
+    if (bdrv_direct_rw)
+      goto out;
+out:
+    blk_aio_pwritev(blk, offset, qiov, flags, cb, opaque);
+    return &dummy_acb;
+    
+
+
+}
+void event_tap_bh_read_fast(void *p)
+{
+    EventTapBlkReadReq *req = p;
+    req->req.cb(req->req.opaque, 0);
+    qemu_bh_delete(req->bh);
+    g_free(req);
+}
+/*
+void bdrv_event_tap(BlockDriverState *bs, BlockRequest *reqs,
+                           int num_reqs, bool is_multiwrite)
+{
+    EventTapLog *log = last_event_tap;
+    //int empty;
+
+    // yifeng
+    // take over iov->iov_bases with our_iov
+    // let iov.niov = 0, qemu_iovec_reset(iov)
+    // report write completion by calling cb(opaque, 0)
+    
+    // when flush buffer
+    // call bdrv_aio_writev(bs, sector_num, our_iov, nb_sectors, our_cb, opaque);
+    // out_cb(opaque, error) will check the error, free iov
+
+    if (!log) {
+        //DPRINTF("no last_event_tap\n");
+        log = event_tap_alloc_log();
+    }
+
+    assert(!(log->mode & ~EVENT_TAP_TYPE_MASK));
+
+    if (log->mode & ~EVENT_TAP_TYPE_MASK) {
+        DPRINTF("last_event_tap already used\n");
+        return;
+    }
+
+
+    log->mode |= EVENT_TAP_BLK;
+    event_tap_alloc_blk_req(&log->blk_req, bs, reqs, num_reqs, event_tap_blk_cb,
+                            &log->blk_req, is_multiwrite);
+
+    //empty = QTAILQ_EMPTY(event_list); 
+    QTAILQ_INSERT_TAIL(event_list, log, node);
+    ++pending_bdrv_request;
+    last_event_tap = NULL;
+
+    printf("%s BLK write appended: %p %d\n", __func__, &log->blk_req, pending_bdrv_request);
+}*/
+/*
+static void event_tap_alloc_blk_req(EventTapBlkReq *blk_req,
+                                    BlockDriverState *bs, BlockRequest *reqs,
+                                    int num_reqs, BlockCompletionFunc *cb,
+                                    void *opaque, bool is_multiwrite)
+{
+    int i;
+
+    blk_req->num_reqs = num_reqs;
+    blk_req->num_cbs = num_reqs;
+    blk_req->left_req = num_reqs;
+    blk_req->device_name = g_strdup(bs->device_name);
+    blk_req->is_multiwrite = is_multiwrite;
+
+    //printf("%s %p %d\n", __func__, blk_req, blk_req->left_req);
+    //assert(num_reqs <= 1);
+
+    // when flush buffer
+    // call bdrv_aio_writev(bs, sector_num, our_iov, nb_sectors, our_cb, opaque);
+    // our_cb(opaque, error) will check the error, free iov
+
+    for (i = 0; i < num_reqs; i++) {
+        blk_req->reqs[i] = reqs[i];
+        // backup original callbacks
+        blk_req->cb[i] = reqs[i].cb;
+        blk_req->opaque[i] = reqs[i].opaque;
+        // replace with our callbacks
+        blk_req->reqs[i].cb = cb;
+        blk_req->reqs[i].opaque = opaque;
+    }
+    //blk_req->bh = qemu_bh_new(event_tap_blk_submit_req, blk_req);
+    //qemu_bh_schedule(blk_req->bh);
+}*/
