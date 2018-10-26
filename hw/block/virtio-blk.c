@@ -53,7 +53,7 @@ static void confirm_req_read_memory_mapped(VirtIOBlockReq *req)
         virtqueue_mark_dirty(req->elem.in_sg, req->elem.in_addr, req->elem.in_num);
     }
 }
-
+/*
 static void virtio_blk_save_write_head(VirtIOBlock *s, VirtIOBlockReq *req, unsigned int head)
 {
     if (s->temp_list == NULL) {
@@ -77,7 +77,7 @@ static void virtio_blk_save_write_head(VirtIOBlock *s, VirtIOBlockReq *req, unsi
     s->temp_list->len++;
     req->record = s->temp_list;
 }
-
+*/
 void* virtio_blk_get_temp_list(void)
 {
     VirtIOBlock *s = global_virtio_block;
@@ -123,7 +123,7 @@ void virtio_blk_commit_temp_list(void* opaque)
     if (temp_list != NULL) {
         VirtIOBlock *s = global_virtio_block;
         ReqRecordCommit *c;
-        QTAILQ_INSERT_TAIL(&s->record_list, temp_list, node);
+ //       QTAILQ_INSERT_TAIL(&s->record_list, temp_list, node); //temp_list
         c = g_malloc(sizeof(ReqRecordCommit));
         c->req = temp_list;
         c->bh = qemu_bh_new(virtio_blk_flush_bh, c);
@@ -791,7 +791,7 @@ static int virtio_blk_handle_request(VirtIOBlockReq *req, MultiReqBuffer *mrb, u
             trace_virtio_blk_handle_write(req, req->sector_num,
                                           req->qiov.size / BDRV_SECTOR_SIZE);
 			if (kvmft_started()) {
-				virtio_blk_save_write_head(s, req, head);
+				//virtio_blk_save_write_head(s, req, head);         //temp_list
 #ifdef CONFIG_EPOCH_OUTPUT_TRIGGER
 				extern kvmft_notify_new_output();
 				kvmft_notify_new_output();
@@ -1114,11 +1114,11 @@ static void virtio_blk_save_device(VirtIODevice *vdev, QEMUFile *f)
     VirtIOBlock *s = VIRTIO_BLK(vdev);
 
     VirtIOBlockReq *req = s->rq;
-    ReqRecord *rec;
-    int i;
+    //ReqRecord *rec;   temp_list
+    //int i;
 
-    // send temp_list and record_list to slave.
-    QTAILQ_FOREACH(rec, &s->record_list, node) {
+    // send temp_list and record_list to slave. //temp_list
+    /*QTAILQ_FOREACH(rec, &s->record_list, node) {
         int nsend = 0; // debugging
         qemu_put_sbyte(f, 3);
         qemu_put_be32(f, rec->left);
@@ -1138,7 +1138,7 @@ static void virtio_blk_save_device(VirtIODevice *vdev, QEMUFile *f)
             qemu_put_be32(f, s->temp_list->list[i]);
             qemu_put_be32(f, s->temp_list->idx[i]);
         }
-    }
+    }*/
 
     req = s->pending_rq;
     while (req) {
