@@ -1353,6 +1353,9 @@ struct kvm_shmem_mark_page_dirty {
 #define KVM_SHM_ADJUST_DIRTY_TRACKING       _IOW(KVMIO,  0xc8, __u32)
 #define KVM_FT_WRITE_PROTECT_DIRTY        _IOW(KVMIO,  0xc9, __u32)
 #define KVM_SHM_ADJUST_EPOCH              _IOW(KVMIO,  0xca, __u32)
+#define KVM_GET_PUT_OFF                   _IOW(KVMIO,  0xd1, int)
+#define KVM_RESET_PUT_OFF                 _IOW(KVMIO,  0xd2, int)
+
 struct kvm_shmem_extend {
   // output from kvm to qemu
   unsigned long page_nums_size;

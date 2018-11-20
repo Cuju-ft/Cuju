@@ -3059,7 +3059,6 @@ int main(int argc, char **argv, char **envp)
     bool list_data_dirs = false;
     const char *blk_server_listen = NULL;
 
-    kvmft_pre_init();
 
     signal(SIGPIPE, SIG_IGN);
 

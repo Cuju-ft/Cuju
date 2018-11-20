@@ -3059,6 +3059,7 @@ static long kvm_vm_ioctl(struct file *filp,
 	struct kvm *kvm = filp->private_data;
 	void   *argp = (void   *)arg;
 	int r;
+	int __cur_index;
 
 	if (kvm->mm != current->mm)
 		return -EIO;
@@ -3187,6 +3188,16 @@ static long kvm_vm_ioctl(struct file *filp,
             goto out;
         break;
     }
+    case KVM_GET_PUT_OFF:
+        if (copy_from_user(&__cur_index, argp, sizeof(__cur_index)))
+            goto out;
+        r = kvm_get_put_off(kvm, __cur_index);
+        break;
+    case KVM_RESET_PUT_OFF:
+        if (copy_from_user(&__cur_index, argp, sizeof(__cur_index)))
+            goto out;
+        r = kvm_reset_put_off(kvm, __cur_index);
+        break;
     case KVM_SHM_ENABLE: {
         r = kvm_shm_enable(kvm);
         if (r)

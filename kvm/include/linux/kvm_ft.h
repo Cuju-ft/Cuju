@@ -143,7 +143,8 @@ int kvm_vm_ioctl_ft_write_protect_dirty(struct kvm *kvm, __u32 cur_index);
 int kvm_vm_ioctl_clear_dirty_bitmap(struct kvm *kvm, __u32 cur_index);
 int kvm_vm_ioctl_adjust_dirty_tracking(struct kvm* kvm, int diff);
 int kvm_vm_ioctl_adjust_epoch(struct kvm* kvm, unsigned long newepoch);
-
+unsigned long kvm_get_put_off(struct kvm *kvm, int cur_index);
+int kvm_reset_put_off(struct kvm *kvm, int cur_index);
 
 int kvmft_vcpu_alloc_shared_all_state(struct kvm_vcpu *vcpu,
         struct kvm_vcpu_get_shared_all_state *state);

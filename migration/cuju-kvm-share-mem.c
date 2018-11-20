@@ -121,13 +121,9 @@ static struct trans_ram_conn_descriptor {
 struct dirty_page_tracking_logs dirty_page_tracking_logs;
 
 static void*** page_array;
-static struct kvmft_dirty_list **shared_snapshot_pfns;
 static int bitmap_count;
 
 static int ft_started = 0;
-
-// fd for /dev/mem
-static int ram_fd = -1;
 
 static unsigned int epoch_time_in_us = EPOCH_TIME_IN_MS * 1000;
 
@@ -152,8 +148,7 @@ void qmp_cuju_adjust_epoch(uint32_t epoch, Error **errp) {
 
 void dirty_page_tracking_logs_start_transfer(MigrationState *s)
 {
-    struct kvmft_dirty_list *dlist =
-        shared_snapshot_pfns[s->cur_off];
+	int cur_off;
     int next_log_off = (dirty_page_tracking_logs.log_off + 1) %
         DIRTY_PAGE_TRACKING_LOG_SIZE;
     struct dirty_page_tracking_log *next_log =
@@ -163,7 +158,10 @@ void dirty_page_tracking_logs_start_transfer(MigrationState *s)
     dirty_page_tracking_logs.total_page_nums -= next_log->page_nums;
     dirty_page_tracking_logs.total_transfer_time_us -=
         next_log->transfer_time_us;
-    next_log->page_nums = dlist->put_off;
+
+    cur_off = s->cur_off;
+    next_log->page_nums = kvm_vm_ioctl(kvm_state, KVM_GET_PUT_OFF, &cur_off);
+
     qemu_gettimeofday(&timeval);
     next_log->transfer_time_us = TIMEVAL_TO_US(timeval);
     dirty_page_tracking_logs.log_off = next_log_off;
@@ -178,25 +176,6 @@ void dirty_page_tracking_logs_start_flush_output(MigrationState *s)
 
     qemu_gettimeofday(&timeval);
     log->transfer_time_us = TIMEVAL_TO_US(timeval) - log->transfer_time_us;
-}
-
-void dirty_page_tracking_logs_commit(MigrationState *s)
-{
-    struct kvmft_dirty_list *dlist =
-        shared_snapshot_pfns[s->cur_off];
-    struct dirty_page_tracking_log *log =
-        &dirty_page_tracking_logs.logs[s->dirty_page_tracking_logs_off];
-
-    dlist->dirty_stop_num = SHARED_DIRTY_WATERMARK;
-    return;
-
-    dirty_page_tracking_logs.total_page_nums += log->page_nums;
-    dirty_page_tracking_logs.total_transfer_time_us += log->transfer_time_us;
-
-    dlist->dirty_stop_num = dirty_page_tracking_logs_max(epoch_time_in_us * 2);
-    if (dlist->dirty_stop_num > 1000) {
-        dlist->dirty_stop_num = 1000;
-    }
 }
 
 unsigned int dirty_page_tracking_logs_max(int bound_ms)
@@ -227,52 +206,7 @@ static inline size_t socket_send_all(int fd, const char *buf, size_t size)
 }
 
 
-static void *map_pfn(int fd, unsigned long pfn, size_t size)
-{
-  void *ret;
-
-  ret = mmap(0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)pfn*4096);
-  if (ret == MAP_FAILED) {
-    perror("mmap pfn:");
-    exit(-1);
-  }
-
-  return ret;
-}
-
-
-void* kvm_shmem_map_pfn(unsigned long pfn, unsigned long size)
-{
-    assert(ram_fd >= 0);
-    return map_pfn(ram_fd, pfn, size);
-}
-
-void kvm_shmem_unmap_pfn(void *ptr, unsigned long size)
-{
-    int ret;
-    assert(ram_fd >= 0);
-    ret = munmap(ptr, size);
-    if (ret) {
-        perror("munmap failed:");
-        exit(-1);
-    }
-}
-
-
 static void compress_init(void);
-
-void kvmft_pre_init(void)
-{
-    int fd;
-
-    fd = open("/dev/mem", O_RDWR | O_SYNC);
-    if (fd < 0) {
-      perror("Open /dev/mem failed");
-      exit(fd);
-    }
-
-    ram_fd = fd;
-}
 
 // called in vl.c
 void kvm_share_mem_init(unsigned long ram_size)
@@ -308,14 +242,6 @@ void kvm_share_mem_init(unsigned long ram_size)
       exit(ret);
     }
 
-    shared_snapshot_pfns = g_malloc0(sizeof(struct kvmft_dirty_list *)
-                                     * KVM_DIRTY_BITMAP_INIT_COUNT);
-    for (i = 0; i < KVM_DIRTY_BITMAP_INIT_COUNT; i++) {
-        shared_snapshot_pfns[i] = map_pfn(ram_fd,
-            shmem_init.page_nums_pfn_snapshot[i],
-            shmem_init.page_nums_size * 4096);
-    }
-
     page_array = g_malloc0(sizeof(void **) * KVM_DIRTY_BITMAP_INIT_COUNT);
     for (i = 0; i < KVM_DIRTY_BITMAP_INIT_COUNT; i++) {
         page_array[i] = g_malloc0(sizeof(void *) * SHARED_DIRTY_SIZE);
@@ -333,7 +259,7 @@ void kvm_share_mem_init(unsigned long ram_size)
           perror("shmem alloc page: ");
           exit(ret);
         }
-        page_array[i][j] = map_pfn(ram_fd, param.pfn, 4096);
+        //page_array[i][j] = map_pfn(ram_fd, param.pfn, 4096);
       }
     }
 
@@ -740,12 +666,9 @@ static inline int gather_512(char *orig_page, char *curr_page, char *output)
   return header;
 }
 
-#define VMFT_CPUSET_DIR	"/dev/cgroup/vmft/"
-
 
 static void compress_init(void)
 {
-	struct stat statbuf;
     int i;
     char *x1;
     char *x2;
@@ -791,11 +714,6 @@ static void compress_init(void)
     x1[0] = 0;
     printf("cmp_32 %d (should 0)\n", memcmp_sse2_32(x1, x2));
 #endif
-
-	if (stat(VMFT_CPUSET_DIR, &statbuf) != 0) {
-		printf("%s: not found cgroup in %s\n", __func__, VMFT_CPUSET_DIR);
-		exit(-1);
-	}
 
 	compress_buf = memalign(4096, 4096);
 
@@ -1255,10 +1173,13 @@ void trans_ram_add(MigrationState *s)
 
 void kvm_shmem_send_dirty_kernel(MigrationState *s)
 {
-    struct kvmft_dirty_list *dlist = shared_snapshot_pfns[s->cur_off];
-
-    kvmft_assert_ram_hash_and_dlist(dlist->pages, dlist->put_off);
-    s->dirty_pfns_len = dlist->put_off;
+	int cur_off;
+	int put_off;
+	cur_off = s->cur_off;
+	put_off = kvm_vm_ioctl(kvm_state, KVM_GET_PUT_OFF, &cur_off);
+	//TODO kvmft_assert_ram_hash_and_dlist function should be moved to kernel space
+    //kvmft_assert_ram_hash_and_dlist(dlist->pages, dlist->put_off);
+    s->dirty_pfns_len = put_off;
 
 #ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
     s->dirty_pfns = g_malloc(sizeof(s->dirty_pfns[0]) * s->dirty_pfns_len);
@@ -1271,8 +1192,9 @@ void kvm_shmem_send_dirty_kernel(MigrationState *s)
 
 void kvmft_reset_put_off(MigrationState *s)
 {
-    struct kvmft_dirty_list *dlist = shared_snapshot_pfns[s->cur_off];
-    dlist->put_off = 0;
+	int cur_off;
+	cur_off = s->cur_off;
+	kvm_vm_ioctl(kvm_state, KVM_RESET_PUT_OFF, &cur_off);
 }
 
 static void load_8x8_page(char *host, char *buf, char *header, int size)

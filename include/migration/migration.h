@@ -489,7 +489,6 @@ MigrationState *migrate_by_index(int index);
 void kvmft_calc_ram_hash(void);
 void dirty_page_tracking_logs_start_transfer(MigrationState *s);
 void dirty_page_tracking_logs_start_flush_output(MigrationState *s);
-void dirty_page_tracking_logs_commit(MigrationState *s);
 unsigned int dirty_page_tracking_logs_max(int bound_ms);
 
 void kvmft_tick_func(void);

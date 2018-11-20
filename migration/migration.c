@@ -3376,7 +3376,6 @@ static void migrate_timer(void *opaque)
     s->ram_len = 0;
     kvm_shmem_send_dirty_kernel(s);
 
-    dirty_page_tracking_logs_commit(s);
     dirty_page_tracking_logs_start_transfer(s);
 
     assert(!kvmft_write_protect_dirty_pages(s->cur_off));

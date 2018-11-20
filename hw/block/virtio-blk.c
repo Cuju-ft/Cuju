@@ -53,7 +53,7 @@ static void confirm_req_read_memory_mapped(VirtIOBlockReq *req)
         virtqueue_mark_dirty(req->elem.in_sg, req->elem.in_addr, req->elem.in_num);
     }
 }
-
+/*
 static void virtio_blk_save_write_head(VirtIOBlock *s, VirtIOBlockReq *req, unsigned int head)
 {
     if (s->temp_list == NULL) {
@@ -77,7 +77,7 @@ static void virtio_blk_save_write_head(VirtIOBlock *s, VirtIOBlockReq *req, unsi
     s->temp_list->len++;
     req->record = s->temp_list;
 }
-
+*/
 void* virtio_blk_get_temp_list(void)
 {
     VirtIOBlock *s = global_virtio_block;
@@ -658,7 +658,7 @@ static void virtio_blk_submit_multireq(BlockBackend *blk, MultiReqBuffer *mrb)
              * 2. merge would exceed maximum number of IOVs
              * 3. merge would exceed maximum transfer length of backend device
              */
-            if (kvmft_started() || sector_num + nb_sectors != req->sector_num ||
+						if (sector_num + nb_sectors != req->sector_num ||
                 niov > blk_get_max_iov(blk) - req->qiov.niov ||
                 req->qiov.size > max_transfer ||
                 nb_sectors > (max_transfer -
