@@ -86,6 +86,9 @@ struct kvm_blk_request {
     int num_reqs;
 
     int ret_fast_read;
+		
+		struct kvm_blk_request *next;
+		struct kvm_blk_request *prev;
 
     QTAILQ_ENTRY(kvm_blk_request) node;
 };
@@ -189,5 +192,8 @@ static inline void kvm_blk_set_ack_cb(KvmBlkSession *s,
 static inline bool kvm_blk_check_ack_cb(KvmBlkSession *s) {
     return s->ack_cb != NULL;
 }
+
+//send write callback to client
+void kvm_blk_server_wcallback(KvmBlkSession *s);
 
 #endif

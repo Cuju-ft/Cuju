@@ -14,6 +14,7 @@
 extern QTAILQ_HEAD(, BlockDriverState) all_bdrv_states;
 
 
+#define BLK_SERVER_WRITE_CALLBACK_LIMIT 300
 #define BLK_SERVER_SESSION_INIT_BUF  4096000
 
 KvmBlkSession *kvm_blk_session = NULL;
@@ -22,6 +23,10 @@ bool kvm_blk_is_server = false;
 uint32_t write_request_id = 0;
 
 uint32_t debug_flag = 0;
+
+int wreq_quota;
+struct kvm_blk_request *wreq_head,*wreq_last;
+
 static inline int kvm_blk_recv_header(KvmBlkSession *s)
 {
     int retval;
@@ -280,6 +285,10 @@ int kvm_blk_server_init(const char *p)
     }
     if (s <= 0)
         return -1;
+
+		wreq_quota = BLK_SERVER_WRITE_CALLBACK_LIMIT; 
+		wreq_head = NULL;
+		wreq_last = NULL;
     assert(!qemu_iohandler_is_ft_paused());
     qemu_set_fd_handler(s,kvm_blk_accept,NULL,(void *)(intptr_t)s);
     return 0;

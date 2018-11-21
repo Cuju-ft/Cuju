@@ -36,6 +36,7 @@ int kvm_blk_client_handle_cmd(void *opaque)
 
 	// handle WRITE
 	if (s->recv_hdr.cmd == KVM_BLK_CMD_WRITE) {
+				br->cb(br->opaque, 0);
         // for quick write
         goto out;
 	}
@@ -147,7 +148,7 @@ struct kvm_blk_request *kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,Q
 	kvm_blk_output_flush(s);
 
     qemu_mutex_unlock(&s->mutex);
-	cb(opaque, 0);
+	//cb(opaque, 0);
 
 	return br;
 }

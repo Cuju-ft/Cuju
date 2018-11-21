@@ -2,6 +2,42 @@
 #include "qemu/thread.h"
 #include "qemu/typedefs.h"
 extern uint32_t debug_flag;
+extern int wreq_quota;
+extern struct kvm_blk_request *wreq_head,*wreq_last;
+
+void kvm_blk_server_wcallback(KvmBlkSession *s) {
+		struct kvm_blk_request *br;
+
+		//error handle
+		if(wreq_head == NULL) {
+				printf("Error:wreq null");
+				return ;
+		}
+		//remove from wreq list
+		br = wreq_head;
+		if(wreq_head->next == NULL) {
+				wreq_head = NULL;
+				wreq_last = NULL;
+		}
+		else { 
+				wreq_head = wreq_head->next;
+				wreq_head->prev = NULL;
+		}
+		//callback to client
+		s->send_hdr.cmd = KVM_BLK_CMD_WRITE;
+		s->send_hdr.id = br->id;
+		s->send_hdr.payload_len = 0;
+		s->send_hdr.num_reqs = 0;
+		kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
+		if (debug_flag == 1) {
+				debug_printf("send write ack.\n");                      
+		}
+		kvm_blk_output_flush(s);
+		
+		//free br
+		free(br);
+}
+
 void kvm_blk_server_internal_init(KvmBlkSession *s)
 {
     QTAILQ_INIT(&s->request_list);
@@ -73,8 +109,8 @@ static void kvm_blk_rw_cb(void *opaque, int ret)
     				__func__, br, br->cmd, ret);
     }
 
-    s->send_hdr.cmd = br->cmd;
-    s->send_hdr.id = br->id;
+    //s->send_hdr.cmd = br->cmd;
+    //s->send_hdr.id = br->id;
 
     if (debug_flag == 1) {
     	QTAILQ_FOREACH(p, &s->request_list, node) {
@@ -83,33 +119,43 @@ static void kvm_blk_rw_cb(void *opaque, int ret)
     }
 
     if (ret < 0) {
+				s->send_hdr.cmd = br->cmd;
+				s->send_hdr.id = br->id;
         s->send_hdr.payload_len = ret;
         kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
-        goto out;
+        kvm_blk_output_flush(s);
+				goto out;
     }
 
     switch (br->cmd) {
         case KVM_BLK_CMD_READ: {
 			if (br->ret_fast_read == KVM_BLK_RW_PARTIAL)
 				kvm_blk_fast_readv(s, br);
+						s->send_hdr.cmd = br->cmd;
+						s->send_hdr.id = br->id;
             s->send_hdr.payload_len = br->nb_sectors;
             kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
             kvm_blk_output_append_iov(s, &br->iov);            
             if (debug_flag == 1) {
                 debug_printf("send back read %d\n", (int)br->iov.size);
             }
+						kvm_blk_output_flush(s);
             break;
         }
         case KVM_BLK_CMD_WRITE: {
             if (--br->num_reqs)
                 return;
-            s->send_hdr.payload_len = 0;
-            s->send_hdr.num_reqs = 0;
-            kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
+						//TODO:s is br->session if fall over;
+						if(wreq_quota < 0)
+								kvm_blk_server_wcallback(s);
+						++wreq_quota;
+            //s->send_hdr.payload_len = 0;
+            //s->send_hdr.num_reqs = 0;
+            //kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
             // TODO free reqs, iov bufs            
-            if (debug_flag == 1) {
-                debug_printf("send write ack.\n");
-            }
+            //if (debug_flag == 1) {
+            //    debug_printf("send write ack.\n");
+            //}
             break;
         }
         default: {
@@ -119,7 +165,7 @@ static void kvm_blk_rw_cb(void *opaque, int ret)
     }
 
 out:
-    kvm_blk_output_flush(s);
+    //kvm_blk_output_flush(s);
 
     QTAILQ_REMOVE(&s->request_list, br, node);
 
@@ -326,6 +372,8 @@ int kvm_blk_serv_handle_cmd(void *opaque)
         struct kvm_blk_read_control c;
         void *new_buf;
         int len;
+				struct kvm_blk_request *wbr;
+
         ret = kvm_blk_recv(s, &c, sizeof(c));
         if (ret != sizeof(c))
             return -EINVAL;
@@ -353,6 +401,27 @@ int kvm_blk_serv_handle_cmd(void *opaque)
         
         qemu_iovec_add(br->piov, new_buf, len);
         QTAILQ_INSERT_TAIL(&s->request_list, br, node);
+				
+				//handle write call back : init wbr
+				wbr = g_malloc0(sizeof(*br));
+				memcpy(wbr,br,sizeof(*br));
+				wbr->next = NULL;
+				wbr->prev = NULL;
+				//insert wbr to wreq list for server call back
+				if(wreq_head == NULL) {
+						wreq_head = wbr;
+						wreq_last = wbr;
+				}
+				else {
+						wbr->prev = wreq_last;
+						wreq_last->next = wbr;
+						wreq_last = wbr;
+				}
+				//weather to call back or not
+				if(wreq_quota > 0) 
+						kvm_blk_server_wcallback(s);
+				--wreq_quota;
+						
 
         if (!s->ft_mode) {
             blk = blk_new();
