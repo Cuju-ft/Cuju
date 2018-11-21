@@ -234,7 +234,6 @@ printf("accepted blk client %d.\n", c);
 
     // read latest write_request_id
     recv(c, &wid, sizeof(wid), 0);    
-    printf("accepted wid %d\n", wid);
     session->sockfd = c;
     session->ft_mode = 0;
     session->bs = QTAILQ_FIRST(&all_bdrv_states);
