@@ -804,6 +804,7 @@ static int virtio_blk_handle_request(VirtIOBlockReq *req, MultiReqBuffer *mrb, u
                                           req->qiov.size / BDRV_SECTOR_SIZE);
 
 			if (kvmft_started()) {
+
                 if(!check_is_blk){
                     virtio_blk_save_write_head(s, req, head);         //temp_list
 #ifdef CONFIG_EPOCH_OUTPUT_TRIGGER

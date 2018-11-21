@@ -806,6 +806,7 @@ static int cuju_ft_trans_close(void *opaque)
         
         cuju_ft_mode = CUJU_FT_TRANSACTION_HANDOVER;
         vm_start();
+        printf("%s vm_started.\n", __func__);
     }
 
     return ret;

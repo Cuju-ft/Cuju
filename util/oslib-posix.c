@@ -38,7 +38,6 @@
 #include <libgen.h>
 #include <sys/signal.h>
 #include "qemu/cutils.h"
-
 #ifdef CONFIG_LINUX
 #include <sys/syscall.h>
 #endif
@@ -530,7 +529,6 @@ pid_t qemu_fork(Error **errp)
     }
     return pid;
 }
-
 void *qemu_alloc_stack(size_t *sz)
 {
     void *ptr, *guardpage;
@@ -547,7 +545,6 @@ void *qemu_alloc_stack(size_t *sz)
     *sz = ROUND_UP(*sz, pagesz);
     /* allocate one extra page for the guard page */
     *sz += pagesz;
-
     ptr = mmap(NULL, *sz, PROT_READ | PROT_WRITE,
                MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (ptr == MAP_FAILED) {
@@ -600,6 +597,5 @@ void qemu_free_stack(void *stack, size_t sz)
         max_stack_usage = usage;
     }
 #endif
-
     munmap(stack, sz);
 }

@@ -605,8 +605,11 @@ InetSocketAddress *inet_parse(const char *str, Error **errp)
             addr->ipv4 = addr->has_ipv4 = true;
         }
     }
+
     addr->host = g_strdup(host);
     addr->port = g_strdup(port);
+    printf("host = %s\n",addr->host );
+    printf("port = %s\n",addr->port );
 
     /* parse options */
     optstr = str + pos;
