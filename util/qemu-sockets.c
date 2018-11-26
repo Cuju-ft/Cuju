@@ -227,7 +227,7 @@ static int inet_listen_saddr(InetSocketAddress *saddr,
     return -1;
 
 listen:
-    if (listen(slisten,1) != 0) {
+    if (listen(slisten,10) != 0) {
         error_setg_errno(errp, errno, "Failed to listen on socket");
         closesocket(slisten);
         freeaddrinfo(res);
