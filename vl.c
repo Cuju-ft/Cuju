@@ -217,6 +217,8 @@ enum xen_mode xen_mode = XEN_EMULATE;
 int ft_join_port = 5000;
 int my_gft_id = -1;
 int ft_ram_conn_count = 1;
+//for blk server
+extern bool check_is_blk ;
 
 static int has_defaults = 1;
 static int default_serial = 1;
@@ -4539,6 +4541,7 @@ int main(int argc, char **argv, char **envp)
     parse_numa_opts(machine_class);
     if (blk_server_listen) {
         int ret = kvm_blk_server_init(blk_server_listen);
+        printf("block server init\n");
         if (ret < 0)
           exit(ret);
         os_setup_post();
@@ -4746,12 +4749,14 @@ int main(int argc, char **argv, char **envp)
     kvm_share_mem_init(ram_size);
 #endif
 
-    assert(!gft_init(ft_join_port));
+    //assert(!gft_init(ft_join_port));
 
 	printf("VM init finished\n");
 
     if (!incoming && blk_server) {
         int ret = kvm_blk_client_init(blk_server);
+        check_is_blk = true;
+        printf("client_ret:%d\n", ret);
         if (ret < 0)
           exit(ret);
     }

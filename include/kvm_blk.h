@@ -124,6 +124,7 @@ typedef struct kvm_blk_session {
 
     int id;
     int ft_mode;
+
 } KvmBlkSession;
 
 struct kvm_blk_read_control {

@@ -46,7 +46,7 @@ extern void kvm_shmem_load_ram(void *buf, int size);
 extern void kvm_shmem_load_ram_with_hdr(void *buf, int size, void *hdr_buf, int hdr_size);
 
 char *blk_server = NULL;
-
+extern bool check_is_blk;
 
 static CujuQEMUFileFtTrans **cuju_ft_trans;
 static int cuju_ft_trans_count;
@@ -798,6 +798,7 @@ static int cuju_ft_trans_close(void *opaque)
         vm_state_notify(1, RUN_STATE_RUNNING);
         if (blk_server) {
             int ret = kvm_blk_client_init(blk_server);
+            check_is_blk = true;
             if (ret < 0) {
                 exit(ret);
             }
@@ -805,6 +806,7 @@ static int cuju_ft_trans_close(void *opaque)
         
         cuju_ft_mode = CUJU_FT_TRANSACTION_HANDOVER;
         vm_start();
+        printf("%s vm_started.\n", __func__);
     }
 
     return ret;

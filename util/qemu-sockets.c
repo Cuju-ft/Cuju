@@ -605,6 +605,7 @@ InetSocketAddress *inet_parse(const char *str, Error **errp)
             addr->ipv4 = addr->has_ipv4 = true;
         }
     }
+
     addr->host = g_strdup(host);
     addr->port = g_strdup(port);
 

@@ -111,7 +111,6 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockBackend *blk,
 
 	return br;
 }
-
 struct kvm_blk_request *kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque){
 	KvmBlkSession *s = kvm_blk_session;
 	struct kvm_blk_read_control c;

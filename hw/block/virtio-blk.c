@@ -35,7 +35,7 @@
 // TODO there may be multiple virtual blocks, but for now we only need
 // to prove that retry-method works for one virtual block.
 VirtIOBlock *global_virtio_block;
-
+bool check_is_blk = false;
 static void confirm_req_read_memory_mapped(VirtIOBlockReq *req)
 {
     if (req->in == NULL) {
@@ -123,7 +123,7 @@ void virtio_blk_commit_temp_list(void* opaque)
     if (temp_list != NULL) {
         VirtIOBlock *s = global_virtio_block;
         ReqRecordCommit *c;
-        QTAILQ_INSERT_TAIL(&s->record_list, temp_list, node);
+        QTAILQ_INSERT_TAIL(&s->record_list, temp_list, node); //temp_list
         c = g_malloc(sizeof(ReqRecordCommit));
         c->req = temp_list;
         c->bh = qemu_bh_new(virtio_blk_flush_bh, c);
@@ -592,15 +592,27 @@ static inline void submit_requests(BlockBackend *blk, MultiReqBuffer *mrb,
                               is_write ? BLOCK_ACCT_WRITE : BLOCK_ACCT_READ,
                               num_reqs - 1);
     }
+    if(check_is_blk){
+        if (is_write) {
+            blk_aio_pwritev_proxy(blk, sector_num<< BDRV_SECTOR_BITS , qiov, 0,
+                           virtio_blk_rw_complete, mrb->reqs[start]);
+        } else {
 
-    if (is_write) {
-        blk_aio_pwritev_proxy(blk, sector_num<< BDRV_SECTOR_BITS , qiov, 0,
-                       virtio_blk_rw_complete, mrb->reqs[start]);
-    } else {
+            blk_aio_preadv_proxy(blk, sector_num<< BDRV_SECTOR_BITS, qiov, 0,
+                           virtio_blk_rw_complete, mrb->reqs[start]);
+        }
+    }else{
+        if (is_write) {
+            blk_aio_pwritev(blk, sector_num<< BDRV_SECTOR_BITS , qiov, 0,
+                           virtio_blk_rw_complete, mrb->reqs[start]);
+        } else {
 
-        blk_aio_preadv_proxy(blk, sector_num<< BDRV_SECTOR_BITS, qiov, 0,
-                       virtio_blk_rw_complete, mrb->reqs[start]);
+            blk_aio_preadv(blk, sector_num<< BDRV_SECTOR_BITS, qiov, 0,
+                           virtio_blk_rw_complete, mrb->reqs[start]);
+        }
+
     }
+    
 }
 
 static int multireq_compare(const void *a, const void *b)
@@ -790,13 +802,17 @@ static int virtio_blk_handle_request(VirtIOBlockReq *req, MultiReqBuffer *mrb, u
             qemu_iovec_init_external(&req->qiov, iov, out_num);
             trace_virtio_blk_handle_write(req, req->sector_num,
                                           req->qiov.size / BDRV_SECTOR_SIZE);
+
 			if (kvmft_started()) {
-				virtio_blk_save_write_head(s, req, head);
+
+                if(!check_is_blk){
+                    virtio_blk_save_write_head(s, req, head);         //temp_list
 #ifdef CONFIG_EPOCH_OUTPUT_TRIGGER
-				extern kvmft_notify_new_output();
-				kvmft_notify_new_output();
+                extern kvmft_notify_new_output();
+                kvmft_notify_new_output();
 #endif
-                break;
+                    break;
+                }
 			}
         } else {
             if (kvmft_started()) {
@@ -1114,10 +1130,10 @@ static void virtio_blk_save_device(VirtIODevice *vdev, QEMUFile *f)
     VirtIOBlock *s = VIRTIO_BLK(vdev);
 
     VirtIOBlockReq *req = s->rq;
-    ReqRecord *rec;
+    ReqRecord *rec;   //temp_list
     int i;
 
-    // send temp_list and record_list to slave.
+    // send temp_list and record_list to slave. //temp_list
     QTAILQ_FOREACH(rec, &s->record_list, node) {
         int nsend = 0; // debugging
         qemu_put_sbyte(f, 3);

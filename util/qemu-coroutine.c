@@ -70,7 +70,6 @@ Coroutine *qemu_coroutine_create(CoroutineEntry *entry, void *opaque)
             alloc_pool_size--;
         }
     }
-
     if (!co) {
         co = qemu_coroutine_new();
     }
