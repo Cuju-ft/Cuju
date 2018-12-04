@@ -76,8 +76,6 @@ int64_t max_advance;
 static QEMUTimer *throttle_timer;
 static unsigned int throttle_percentage;
 
-bool ft_stopped_cpus;
-
 #define CPU_THROTTLE_PCT_MIN 1
 #define CPU_THROTTLE_PCT_MAX 99
 #define CPU_THROTTLE_TIMESLICE_NS 10000000
@@ -1489,7 +1487,6 @@ void cpu_stop_current(void)
 
 int vm_stop(RunState state)
 {
-    ft_stopped_cpus = true;
     if (qemu_in_vcpu_thread()) {
         qemu_system_vmstop_request_prepare();
         qemu_system_vmstop_request(state);
@@ -1504,10 +1501,8 @@ int vm_stop(RunState state)
     return do_vm_stop(state);
 }
 
-/**
- * vm_start_mig : a light weight versin of vm_start
- *
- */
+bool ft_stopped_cpus;
+
 void vm_stop_mig(void)
 {
     ft_stopped_cpus = true;

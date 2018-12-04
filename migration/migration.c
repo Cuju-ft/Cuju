@@ -48,8 +48,6 @@
 
 //#define DEBUG_MIGRATION
 
-//#define GFT_RESYNC
-
 #ifdef DEBUG_MIGRATION
 #define DPRINTF(fmt, ...) \
     do { printf("migration: " fmt, ## __VA_ARGS__); } while (0)
@@ -140,13 +138,13 @@ static void migrate_assert_ft_state_change(int f, int t)
     if (f == CUJU_FT_TRANSACTION_FLUSH_OUTPUT)
         assert(t == CUJU_FT_TRANSACTION_PRE_RUN);
 }
-/// This is the enum for master/slave migration state
+
 enum {
-    MIG_STATE_ERROR, ///< set in migrate_fd_error
-    MIG_STATE_SETUP, ///< set in migrate_newt
-    MIG_STATE_CANCELLED, ///< set in migrate_fd_cancel
-    MIG_STATE_ACTIVE, ///< set in ft_setup_migrate_state
-    MIG_STATE_COMPLETED, ///< set in migrate_fd_completed
+    MIG_STATE_ERROR,
+    MIG_STATE_SETUP,
+    MIG_STATE_CANCELLED,
+    MIG_STATE_ACTIVE,
+    MIG_STATE_COMPLETED,
 };
 
 static NotifierList migration_state_notifiers =
@@ -177,7 +175,7 @@ static QemuCond ft_cond;
 
 static MigrationState **migration_states;
 int migration_states_count = 0;
-static int migrate_get_index(MigrationState *s);
+int migrate_get_index(MigrationState *s);
 static void migrate_run(MigrationState *s);
 
 // Group FT
@@ -189,7 +187,6 @@ static GroupFTMember group_ft_members_tmp[GROUP_FT_MEMBER_MAX];
 static int group_ft_members_size_tmp = 0;
 /* sockets of leader and other VMs */
 static int group_ft_sockets[GROUP_FT_MEMBER_MAX];
-//static int group_ft_sockets_ack[GROUP_FT_MEMBER_MAX];
 /* socket connecting leader */
 static int group_ft_leader_sock = 0;
 static int group_ft_master_sock = 0;
@@ -204,16 +201,6 @@ extern int my_gft_id;
 
 int qio_ft_sock_fd = 0;
 
-enum GFT_STATUS gft_status = GFT_PRE;
-
-bool migration_paused = false;
-
-#ifdef GFT_RESYNC
-static void gft_reset_all(void);
-#endif
-
-void qmp_migrate_pause(void);
-void qmp_migrate_resume(void);
 // At the time setting up FT, current will pointer to 2nd MigrationState.
 static int migration_states_current;
 
@@ -228,7 +215,7 @@ MigrationState *migrate_by_index(int index)
     return migration_states[index];
 }
 
-static int migrate_get_index(MigrationState *s)
+int migrate_get_index(MigrationState *s)
 {
     int i;
     for (i = 0; i < migration_states_count; i++) {
@@ -477,12 +464,7 @@ void migrate_send_rp_req_pages(MigrationIncomingState *mis, const char *rbname,
         migrate_send_rp_message(mis, MIG_RP_MSG_REQ_PAGES, msglen, bufc);
     }
 }
-/**
- * qemu_start_incoming_migration :
- *
- * called in vl.c when incoming is set as true
- * call tcp_start_incoming_migration to listen on port
- */
+
 void qemu_start_incoming_migration(const char *uri, Error **errp)
 {
     const char *p = uri;
@@ -782,8 +764,7 @@ void cuju_migration_channel_connect(MigrationState *s,
         s->to_dst_file = f[0];
 
         s->fs = f;
-        if(gft_status != GFT_WAIT)
-            migrate_fd_connect(s);
+        migrate_fd_connect(s);
     }
 }
 
@@ -949,7 +930,6 @@ MigrationInfo *qmp_query_migrate(Error **errp)
     MigrationInfo *info = g_malloc0(sizeof(*info));
     MigrationState *s = migrate_get_current();
 
-    printf("in func %s \n",__func__);
     switch (s->state) {
     case MIGRATION_STATUS_NONE:
         /* no migration has happened ever */
@@ -1345,11 +1325,7 @@ bool migration_in_postcopy_after_devices(MigrationState *s)
 {
     return migration_in_postcopy(s) && s->postcopy_after_devices;
 }
-/**
- * migration_new : setup for MigrationState
- * s->state = MIGRATION_STATUS_NONE
- * initializae bitmap
- */
+
 static MigrationState* migration_new(void)
 {
     MigrationState *s = g_malloc0(sizeof(MigrationState));
@@ -1362,10 +1338,7 @@ static MigrationState* migration_new(void)
 
     return s;
 }
-/* Called in vl.c before trans_ram_init
- * 1. allocate space for migration_states
- * 2. set migration_states_current / migration_states_count
- * */
+
 void __migrate_init(void)
 {
     int i;
@@ -1544,11 +1517,7 @@ void qmp_migrate(const char *uri, bool has_blk, bool blk,
     params.shared = has_inc && inc;
 
     if(cuju)
-        if(gft_status != GFT_WAIT)
-            printf("Enter FT mode\n");
-
-    if(gft_status == GFT_WAIT)
-        goto there;
+        printf("Enter FT mode\n");
 
     if (migration_is_setup_or_active(s->state) ||
         s->state == MIGRATION_STATUS_CANCELLING ||
@@ -1566,7 +1535,7 @@ void qmp_migrate(const char *uri, bool has_blk, bool blk,
     }
 
     s = migrate_init(&params);
-there:
+
     if (strstart(uri, "tcp:", &p)) {
         if (cuju) {
             cuju_tcp_start_outgoing_migration(s, p, &local_err);
@@ -2284,7 +2253,7 @@ static void migrate_join_close_socks(MigrationJoinConn *conn)
     if (conn->r_sock == 0)
         return;
 
-    FTPRINTF("%s\n", __func__);
+    printf("%s", __func__);
 
     brother = conn->brother;
 
@@ -2324,7 +2293,7 @@ static void gft_broadcast_commit2(MigrationState *s)
     MigrationJoinConn *conn;
     int i;
 
-    FTPRINTF("%s %d %lx\n", __func__, join->number, join->bitmaps_commit2);
+    //printf("%s %d %x\n", __func__, join->number, join->bitmaps_commit2);
 
     if (join->number == 0)
         return;
@@ -2333,8 +2302,7 @@ static void gft_broadcast_commit2(MigrationState *s)
         conn = &join->conn[i];
         if (conn->w_sock) {
             FTPRINTF("%s migrationState %d sending commit2\n", __func__, migrate_get_index(s));
-            GFT_SEND_CMD(conn->w_file, MIG_JOIN_GFT_EPOCH_COMMIT2);
-//            printf("send commit2 done\n");
+            GFT_SEND_CMD(conn->w_file, MIG_JOIN_EPOCH_COMMIT2);
         }
     }
 }
@@ -2342,9 +2310,9 @@ static void gft_broadcast_commit2(MigrationState *s)
 /*
  *  the following can happen at the same time.
  *
- *  send out MIG_JOIN_GFT_SNAPSHOT_START
+ *  send out GFT_SNAPSHOT_START
  *  recv multiple MIG_JOIN_EPOCH_STARTs
- *  recv multiple MIG_JOIN_GFT_EPOCH_COMMIT1
+ *  recv multiple MIG_JOIN_EPOCH_COMMIT1
  *
  */
 static void gft_broadcast_snapshot_start(MigrationState *s)
@@ -2360,7 +2328,7 @@ static void gft_broadcast_snapshot_start(MigrationState *s)
         conn = &join->conn[i];
         if (conn->r_sock) {
             FTPRINTF("%s(%lf) migrationState %d sending start\n", __func__, time_in_double(), migrate_get_index(s));
-            GFT_SEND_CMD(conn->w_file, MIG_JOIN_GFT_SNAPSHOT_START);
+            GFT_SEND_CMD(conn->w_file, GFT_SNAPSHOT_START);
         }
     }
 }
@@ -2380,7 +2348,6 @@ static void flush_dev(void *opaque)
 
 // we need this bh because only main-io-thread can send/recv
 // control messages to/from slave.
-// will be called interchangably with flush_dev
 void kvm_shmem_trans_ram_bh(void *opaque)
 {
     MigrationState *s = opaque;
@@ -2420,11 +2387,7 @@ static void kvmft_flush_output(MigrationState *s)
     event_tap_flush_net_list(s->ft_event_tap_net_list, migrate_ft_trans_flush_cb, s);
     s->ft_event_tap_net_list = event_tap_net_list_new();
 }
-/**
- * gft_master_read_master : fill the r_file buffer and process one byte commands
- * will also trigger ft when detect len <0
- *
- **/
+
 static void gft_master_read_master(void *opaque)
 {
     MigrationJoinConn *conn = opaque;
@@ -2435,115 +2398,77 @@ static void gft_master_read_master(void *opaque)
     len = qemu_fill_buffer(conn->r_file);
     if (len == -EAGAIN || len == -EWOULDBLOCK)
         return;
-#ifdef GFT_RESYNC
-    else if (len == -EINVAL){
-        // detect failover from other master
-        //
-        //
-        //printf("Bypassing Failover\n");
-        gft_status = GFT_WAIT;
-        gft_reset_all();
-        return;
-    }
-#endif
     else if (len <= 0) {
         migrate_join_close_socks(conn);
-        FTPRINTF("**** %s close\n", __func__);
+        printf("**** %s close\n", __func__);
         qemu_set_fd_handler(conn->r_sock, NULL, NULL, NULL);
         exit(-1);
         return;
     }
 
     while (len-- > 0) {
-        FTPRINTF("%s, enter while loop\n",__func__);
         cmd = qemu_get_byte(conn->r_file);
         conn->last_recv = cmd;
         FTPRINTF("%s(%lf) migrationState %d recv %d from %d\n", __func__,
             time_in_double(), migrate_get_index(s), cmd, conn->gft_id);
         switch (cmd) {
-            case MIG_JOIN_GFT_SNAPSHOT_START:
-                FTPRINTF("in %s, case MIG_JOIN_GFT_SNAPSHOT_START\n", __func__);
-                /**
-                 * Receive Snapshot Start Broadcast from other nodes
-                 * 1. if we are still in running stage, we must cancel our timer
-                 * 2. abort if we receive mutiple gft_snapshot_start from the same port
-                 * 3. if all nodes have started snapshot stage, allow next migrate state to run
-                 */
+            case GFT_SNAPSHOT_START:
                 FTPRINTF("%s owner is %d\n", __func__, migrate_token_owner ? migrate_token_owner->cur_off : -1);
                 if (s == migrate_token_owner) {
-                    if (s->ft_state == CUJU_FT_TRANSACTION_RUN){
-//                        printf("fire timer\n");
+                    if (s->ft_state == CUJU_FT_TRANSACTION_RUN)
                         kvmft_fire_timer(s->cur_off);
-                    }
                     else
                         s->epoch_timer_pending = true;
                 }
                 if(join->bitmaps_snapshot_started == ~0) {
-                    FTPRINTF("!!%s Get duplicated command snapshot %d!!\n", __func__, cmd);
+                    printf("!!%s Get duplicated command snapshot %d!!\n", __func__, cmd);
                     break;
                 }
                 assert(join->bitmaps_snapshot_started != ~0);
-                if (test_and_set_bit(conn->gft_id, &join->bitmaps_snapshot_started)){
-                    FTPRINTF("abort snapshot\n");
-                    //abort();
-                    break;
-                }
+                if (test_and_set_bit(conn->gft_id, &join->bitmaps_snapshot_started))
+                    abort();
                 if (join->bitmaps_snapshot_started == ~0) {
                     MigrationState *n = migrate_get_next(s);
                     if (n->join.wait_group_snapshot_start) {
                         n->join.wait_group_snapshot_start = false;
-//                        printf("MIG_JOIN_GFT_SNAPSHOT_START migrate run\n");
                         migrate_run(n);
                     }
                 }
                 break;
-            case MIG_JOIN_GFT_EPOCH_COMMIT1:
-                FTPRINTF("in %s, case MIG_JOIN_GFT_EPOCH_COMMIT1\n", __func__);
+            case MIG_JOIN_EPOCH_COMMIT1:
                 assert(join->bitmaps_commit1 != ~0);
-                if (test_and_set_bit(conn->gft_id, &join->bitmaps_commit1)){
-                    FTPRINTF("abort commit1\n");
-                    //abort();
-                    break;
-                }
+                if (test_and_set_bit(conn->gft_id, &join->bitmaps_commit1))
+                    abort();
                 if (join->bitmaps_commit1 == ~0) {
                     FTPRINTF("%s %d broadcast commit2\n", __func__, migrate_get_index(s));
                     gft_broadcast_commit2(s);
                     if (join->wait_group_transfer_done) {
                         join->wait_group_transfer_done = false;
                         FTPRINTF("%s(%lf) %d flush output\n", __func__, time_in_double(), migrate_get_index(s));
-//                        printf("gft_reset_bitmaps_commit1\n");
                         gft_reset_bitmaps_commit1(s);
                         kvmft_flush_output(s);
                     }
                 }
                 break;
-            case MIG_JOIN_GFT_EPOCH_COMMIT2:
-                FTPRINTF("in %s, case MIG_JOIN_GFT_EPOCH_COMMIT2, bitmaps_commit2 = %lx\n",join->bitmaps_commit2);
+            case MIG_JOIN_EPOCH_COMMIT2:
                 if(join->bitmaps_commit2 == ~0) {
-                    FTPRINTF("!!%s Get duplicated command commit2 %d!!\n", __func__, cmd);
+                    printf("!!%s Get duplicated command commit2 %d!!\n", __func__, cmd);
                     break;
                 }
                 assert(join->bitmaps_commit2 != ~0);
-                if (test_and_set_bit(conn->gft_id, &join->bitmaps_commit2)){
-                    FTPRINTF("abort commit2\n");
-                    //abort();
-                    break;
-                }
+                if (test_and_set_bit(conn->gft_id, &join->bitmaps_commit2))
+                    abort();
                 if (join->bitmaps_commit2 == ~0 && join->wait_group_commit2) {
                     join->wait_group_commit2 = false;
-                    FTPRINTF("%s MIG_JOIN_GFT_EPOCH_COMMIT2 migrate run\n", __func__);
                     migrate_run(s);
                 }
-                FTPRINTF("in %s, case MIG_JOIN_GFT_EPOCH_COMMIT2 exit, bitmaps_commit2 = %lx\n",, __func__, join->bitmaps_commit2);
                 break;
             default:
                 break;
         }
     }
 }
-/**
- * gft_master_try_get_notify : This function trys to get notification from all rsocks
- **/
+
 static void gft_master_try_get_notify(MigrationState *s)
 {
     MigrationJoin *join = &s->join;
@@ -2559,12 +2484,7 @@ static void gft_master_try_get_notify(MigrationState *s)
             gft_master_read_master(conn);
     }
 }
-/**
- * Create Connection with group member
- * corresponds with gft_master_accept_other_master_one
- * use inet_connect to connect to w_sock of group member , store in join->conn.r_sock
- * index represents the current migration_state's numbers
- **/
+
 static struct MigrationJoinConn* gft_master_connect_other_master(
                 MigrationState *s, int target_gft_id)
 {
@@ -2582,7 +2502,7 @@ static struct MigrationJoinConn* gft_master_connect_other_master(
     sprintf(host_port, "%s:%d", gft_member->master_host_ip,
             gft_member->master_host_gft_port);
 
-    FTPRINTF("%s\n", host_port);
+    printf("%s\n", host_port);
 
     for (i = 0; i < MIG_MAX_JOIN; ++i) {
         if (s->join.conn[i].r_sock == 0) {
@@ -2610,10 +2530,10 @@ static struct MigrationJoinConn* gft_master_connect_other_master(
     conn->r_file = f;
     conn->r_sock = sd;
 
-    FTPRINTF("%s send sock %d\n", __func__, sd);
+    printf("%s send sock %d\n", __func__, sd);
     assert(send(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(recv(sd, &index, sizeof(index), 0) == sizeof(index));
-    //assert(index == s->cur_off);
+    assert(index == s->cur_off);
 
     sd = inet_connect(host_port, &err);
     if (err || sd == -1) {
@@ -2629,10 +2549,10 @@ static struct MigrationJoinConn* gft_master_connect_other_master(
     conn->w_file = f;
     conn->w_sock = sd;
 
-    FTPRINTF("%s send sock %d\n", __func__, sd);
+    printf("%s send sock %d\n", __func__, sd);
     assert(send(sd, &index, sizeof(index), 0) == sizeof(index));
     assert(recv(sd, &index, sizeof(index), 0) == sizeof(index));
-    //assert(index == s->cur_off);
+    assert(index == s->cur_off);
 
     conn->migrate = s;
     conn->gft_id = target_gft_id;
@@ -2655,25 +2575,15 @@ out:
         migrate_join_close_socks(conn);
     return NULL;
 }
-/**
- * This function iterates through each group member
- * and build two connection with that member
- * seems like leader must have the smallest gft_id by now
- *
- **/
+
 static void gft_connect_internal(void)
 {
     MigrationState *s1, *s2;
     struct MigrationJoinConn *conn1, *conn2;
     int i;
-    if(gft_status != GFT_WAIT){
-        s1 = migrate_by_index(0);
-        s2 = migrate_by_index(1);
-    }
-    else{
-        s1 = migrate_get_current();
-        s2 = migrate_get_next(s1);
-    }
+
+    s1 = migrate_by_index(0);
+    s2 = migrate_by_index(1);
 
     for (i = 0; i < group_ft_members_size; ++i) {
         GroupFTMember *m = &group_ft_members[i];
@@ -2696,8 +2606,8 @@ static void gft_connect_internal(void)
             s1->join.number++;
             s2->join.number++;
 
-            FTPRINTF("%s connection built with %d\n", __func__, m->gft_id);
-            FTPRINTF("%s join.number %d %d\n", __func__, s1->join.number, s2->join.number);
+            printf("%s connection built with %d\n", __func__, m->gft_id);
+            printf("%s join.number %d %d\n", __func__, s1->join.number, s2->join.number);
         }
     }
 }
@@ -2707,39 +2617,17 @@ static void gft_master_notify_leader_migration_done(void)
     int send;
     if (!group_ft_members_size)
         return;
-    FTPRINTF("%s, group_ft_leader_sock = %d\n", __func__, group_ft_leader_sock);
-    if(gft_status != GFT_WAIT){
-        if (group_ft_leader_sock) { // master enter
-            send = MIG_JOIN_GFT_MIGRATION_DONE;
-            assert(write(group_ft_leader_sock, &send, sizeof(send)) == sizeof(send));
-            FTPRINTF("%s send MIG_JOIN_GFT_MIGRATION_DONE\n",__func__);
-        }
-        else if (++group_ft_members_ready == group_ft_members_size){ // leader enter
-            gft_leader_broadcast_all_migration_done();
-        }
-    }
-
-    else{
-        FTPRINTF("%s, group_ft_members_ready = %d\n",__func__, group_ft_members_ready);
-        if (group_ft_leader_sock) { // master enter
-            send = MIG_JOIN_GFT_MIGRATION_DONE;
-            group_ft_leader_sock = 0;
-            assert(write(group_ft_leader_sock, &send, sizeof(send)) == sizeof(send));
-            FTPRINTF("%s send MIG_JOIN_GFT_MIGRATION_DONE\n",__func__);
-        }
-        else if (++group_ft_members_ready == group_ft_members_size){ //leader enter
-            gft_leader_broadcast_all_migration_done();
-        }
-    }
-
-    //printf("%s leader_sock = %d\n", __func__, group_ft_leader_sock);
-    //printf("%s group_ft_members_ready = %d , group_ft_members_size = %d \n",__func__,group_ft_members_ready,group_ft_members_size);
+    if (group_ft_leader_sock) {
+        send = MIG_JOIN_GFT_MIGRATION_DONE;
+        assert(write(group_ft_leader_sock, &send, sizeof(send)) == sizeof(send));
+    } else if (++group_ft_members_ready == group_ft_members_size)
+        gft_leader_broadcast_all_migration_done();
+    printf("%s leader_sock = %d\n", __func__, group_ft_leader_sock);
 }
 
 static void gft_prepare_snapshot_bitmap(void)
 {
-    //MigrationState *s = migrate_by_index(0);
-    MigrationState *s = migrate_get_current();
+    MigrationState *s = migrate_by_index(0);
     int i;
     s = migrate_get_previous(s);
     for (i = 0; i < group_ft_members_size; i++) {
@@ -2771,28 +2659,15 @@ static void gft_master_wait_all_migration_done(void *opaque)
         group_ft_members_size == group_ft_members_ready) {
         gft_prepare_snapshot_bitmap();
         gft_master_start_listen_other_masters();
-        FTPRINTF("%s ok, run %d!\n", __func__, s->cur_off);
+        printf("%s ok, run %d!\n", __func__, s->cur_off);
         if (group_ft_wait_all.timer)
             timer_del(group_ft_wait_all.timer);
-
-        if(gft_status == GFT_WAIT){
-
-            migration_paused = false;
-            qemu_iohandler_ft_pause(false);
-            migrate_run(s);
-            vm_start();
-        }
-        else{
-            migrate_run(s);
-            vm_start();
-        }
-        //printf("in func %s Calling migrate run in wait all migration done !! \n",__func__);
-
-        //printf("in func %s , after migrate_run \n",__func__);
+        migrate_run(s);
+        vm_start();
     } else {
         if (!group_ft_wait_all.timer)
             group_ft_wait_all.timer = timer_new_ms(QEMU_CLOCK_REALTIME,
-                (QEMUTimerCB *) gft_master_wait_all_migration_done, NULL);
+                gft_master_wait_all_migration_done, NULL);
         printf("wait for other migrations..\n");
         timer_mod(group_ft_wait_all.timer, qemu_clock_get_ms(QEMU_CLOCK_REALTIME) + 1000);
     }
@@ -2811,17 +2686,16 @@ static void gft_broadcast_backup_done(MigrationState *s)
         conn = &join->conn[i];
         if (conn->w_sock) {
             FTPRINTF("%s migrationState %d sending commit1\n", __func__, migrate_get_index(s));
-            GFT_SEND_CMD(conn->w_file, MIG_JOIN_GFT_EPOCH_COMMIT1);
+            GFT_SEND_CMD(conn->w_file, MIG_JOIN_EPOCH_COMMIT1);
         }
     }
 }
 
 // NOTE: don't send content in this function
-static bool kvmft_first_ack = true;
 static int migrate_ft_trans_get_ready(void *opaque)
 {
     MigrationState *s = opaque;
-    //printf("in %s, ft_state = %d\n", __func__, s->ft_state);
+    static bool kvmft_first_ack = true;
     int ret = -1;
 
     if (!qemu_ft_trans_is_sender(s->file))
@@ -2830,23 +2704,17 @@ static int migrate_ft_trans_get_ready(void *opaque)
     switch (s->ft_state) {
 
     case CUJU_FT_INIT:
-        if(gft_status == GFT_WAIT){
-            migrate_token_owner = s;
-            goto there;
-        }
-        FTPRINTF("%s recv ack, index %d\n", __func__, s->cur_off);
+        printf("%s recv ack, index %d\n", __func__, s->cur_off);
         if ((ret = qemu_ft_trans_recv_ack(s->file)) < 0) {
             printf("%s sender receive ACK failed.\n", __func__);
             goto error_out;
         }
-
-        kvmft_calc_ram_hash();
-there:
         migrate_set_ft_state(s, CUJU_FT_TRANSACTION_PRE_RUN);
 
         assert(kvmft_first_ack);
         kvmft_first_ack = false;
 
+        kvmft_calc_ram_hash();
 
         assert(s == migrate_token_owner);
         gft_connect_internal();
@@ -2877,8 +2745,8 @@ there:
             s->join.wait_group_transfer_done = true;
         break;
 
-        //kvmft_flush_output(s);
-        //break;
+		kvmft_flush_output(s);
+        break;
 
     default:
         printf("%s unexpected (%d) state %d\n", __func__, migrate_get_index(s), s->ft_state);
@@ -2934,12 +2802,7 @@ static int migrate_fd_close(void *opaque)
     qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
     return s->close(s);
 }
-/**
- * ft_setup_migrate_state :
- * set last_cmd to QEMU_VM_TRANSACTION_BEGIN
- * set state to MIG_STATE_ACTIVE
- *
- */
+
 static void ft_setup_migrate_state(MigrationState *s, int index)
 {
     s->file = cuju_qemu_fopen_ops_ft_trans(s,
@@ -2994,7 +2857,6 @@ static void *migration_thread(void *opaque)
     bool enable_colo = migrate_colo_enabled();
     bool enable_cuju = migrate_cuju_enabled();
 
-    //if(gft_status != GFT_WAIT){
     rcu_register_thread();
 
     qemu_savevm_state_header(s->to_dst_file);
@@ -3023,7 +2885,7 @@ static void *migration_thread(void *opaque)
 
     trace_migration_thread_setup_complete();
 
-	FTPRINTF("Start live migration iterate backup\n");
+	printf("Start live migration iterate backup\n");
     while (s->state == MIGRATION_STATUS_ACTIVE ||
            s->state == MIGRATION_STATUS_POSTCOPY_ACTIVE) {
         int64_t current_time;
@@ -3102,10 +2964,10 @@ static void *migration_thread(void *opaque)
     cpu_throttle_stop();
     end_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
 
-    FTPRINTF("%s migrate done and cuju = %d\n", __func__, enable_cuju);
+    printf("%s migrate done and cuju = %d\n", __func__, enable_cuju);
     if(enable_cuju) {
 
-		FTPRINTF("start cuju process\n");
+		printf("start cuju process\n");
 		ft_setup_migrate_state(s, 0);
         ft_setup_migrate_state(s2, 1);
 
@@ -3137,7 +2999,7 @@ static void *migration_thread(void *opaque)
 
         assert(!kvmft_set_master_slave_sockets(s, ft_ram_conn_count));
         assert(!kvmft_set_master_slave_sockets(s2, ft_ram_conn_count));
-        //printf("%s\n",__func__);
+
 		return NULL;
     }
     else {
@@ -3212,7 +3074,7 @@ void migrate_fd_connect(MigrationState *s)
             return;
         }
     }
-    FTPRINTF("Ready to create thread.\n");
+
     migrate_compress_threads_create();
     qemu_thread_create(&s->thread, "migration", migration_thread, s,
                        QEMU_THREAD_JOINABLE);
@@ -3337,16 +3199,7 @@ int cuju_get_fd_from_QIOChannel(QIOChannel *ioc) {
     QIOChannelSocket *sioc = QIO_CHANNEL_SOCKET(ioc);
     return sioc->fd;
 }
-/**
- * cuju_setup_slave_receiver :
- * is_sender set to 0 for slave
- * corresponds to ft_setup_migrate_state in migration.c
- * dev_fd probably used to monitor connection liveness, ft_trans_incoming will close qemu_file if error
- *
- * @s : socket returned from inet_listen
- * @dev_fd : main connection between master / slave
- * @ram_fd : ram_fd array
- */
+
 static QEMUFile *cuju_setup_slave_receiver(int s, QEMUFile *devf, QEMUFile *ramf)
 {
     QEMUFile *f;
@@ -3383,7 +3236,7 @@ void *cuju_process_incoming_thread(void *opaque)
     do {
         ret = qemu_ft_trans_begin(f);
     } while (ret == -EAGAIN);
-    FTPRINTF("%s qemu_ft_trans_begin returns %d\n", __func__, ret);
+    printf("%s qemu_ft_trans_begin returns %d\n", __func__, ret);
     if (ret < 0)
         goto out;
 
@@ -3446,17 +3299,13 @@ static bool gft_can_run(MigrationState *s)
     FTPRINTF("%s(%lf) %d run\n", __func__, time_in_double(), s->cur_off);
     return true;
 }
-/**
- * migrate_run : resume vm execution for an epoch long
- * set hrtimer event by kvm_shm_start_timer
- * s->join.state set to MIG_JOIN_GFT_EPOCH_COMMIT (meaning the commit of previous epoch ? )
- * join.state must be MIG_JOIN_GFT_EPOCH_COMMIT before the snapshot of next epoch
- */
+
 static void migrate_run(MigrationState *s)
 {
     static unsigned long run_serial = 0;
 
     FTPRINTF("%s %d\n", __func__, s->cur_off);
+
     if (migrate_token_owner != s || s->ft_state != CUJU_FT_TRANSACTION_PRE_RUN) {
         FTPRINTF("%s cant run own != s ? %d ft_state == %d\n", __func__,
             migrate_token_owner != s, s->ft_state);
@@ -3465,14 +3314,7 @@ static void migrate_run(MigrationState *s)
 
     if (!gft_can_run(s))
         return;
-    if(migration_paused){
-        printf("Migration_Paused, return!!\n");
-        return;
-    }
-    if(gft_status == GFT_WAIT){
-        gft_status = GFT_PRE;
-        //printf("gft_status = GFT_PRE\n");
-    }
+
     migrate_set_ft_state(s, CUJU_FT_TRANSACTION_RUN);
     s->run_serial = ++run_serial;
 
@@ -3480,6 +3322,7 @@ static void migrate_run(MigrationState *s)
     assert(!kvm_shmem_flip_sharing(s->cur_off));
 
     migrate_schedule(s);
+
     event_tap_start_epoch(s->ft_event_tap_net_list,
         s->ft_event_tap_list, NULL, NULL);
 
@@ -3489,7 +3332,7 @@ static void migrate_run(MigrationState *s)
     vm_start_mig();
 
     s->run_real_start_time = time_in_double();
-    s->join.state = MIG_JOIN_GFT_EPOCH_COMMIT;
+    s->join.state = GFT_EPOCH_COMMIT;
 
 #ifdef CONFIG_EPOCH_OUTPUT_TRIGGER
     kvmft_output_notified = 0;
@@ -3507,7 +3350,9 @@ static void migrate_timer(void *opaque)
 {
     static unsigned long trans_serial = 0;
     MigrationState *s = opaque;
+
     assert(s == migrate_get_current());
+
 #ifndef ft_debug_mode_enable
     if ((trans_serial & 0x03f) == 0) {
         printf("\n%s tick %lu\n", __func__, trans_serial);
@@ -3537,7 +3382,10 @@ static void migrate_timer(void *opaque)
     dirty_page_tracking_logs_commit(s);
     dirty_page_tracking_logs_start_transfer(s);
 
+    //extern int kvmft_protect_speculative_and_prepare_next_speculative(int cur_index);
+    //assert(!kvmft_protect_speculative_and_prepare_next_speculative(s->cur_off));
     assert(!kvmft_write_protect_dirty_pages(s->cur_off));
+    //assert(!kvm_shm_sync_dirty_bitmap_batch(s->cur_off));
     assert(!kvm_shm_clear_dirty_bitmap(s->cur_off));
 
     s->time_buf_off = sprintf(s->time_buf, "%p", s);
@@ -3616,11 +3464,7 @@ static int migrate_join_mac_to_array(const char *mac, char array[])
 
     return 0;
 }
-/**
- * Create Connection with Group leader
- * corresponds with gft_master_connect_other_master
- *
- **/
+
 static MigrationJoinConn* gft_master_accept_other_master_one(MigrationState *s, int sd)
 {
     struct sockaddr_in addr;
@@ -3629,7 +3473,7 @@ static MigrationJoinConn* gft_master_accept_other_master_one(MigrationState *s, 
     QEMUFile *f;
     struct MigrationJoinConn *conn = NULL;
 
-    FTPRINTF("%s begin\n", __func__);
+    printf("%s begin\n", __func__);
 
     // find spare one.
     for (i = 0; i < MIG_MAX_JOIN; ++i) {
@@ -3662,7 +3506,7 @@ static MigrationJoinConn* gft_master_accept_other_master_one(MigrationState *s, 
     conn->w_file = f;
 
     assert(recv(c, &index, sizeof(index), 0) == sizeof(index));
-    //assert(index == s->cur_off);
+    assert(index == s->cur_off);
     index = s->cur_off;
     assert(send(c, &index, sizeof(index), 0) == sizeof(index));
 
@@ -3684,20 +3528,20 @@ static MigrationJoinConn* gft_master_accept_other_master_one(MigrationState *s, 
     conn->r_file = f;
 
     assert(recv(c, &index, sizeof(index), 0) == sizeof(index));
-    //assert(index == s->cur_off);
+    assert(index == s->cur_off);
     index = s->cur_off;
     assert(send(c, &index, sizeof(index), 0) == sizeof(index));
 
     conn->migrate = s;
 
-    FTPRINTF("%s accepted\n", __func__);
+    printf("%s accepted\n", __func__);
 
     // receive MIG_JOIN_GFT_NEW and gft_id
     assert(recv(conn->r_sock, &cmd, sizeof(cmd), 0) == sizeof(cmd));
     assert(cmd == MIG_JOIN_GFT_NEW);
     assert(recv(conn->r_sock, &conn->gft_id, sizeof(conn->gft_id), 0) == sizeof(conn->gft_id));
 
-    FTPRINTF("%s build connection between gft_id %d and %d\n",
+    printf("%s build connection between gft_id %d and %d\n",
             __func__, my_gft_id, conn->gft_id);
 
     clear_bit(conn->gft_id, &s->join.bitmaps_snapshot_started);
@@ -3708,7 +3552,7 @@ static MigrationJoinConn* gft_master_accept_other_master_one(MigrationState *s, 
     qemu_set_nonblock(conn->r_sock);
     //qemu_set_fd_survive_ft_pause(conn->w_sock, true);
 
-    FTPRINTF("%s done\n", __func__);
+    printf("%s done\n", __func__);
     return conn;
 out:
     printf("%s error.\n", __func__);
@@ -3719,28 +3563,16 @@ out:
     }
     return NULL;
 }
-/**
- * gft_master_accept_other_master : used to accept connections for two migration states respectively
- * set join state to MIG_JOIN_GFT_EPOCH_COMMIT for each MigrationState
- */
+
 static void gft_master_accept_other_master(void *opaque)
 {
-    MigrationState *s1, *s2;
-    if(gft_status == GFT_WAIT){
-        s1 = migrate_get_current();
-        s2 = migrate_get_next(s1);
-    }else{
-        s1 = migrate_by_index(0);
-        s2 = migrate_by_index(1);
-    }
-
+    MigrationState *s1 = migrate_by_index(0);
+    MigrationState *s2 = migrate_by_index(1);
     MigrationJoinConn *conn1, *conn2;
     int sd = (int)(intptr_t)opaque;
 
-    if(gft_status != GFT_WAIT){
-        s1->cur_off = 0;
-        s2->cur_off = 1;
-    }
+    s1->cur_off = 0;
+    s2->cur_off = 1;
     conn1 = gft_master_accept_other_master_one(s1, sd);
     conn2 = gft_master_accept_other_master_one(s2, sd);
     conn1->brother = conn2;
@@ -3748,43 +3580,23 @@ static void gft_master_accept_other_master(void *opaque)
     s1->join.number++;
     s2->join.number++;
 
-    s1->join.state = MIG_JOIN_GFT_EPOCH_COMMIT;
-    s2->join.state = MIG_JOIN_GFT_EPOCH_COMMIT;
-    /*printf("in func %s, done building connection\n",__func__);
-    printf("my id = %d , other id = %d\n",my_gft_id,conn1->gft_id);
-    printf("conn1 r_sock = %d, w_sock = %d\n",conn1->r_sock, conn1->w_sock);
-    printf("conn2 r_sock = %d, w_sock = %d\n",conn2->r_sock, conn2->w_sock);
-    printf("conn1->bitmaps = %lx , conn2=>bitmaps = %lx\n ",s1->join.bitmaps_snapshot_started,s2->join.bitmaps_snapshot_started);
-    puts("");
-    */
-    //if(s1->join.number == my_gft_id){
-    if(s1->join.number == 1){
-        if(gft_status == GFT_WAIT){
-            FTPRINTF("ready to enter migrate_ft_trans_get_ready !!\n");
-            g_usleep(15000);
-            migrate_ft_trans_get_ready(migrate_get_current());
-        }
-    }
-    //printf("%s accept %d.\n", __func__, s1->join.number);
+    s1->join.state = GFT_EPOCH_COMMIT;
+    s2->join.state = GFT_EPOCH_COMMIT;
+
+    printf("%s accept %d.\n", __func__, s1->join.number);
 }
-/**
- * gft_master_read_leader : a callback used by nodes to wait migration done broadcast from the leader
- * will close the fd used
- * */
+
 static void gft_master_read_leader(void *opaque)
 {
-    int cmd;
-    uintptr_t fd = (uintptr_t)opaque;
+    int cmd, fd = (uintptr_t)opaque;
     assert(read(fd, &cmd, sizeof(cmd)) == sizeof(cmd));
     assert(cmd == MIG_JOIN_GFT_MIGRATION_ALL);
     qemu_set_fd_handler(fd, NULL, NULL, NULL);
     close(fd);
     group_ft_members_ready = group_ft_members_size;
-    FTPRINTF("%s group_ft_members_ready = %d, close %lu\n", __func__, group_ft_members_ready, fd);
+    printf("%s %d\n", __func__, group_ft_members_ready);
 }
-/**
- * gft_start_migration : find self index in group_ft_members array and start qmp_migrate respectively for each node
- */
+
 static void gft_start_migration(void)
 {
     int i;
@@ -3807,28 +3619,20 @@ static void gft_start_migration(void)
 
 // groupft leader sends out gft_add_host and gft_init,
 // this function receives them on other group VMs.
-/**
- * gft_master_accept_leader : This is where group members get the information about other group members
- * GFT_INIT -> amount of group members -> group member info ->
- * MIG_JOIN_GFT_INIT ->
- **/
 static void gft_master_accept_leader(void *opaque)
 {
     int server_fd = (uintptr_t) opaque;
     struct sockaddr_in addr;
     socklen_t addr_len = sizeof(addr);
-    int fd = -1, i, j;
+    int fd, i, j;
     int received, send;
 
-    qemu_iohandler_ft_pause(false);
-    FTPRINTF("in %s, server_fd = %d\n", __func__, server_fd);
     fd = qemu_accept(server_fd, (struct sockaddr *)&addr, &addr_len);
-    FTPRINTF("in %s, fd = %d\n", __func__, fd );
     if (fd == -1) {
         printf("%s accept error.\n", __func__);
         return;
     }
-    FTPRINTF("%s accepted GFT_INIT connection.\n", __func__);
+    printf("%s accepted GFT_INIT connection.\n", __func__);
 
     assert(read(fd, &received, sizeof(received)) == sizeof(received));
     if (received != MIG_JOIN_GFT_ADD_HOST) {
@@ -3842,19 +3646,19 @@ static void gft_master_accept_leader(void *opaque)
         goto err;
     }
     group_ft_members_size = received;
-    FTPRINTF("%s group_ft_members_size = %d\n", __func__, group_ft_members_size);
+    printf("%s group_ft_members_size = %d\n", __func__, group_ft_members_size);
 
     assert(read(fd, group_ft_members,
                 sizeof(GroupFTMember)*group_ft_members_size)
             == sizeof(GroupFTMember)*group_ft_members_size);
 
     for (i = 0; i < group_ft_members_size; i++) {
-        FTPRINTF("%s GFT member: gft_id %d %s:%d\n", __func__,
+        printf("%s GFT member: gft_id %d %s:%d\n", __func__,
             group_ft_members[i].gft_id,
             group_ft_members[i].master_host_ip,
             group_ft_members[i].master_host_gft_port);
         for (j = 0; j < MAC_LEN; j++)
-            FTPRINTF("%s MAC %02x\n", __func__, group_ft_members[i].master_mac[j]);
+            printf("%s MAC %02x\n", __func__, group_ft_members[i].master_mac[j]);
     }
 
     assert(read(fd, &received, sizeof(received)) == sizeof(received));
@@ -3872,9 +3676,8 @@ static void gft_master_accept_leader(void *opaque)
 
     send = MIG_JOIN_GFT_INIT_ACK;
     assert(write(fd, &send, sizeof(send)) == sizeof(send));
-    if(gft_status != GFT_WAIT)
-        group_ft_leader_sock = fd;
-    //printf("%s group_ft_leader_sock = %d\n", __func__, group_ft_leader_sock);
+
+    group_ft_leader_sock = fd;
     qemu_set_nonblock(fd);
     qemu_set_fd_handler(fd, NULL, NULL, NULL);
     qemu_set_fd_handler(fd, gft_master_read_leader, NULL, (void *)(uintptr_t)fd);
@@ -3888,101 +3691,12 @@ err:
     close(server_fd);
 }
 
-#ifdef GFT_RESYNC
-/**
- * gft_reset_connections : reset per MigrationState connections
- *
- *
- */
-static void gft_reset_connections(MigrationState *s){
-    MigrationJoin *join;
-    MigrationJoinConn *conn;
-    join = &s->join;
-    /*gft_reset_bitmaps_snapshot(s);
-    gft_reset_bitmaps_commit1(s);
-    gft_reset_bitmaps_commit2(s);*/
-    s->join.bitmaps_snapshot_started = ~0;
-    s->join.bitmaps_commit1  = ~0;
-    s->join.bitmaps_commit2 = ~0;
-    int i;
-    for (i = 0; i < MIG_MAX_JOIN; ++i) {
-        conn = &join->conn[i];
-        if(conn->r_sock){
-            close(conn->r_sock);
-            qemu_set_fd_handler(conn->r_sock,
-                    NULL,NULL,NULL);
-            conn->r_sock = 0;
-            qemu_close(conn->r_sock);
-        }
-        if (conn->w_sock) {
-            close(conn->w_sock);
-            qemu_set_fd_handler(conn->w_sock,
-                    NULL,NULL,NULL);
-            conn->w_sock = 0;
-            qemu_close(conn->w_sock);
-        }
-    }
-        s->join.number = 0;
-    s->join.wait_group_snapshot_start = false;
-    s->join.wait_group_commit2 = false;
-    s->join.wait_group_transfer_done = false;
-}
-void gft_clear_group_info(void);
-void gft_clear_group_info(void ){
-    group_ft_members_size_tmp = 0;
-    group_ft_members_size = 0;
-    group_ft_members_ready = 0;
-}
-/**
- * gft_reset_all : reset gft connections when failover detected
- * Things to do :
- * 1. kill group connections for current migration state
- * 2. kill group connections for previous migration state
- * 3. restore memory state to previous epoch
- * 4. status change:
- *      a. group_ft_leader_inited = false
- *      b. GFT_STATUS = GFT_WAIT
- * 5. cleanup group member information
- * 6. set s->ft_state to FT_INIT
- * 7. set n->ft_state to FT_TRANSACTION_PRE_RUN
- */
-static void gft_reset_all(void){
-    MigrationState * s = migrate_get_current();
-    MigrationState * n = migrate_get_next(s);
-    gft_reset_connections(s);
-    gft_reset_connections(n);
-    group_ft_leader_inited = false;
-    kvmft_first_ack = true;
-    gft_clear_group_info();
-    qmp_migrate_pause();
-    vm_stop_force_state(0);
-    //kvm_vm_ioctl(kvm_state,KVMFT_RESTORE_PREVIOUS_EPOCH,(void *)s);
-    s->ft_state = CUJU_FT_INIT;
-    n->ft_state = CUJU_FT_TRANSACTION_PRE_RUN;
-    kvm_shmem_cancel_timer();
-    kvm_shm_clear_dirty_bitmap(0);
-    kvm_shm_clear_dirty_bitmap(1);
-    //kvmft_fire_timer(s->cur_off);
-    //kvmft_fire_timer(n->cur_off);
-    qemu_set_fd_handler(group_ft_master_sock,
-                         gft_master_accept_leader,
-                         NULL,
-                         (void *)(uintptr_t)group_ft_master_sock);
-}
-#endif
-
-/** Called in vl.c
- * gft_init: init the socket for accepting input
- * register gft_master_accept_leader to deal with commands sent by qmp_gft_leader_init
- *
- **/
 int gft_init(int port)
 {
     char host_port[32]; // format will be 0:4445
     Error *err = NULL;
 
     sprintf(host_port, "0:%d", port);
-    FTPRINTF("host_port : %s\n", host_port);
     SocketAddress* sa = socket_parse(host_port, &err);
     if (err) {
         error_report_err(err);
@@ -4002,11 +3716,7 @@ int gft_init(int port)
     qemu_set_fd_survive_ft_pause(group_ft_master_sock, true);
     return 0;
 }
-/**
- * gft_leader_broadcast_all_migration_done : iterate all group_ft_sockets
- * and send MIG_JOIN_GFT_MIGRATION_ALL to all nodes, which will be read by gft_master_read_leader
- *
- */
+
 static void gft_leader_broadcast_all_migration_done(void)
 {
     int cmd, fd, i;
@@ -4022,24 +3732,16 @@ static void gft_leader_broadcast_all_migration_done(void)
     }
     FTPRINTF("%s\n", __func__);
 }
-/**
- * gft_leader_read_master : callback used by leader to wait for completion of all group nodes
- * expect MIG_JOIN_GFT_MIGRATION_DONE from individual nodes
- * when receive enough acks, broadcast migrate_done to all nodes
- *
- */
+
 static void gft_leader_read_master(void *opaque)
 {
-    int cmd;
-    uintptr_t fd;
+    int cmd, fd;
     fd = (uintptr_t)opaque;
     assert(read(fd, &cmd, sizeof(cmd)) == sizeof(cmd));
     assert(cmd == MIG_JOIN_GFT_MIGRATION_DONE);
     if (++group_ft_members_ready == group_ft_members_size)
         gft_leader_broadcast_all_migration_done();
     FTPRINTF("%s ready member %d total member %d\n", __func__, group_ft_members_ready, group_ft_members_size);
-    FTPRINTF("%s ready member %d total member %d\n", __func__, group_ft_members_ready, group_ft_members_size);
-    FTPRINTF("%s, group_ft_leader_sock = %d\n", __func__, group_ft_leader_sock);
 }
 
 void qmp_gft_add_host(int gft_id,
@@ -4066,28 +3768,26 @@ void qmp_gft_add_host(int gft_id,
     m->slave_host_ft_port = slave_host_ft_port;
     group_ft_members_size_tmp++;
 }
-/**
- * qmp_gft_leader_init : the function called by hmp_gft_init for master to start gft process
- * 1. set the value of group_ft_leader_inited
- * 2. distribute group member information to all group nodes
- */
+
 void qmp_gft_leader_init(Error **errp)
 {
     Error *err = NULL;
     char host_port[32];
     int i;
+
     if (group_ft_leader_inited)
         return;
     group_ft_leader_inited = true;
-    FTPRINTF("%s, group_ft_master_sock = %d\n",__func__,group_ft_master_sock);
 
+    qemu_set_fd_handler(group_ft_master_sock, NULL, NULL, NULL);
     qemu_set_fd_handler(group_ft_master_sock,
-                        gft_master_accept_other_master,
+                         gft_master_accept_other_master,
                          NULL,
                          (void *)(uintptr_t)group_ft_master_sock);
+
     // distribute group info to members
     for (i = 0; i < group_ft_members_size_tmp; ++i) {
-        // connect to all master:gft_port and broadcast GroupFTMember list
+        // connect to all master:gft_port and broadcase GroupFTMember list
         GroupFTMember *m = &group_ft_members_tmp[i];
         int sd, send;
 
@@ -4101,7 +3801,7 @@ void qmp_gft_leader_init(Error **errp)
             continue;
         }
 
-        sd = inet_connect(host_port, &err); //correspond to qemu_accept
+        sd = inet_connect(host_port, &err);
         if (err || sd == -1) {
             printf("%s error connect to %s.\n", __func__, host_port);
             return;
@@ -4126,17 +3826,15 @@ void qmp_gft_leader_init(Error **errp)
                     __func__, host_port);
             return;
         }
+
         qemu_set_nonblock(sd);
         qemu_set_fd_handler(sd, NULL, NULL, NULL);
         qemu_set_fd_handler(sd, gft_leader_read_master, NULL, (void *)(uintptr_t)sd);
+
         group_ft_sockets[i] = sd;
     }
 
     gft_start_migration();
-    if(gft_status == GFT_WAIT){
-        qemu_iohandler_ft_pause(false);
-        migrate_ft_trans_get_ready(migrate_get_current());
-    }
 }
 
 int gft_packet_can_send(const uint8_t *buf, int size)
@@ -4181,77 +3879,4 @@ int gft_packet_can_send(const uint8_t *buf, int size)
     }
 
     return 0;
-}
-
-void print_fds(void){
-    int i;
-    MigrationState * s = migrate_get_current();
-    MigrationState * n = migrate_get_next(s);
-    MigrationJoin *join = &s->join;
-    MigrationJoinConn *conn;
-
-    printf("Master Socket = %d,max = %d\n",group_ft_master_sock,MIG_MAX_JOIN);// = inet_listen(host_port, NULL, 256, SOCK_STREAM, 0, &err);
-
-    for (i = 0; i < group_ft_members_size_tmp; ++i) {
-        printf("group_ft_sockets[%d] = %d\n",i,group_ft_sockets[i]);
-    }
-    printf("Current Migration State \n");
-    printf("s->fd = %d, s->ram_fds[0]=%d \n",s->fd,s->ram_fds[0]);
-    printf("Printing Read Sockets");
-    for (i = 0; i < MIG_MAX_JOIN; ++i) {
-        conn = &join->conn[i];
-        printf("\t%d",conn->r_sock);
-    }
-    printf("\n");
-    printf("Printing Write Sockets");
-    for (i = 0; i < MIG_MAX_JOIN; ++i) {
-        conn = &join->conn[i];
-            printf("\t%d",conn->w_sock);
-    }
-    printf("\n");
-
-    printf("Next Migration State \n");
-    printf("n->fd = %d, n->ram_fds[0]=%d \n",n->fd,n->ram_fds[0]);
-    join = &n->join;
-
-    printf("Printing Read Sockets");
-    for (i = 0; i < MIG_MAX_JOIN; ++i) {
-        conn = &join->conn[i];
-        printf("\t%d",conn->r_sock);
-    }
-    printf("\n");
-    printf("Printing Write Sockets");
-    for (i = 0; i < MIG_MAX_JOIN; ++i) {
-        conn = &join->conn[i];
-        printf("\t%d",conn->w_sock);
-    }
-    printf("\n");
-
-
-}
-
-void qmp_migrate_pause(void){
-
-#ifdef ft_debug_mode_enable
-    print_fds();
-#endif
-    //qmp_fd = now_fd;
-    //printf("qmp_fd = %d\n",qmp_fd);
-
-    FTPRINTF("setting migration_paused to true\n");
-
-    migration_paused = true;
-    //migrate_pause.notify = migration_pause_notifier;
-    //add_migration_state_change_notifier(&migrate_pause) ;
-    FTPRINTF("migrate pause notifier added\n");
-    qemu_iohandler_ft_pause(true);
-}
-
-void qmp_migrate_resume(void){
-    FTPRINTF("in func %s\n",__func__);
-
-    migration_paused = false;
-    qemu_iohandler_ft_pause(false);
-    migrate_run(migrate_token_owner);
-
 }

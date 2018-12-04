@@ -7,7 +7,7 @@
  *  Wei-Chen Liao       <ms0472904@gmail.com>
  *  Po-Jui Tsao         <pjtsao@itri.org.tw>
  *  Yu-Shiang Lin       <YuShiangLin@itri.org.tw>
- *
+ *  
  *
  */
 
@@ -29,7 +29,6 @@
 #include "qom/cpu.h"
 #include "exec/memory.h"
 #include "exec/address-spaces.h"
-#include "migration/cuju-kvm-share-mem.h"
 #include "migration/cuju-ft-trans-file.h"
 #include "io/channel-socket.h"
 #include <linux/kvm.h>
@@ -42,9 +41,8 @@ int cuju_is_load = 0;
 QemuMutex cuju_load_mutex;
 QemuCond cuju_load_cond;
 
-//extern int qemu_loadvm_dev(QEMUFile *f);
-//extern void kvm_shmem_load_ram(void *buf, int size);
-//extern void kvm_shmem_load_ram_with_hdr(void *buf, int size, void *hdr_buf, int hdr_size);
+extern void kvm_shmem_load_ram(void *buf, int size);
+extern void kvm_shmem_load_ram_with_hdr(void *buf, int size, void *hdr_buf, int hdr_size);
 
 char *blk_server = NULL;
 
@@ -304,10 +302,7 @@ static ssize_t cuju_ft_trans_put(void *opaque, void *buf, int size)
     assert(offset == size);
     return offset;
 }
-/**
- * cuju_ft_trans_send_header : send header and state to slave
- *
- */
+
 int cuju_ft_trans_send_header(CujuQEMUFileFtTrans *s,
                         enum CUJU_QEMU_VM_TRANSACTION_STATE state,
                         uint32_t payload_len)
@@ -763,27 +758,19 @@ out:
 static int cuju_ft_trans_close(void *opaque)
 {
     Error *local_err = NULL;
+
     CujuQEMUFileFtTrans *s = opaque;
-    int ret = -1;
+    int ret;
 
     printf("%s\n", __func__);
 
     trace_cuju_ft_trans_close();
+    ret = s->close(s->opaque);
+    if (s->is_sender)
+        g_free(s->buf);
 
-    if (!s){
-    /*
-    vm_stop_mig();
-    kvm_vm_ioctl_proxy((void *) s);
-    //kvm_vm_ioctl(kvm_state, KVMFT_RESTORE_PREVIOUS_EPOCH, (void *) s);
-    bdrv_drain_all();
-    bdrv_invalidate_cache_all(&local_err);
-    qemu_announce_self();
 
-    vm_start_mig();
-    */
-
-    }else if (!s->is_sender) {
-        ret = s->close(s->opaque);
+    if (!s->is_sender) {
         qemu_mutex_lock(&cuju_load_mutex);
         while (cuju_is_load == 1)
             qemu_cond_wait(&cuju_load_cond, &cuju_load_mutex);
@@ -995,10 +982,7 @@ clear:
     close(s->ram_hdr_fd);
     s->ram_hdr_fd = -1;
 }
-/**
- * cuju_ft_tran_read_pages : handler for slave ram_fd
- *
- */
+
 void cuju_ft_trans_read_pages(void *opaque)
 {
     CujuQEMUFileFtTrans *s = opaque;
@@ -1181,12 +1165,7 @@ static const QEMUFileOps cuju_ops = {
     //.set_blocking = channel_set_blocking,
     //.get_return_path = channel_get_output_return_path,
 };
-/**
- * cuju_qemu_fopen_ops_ft_trans : open qemu file and set is_sender
- * set ft_trans_put_buffer / ft_trans_get_buffer , ft_trans_close, ft_trans_rate_limit
- * state set to CUJU_QEMU_VM_TRANSACTION_INIT
- * last_cmd set to CUJU_QEMU_VM_TRANSACTION_COMMIT
- */
+
 QEMUFile *cuju_qemu_fopen_ops_ft_trans(void *opaque,
                                   CujuFtTransPutBufferFunc *put_buffer,
                                   CujuFtTransGetBufferFunc *get_buffer,
@@ -1288,3 +1267,4 @@ void cuju_socket_set_quickack(int fd)
     int i = 1;
     setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, (void *)&i, sizeof(i));
 }
+

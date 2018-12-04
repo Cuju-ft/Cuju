@@ -37,7 +37,6 @@
 #endif
 
 static char* slave_host_port;
-extern enum GFT_STATUS gft_status ;
 
 static void backup_slave_host_port(const char *host_port)
 {
@@ -243,15 +242,14 @@ void cuju_tcp_start_outgoing_migration(MigrationState *s,
 {
     backup_slave_host_port(host_port);
 
-    if(gft_status != GFT_WAIT){
-        Error *err = NULL;
-        SocketAddress *saddr = tcp_build_address(host_port, &err);
-        if (!err) {
-            cuju_socket_start_outgoing_migration(s, saddr, &err);
-        }
-        error_propagate(errp, err);
+    Error *err = NULL;
+    SocketAddress *saddr = tcp_build_address(host_port, &err);
+    if (!err) {
+        cuju_socket_start_outgoing_migration(s, saddr, &err);
     }
+    error_propagate(errp, err);
 }
+
 void unix_start_outgoing_migration(MigrationState *s,
                                    const char *path,
                                    Error **errp)
@@ -360,7 +358,7 @@ static gboolean cuju_socket_accept_incoming_migration(QIOChannel *ioc,
 out:
     // Close listening socket as its no longer needed
     qio_channel_close(ioc, NULL);
-    return FALSE; // unregister
+    return FALSE; // unregister 
 }
 
 static void cuju_socket_start_incoming_migration(SocketAddress *saddr,
