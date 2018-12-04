@@ -7,22 +7,19 @@
 #define IP_LEN          16
 #define MAC_LEN         6
 
-enum MIG_JOIN_GFT_STATE{
- MIG_JOIN_GFT_ZERO               ,
- MIG_JOIN_GFT_NOT_READY              ,
- MIG_JOIN_GFT_SNAPSHOT_START              ,
- MIG_JOIN_GFT_EPOCH_COMMIT1          ,
- MIG_JOIN_GFT_EPOCH_COMMIT                ,
- MIG_JOIN_GFT_EPOCH_SNAPSHOT_DONE,
- MIG_JOIN_GFT_INIT_UNUSED        ,
- MIG_JOIN_GFT_ADD_HOST           ,
- MIG_JOIN_GFT_INIT               ,
- MIG_JOIN_GFT_INIT_ACK           ,
- MIG_JOIN_GFT_NEW                ,
- MIG_JOIN_GFT_MIGRATION_DONE     ,
- MIG_JOIN_GFT_MIGRATION_ALL      ,
- MIG_JOIN_GFT_EPOCH_COMMIT2
-};
+#define MIG_JOIN_NOT_READY              0x01
+#define GFT_SNAPSHOT_START              0x02
+#define MIG_JOIN_EPOCH_COMMIT1          0x03
+#define GFT_EPOCH_COMMIT                0x04
+#define MIG_JOIN_EPOCH_SNAPSHOT_DONE    0x05
+#define MIG_JOIN_INIT                   0x06
+#define MIG_JOIN_GFT_ADD_HOST           0x07
+#define MIG_JOIN_GFT_INIT               0x08
+#define MIG_JOIN_GFT_INIT_ACK           0x09
+#define MIG_JOIN_GFT_NEW                0x0a
+#define MIG_JOIN_GFT_MIGRATION_DONE     0x0b
+#define MIG_JOIN_GFT_MIGRATION_ALL      0x0c
+#define MIG_JOIN_EPOCH_COMMIT2          0x0d
 
 typedef struct
 {
