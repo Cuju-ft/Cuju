@@ -1316,8 +1316,8 @@ struct kvm_shmem_init {
   unsigned long shared_page_num;
   unsigned long shared_watermark;
   unsigned long page_nums_size;
-  unsigned long page_nums_pfn_dirty[2]; // start of struct
-  unsigned long page_nums_pfn_snapshot[2]; // start of struct
+  unsigned long page_nums_pfn_dirty[2]; // start of struct 
+  unsigned long page_nums_pfn_snapshot[2]; // start of struct 
   unsigned long epoch_time_in_ms;
   unsigned long pages_per_ms;
 };
@@ -1356,7 +1356,7 @@ struct kvm_shmem_mark_page_dirty {
 struct kvm_shmem_extend {
   // output from kvm to qemu
   unsigned long page_nums_size;
-  unsigned long page_nums_pfn_snapshot; // start of struct
+  unsigned long page_nums_pfn_snapshot; // start of struct 
 };
 #define KVM_SHM_EXTEND                    _IOW(KVMIO, 0xcb, struct kvm_shmem_extend)
 struct kvm_shmem_start_kernel_transfer {
@@ -1369,7 +1369,7 @@ struct kvm_shmem_start_kernel_transfer {
 #define KVM_START_KERNEL_TRANSFER         _IOW(KVMIO,  0xcc, struct kvm_shmem_start_kernel_transfer)
 struct kvm_vcpu_get_shared_all_state {
     __u32 pfn;
-    __u32 order;
+    __u32 order;                                                                                             
 };
 #define KVM_VCPU_GET_SHARED_ALL_STATE     _IOW(KVMIO,  0xcd, struct kvm_vcpu_get_shared_all_state)
 #define KVM_FT_PROTECT_SPECULATIVE_PREPARE_NEXT_SPECULATIVE        _IOW(KVMIO,  0xce, __u32)
@@ -1380,7 +1380,7 @@ struct kvmft_set_master_slave_sockets {
 };
 #define KVMFT_SET_MASTER_SLAVE_SOCKETS    _IOW(KVMIO, 0xcf, struct kvmft_set_master_slave_sockets)
 
-#define KVMFT_RESTORE_PREVIOUS_EPOCH      _IOW(KVMIO,0xd1,void *)
+
 
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
 #define KVM_DEV_ASSIGN_PCI_2_3		(1 << 1)
@@ -1449,7 +1449,7 @@ struct kvm_cpu_state {
 
 #define KVM_SHM_SNAPMODE_OFF		0
 // will check dirty_bitmap of previous epoch
-#define KVM_SHM_SNAPMODE_NORMAL		1
+#define KVM_SHM_SNAPMODE_NORMAL		1	
 #define KVM_SHM_SNAPMODE_TESTING	2
 
 #endif /* __LINUX_KVM_H */
