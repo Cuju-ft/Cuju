@@ -2431,8 +2431,7 @@ static void gft_master_read_master(void *opaque)
                 /**
                  * Receive Snapshot Start Broadcast from other nodes
                  * 1. if we are still in running stage, we must cancel our timer
-                 * 2. if we receive mutiple gft_snaphsot_start from the same port,
-                 * 2. abort if we receive mutiple gft_snaphsot_start from the same port
+                 * 2. if we receive mutiple gft_snaphsot_start from the same port, we
                  * 3. if all nodes have started snapshot stage, allow next migrate state to run
                  */
                 FTPRINTF("%s owner is %d\n", __func__, migrate_token_owner ? migrate_token_owner->cur_off : -1);
@@ -3238,16 +3237,7 @@ int cuju_get_fd_from_QIOChannel(QIOChannel *ioc) {
     QIOChannelSocket *sioc = QIO_CHANNEL_SOCKET(ioc);
     return sioc->fd;
 }
-/**
- * setup_slave_receiver :
- * is_sender set to 0 for slave
- * corresponds to ft_setup_migrate_state in migration.c
- * c probably used to monitor connection liveness, ft_trans_incoming will close qemu_file if error
- *
- * @s : socket returned from inet_listen
- * @dev_fd : main connection between master / slave
- * @ram_fd : first element of ram_fd array
- */
+
 static QEMUFile *cuju_setup_slave_receiver(int s, QEMUFile *devf, QEMUFile *ramf)
 {
     QEMUFile *f;

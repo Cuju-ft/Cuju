@@ -304,10 +304,7 @@ static ssize_t cuju_ft_trans_put(void *opaque, void *buf, int size)
     assert(offset == size);
     return offset;
 }
-/**
- * cuju_ft_trans_send_header : send header and state to slave
- *
- */
+
 int cuju_ft_trans_send_header(CujuQEMUFileFtTrans *s,
                         enum CUJU_QEMU_VM_TRANSACTION_STATE state,
                         uint32_t payload_len)
@@ -993,10 +990,7 @@ clear:
     close(s->ram_hdr_fd);
     s->ram_hdr_fd = -1;
 }
-/**
- * cuju_ft_tran_read_pages : handler for slave ram_fd
- *
- */
+
 void cuju_ft_trans_read_pages(void *opaque)
 {
     CujuQEMUFileFtTrans *s = opaque;
@@ -1179,12 +1173,7 @@ static const QEMUFileOps cuju_ops = {
     //.set_blocking = channel_set_blocking,
     //.get_return_path = channel_get_output_return_path,
 };
-/**
- * cuju_qemu_fopen_ops_ft_trans : open qemu file and set is_sender
- * set ft_trans_put_buffer / ft_trans_get_buffer , ft_trans_close, ft_trans_rate_limit
- * state set to QEMU_VM_TRANSACTION_INIT
- * last_cmd set to QEMU_VM_TRANSACTION_COMMIT
- */
+
 QEMUFile *cuju_qemu_fopen_ops_ft_trans(void *opaque,
                                   CujuFtTransPutBufferFunc *put_buffer,
                                   CujuFtTransGetBufferFunc *get_buffer,

@@ -358,7 +358,7 @@ static gboolean cuju_socket_accept_incoming_migration(QIOChannel *ioc,
 out:
     // Close listening socket as its no longer needed
     qio_channel_close(ioc, NULL);
-    return FALSE; // unregister
+    return FALSE; // unregister 
 }
 
 static void cuju_socket_start_incoming_migration(SocketAddress *saddr,
