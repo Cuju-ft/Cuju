@@ -328,7 +328,7 @@ struct page *kvm_shm_alloc_page(struct kvm *kvm,
         }
         ctx->shared_pages_snapshot_k[param->index1][param->index2] =
             pfn_to_virt(page_to_pfn(page));
-        ctx->shared_pages_snapshot_pages[param->index1][param->index2] = page;
+        ctx->shared_pages_snapshot_pages[param->index2][param->index2] = page;
     }
 out:
     return page;

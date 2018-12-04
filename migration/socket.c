@@ -242,16 +242,16 @@ void cuju_tcp_start_outgoing_migration(MigrationState *s,
                                   Error **errp)
 {
     backup_slave_host_port(host_port);
-
-    if(gft_status != GFT_WAIT){
-        Error *err = NULL;
-        SocketAddress *saddr = tcp_build_address(host_port, &err);
-        if (!err) {
-            cuju_socket_start_outgoing_migration(s, saddr, &err);
-        }
-        error_propagate(errp, err);
+    if(gft_status == GFT_WAIT)
+        migrate_fd_connect(s);
+    Error *err = NULL;
+    SocketAddress *saddr = tcp_build_address(host_port, &err);
+    if (!err) {
+        cuju_socket_start_outgoing_migration(s, saddr, &err);
     }
+    error_propagate(errp, err);
 }
+
 void unix_start_outgoing_migration(MigrationState *s,
                                    const char *path,
                                    Error **errp)

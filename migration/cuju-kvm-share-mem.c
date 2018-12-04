@@ -542,10 +542,6 @@ int kvm_shmem_flip_sharing(int cur_index)
     return ret;
 }
 
-void kvm_shmem_cancel_timer(void){
-    kvm_vm_ioctl(kvm_state, KVM_SHM_CANCEL_TIMER);
-}
-
 void kvm_shmem_start_timer(void)
 {
     kvm_vm_ioctl(kvm_state, KVM_SHM_START_TIMER);
