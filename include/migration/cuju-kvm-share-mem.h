@@ -1,4 +1,4 @@
-/* 
+/*
  * Cuju
  * (a.k.a. Fault Tolerance, Continuous Replication, or Checkpointing)
  *
@@ -21,7 +21,7 @@
 
 #define KVM_SHARE_MEM   1
 #define EPOCH_TIME_IN_MS    5
-#define PAGES_PER_MS        200
+#define PAGES_PER_MS        2000
 #define SHARED_DIRTY_SIZE   10000
 #define SHARED_DIRTY_WATERMARK  9600
 
@@ -45,6 +45,7 @@ int kvm_shmem_mark_page_dirty_range(MemoryRegion *mr, hwaddr addr, hwaddr length
 int kvm_shmem_mark_page_dirty(void *ptr, unsigned long gfn);
 void kvm_shmem_send_dirty_kernel(MigrationState *s);
 void kvm_shmem_start_timer(void);
+void kvm_shmem_cancel_timer(void);
 int kvm_shmem_flip_sharing(int cur_index);
 
 int kvmft_fire_timer(int moff);
@@ -68,6 +69,5 @@ void kvm_shmem_load_ram_with_hdr(void *buf, int size, void *hdr_buf, int hdr_siz
 void kvm_shmem_load_ram(void *buf, int size);
 void* kvm_shmem_map_pfn(unsigned long pfn, unsigned long size);
 void kvm_shmem_unmap_pfn(void *ptr, unsigned long size);
-
-
+int kvm_vm_ioctl_proxy(void *s);
 #endif

@@ -6,7 +6,7 @@
  *  Yi-feng Sun         <pkusunyifeng@gmail.com>
  *  Wei-Chen Liao       <ms0472904@gmail.com>
  *  Po-Jui Tsao         <pjtsao@itri.org.tw>
- *  Yu-Shiang Lin       <YuShiangLin@itri.org.tw> 
+ *  Yu-Shiang Lin       <YuShiangLin@itri.org.tw>
  *
  */
 

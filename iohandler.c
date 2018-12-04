@@ -79,6 +79,9 @@ bool qemu_iohandler_is_ft_paused(void)
 void qemu_set_fd_survive_ft_pause(int fd, bool survive)
 {
     aio_set_fd_survive_ft_pause(iohandler_ctx, fd, survive);
+#ifdef ft_debug_mode_enable
+    printf("set fd %d to %d\n", fd, survive);
+#endif
 }
 
 /* reaping of zombies.  right now we're not passing the status to

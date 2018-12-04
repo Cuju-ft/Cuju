@@ -7,19 +7,51 @@
 #define IP_LEN          16
 #define MAC_LEN         6
 
-#define MIG_JOIN_NOT_READY              0x01
-#define GFT_SNAPSHOT_START              0x02
-#define MIG_JOIN_EPOCH_COMMIT1          0x03
-#define GFT_EPOCH_COMMIT                0x04
-#define MIG_JOIN_EPOCH_SNAPSHOT_DONE    0x05
-#define MIG_JOIN_INIT                   0x06
-#define MIG_JOIN_GFT_ADD_HOST           0x07
-#define MIG_JOIN_GFT_INIT               0x08
-#define MIG_JOIN_GFT_INIT_ACK           0x09
-#define MIG_JOIN_GFT_NEW                0x0a
-#define MIG_JOIN_GFT_MIGRATION_DONE     0x0b
-#define MIG_JOIN_GFT_MIGRATION_ALL      0x0c
-#define MIG_JOIN_EPOCH_COMMIT2          0x0d
+enum GFT_STATUS{
+    GFT_PRE = 0,
+    GFT_START,
+    GFT_WAIT,
+};
+
+/// This is the enum for GFT status, stored in MigrationState->join.state
+enum MIG_JOIN_GFT_STATE{
+ MIG_JOIN_GFT_ZERO               , ///< Simply used to maintain same numbering
+ MIG_JOIN_GFT_NOT_READY              , ///< Unused
+  /**
+  * \enum MIG_JOIN_GFT_STATE :: MIG_JOINGFT_SNAPSHOT_START
+  * \brief CMD send to before start of snapshot stage
+  * broadcasted in ft_tick_func
+  *
+  * upon recv
+  * set bit for bitmap_snapshot_started
+  * if all started snapshot, if next MigrationState is ready to run,
+  * set wait to false, and run next MigrationState
+  */
+ MIG_JOIN_GFT_SNAPSHOT_START              ,
+ /**
+  * \enum MIG_JOIN_GFT_STATE :: MIG_JOIN_GFT_EPOCH_COMMIT1
+  * \brief CMD sent after end of transfer stage
+  *  upon recving the cmd, bitmaps_commit1 == ~0,
+  *  broadcast MIG_JOIN_GFT_EPOCH_COMMIT2
+  */
+ MIG_JOIN_GFT_EPOCH_COMMIT1          ,
+ /**
+  * \enum MIG_JOIN_GFT_STATE::MIG_JOIN_GFT_EPOCH_COMMIT
+  * \breif MIG_JOIN_GFT_STATE block before start of next snapshot
+  * set in migrate_run / gft_master_accept_other_master,
+  *
+  */
+ MIG_JOIN_GFT_EPOCH_COMMIT                ,
+ MIG_JOIN_GFT_EPOCH_SNAPSHOT_DONE, ///< Unused
+ MIG_JOIN_GFT_INIT_UNUSED        , ///<Unused
+ MIG_JOIN_GFT_ADD_HOST           , ///< CMD used to addhost, should be followed by group info
+ MIG_JOIN_GFT_INIT               , ///< Paired with INIT_ACK, check connection
+ MIG_JOIN_GFT_INIT_ACK           , ///< Paired with INIT, check connection
+ MIG_JOIN_GFT_NEW                ,
+ MIG_JOIN_GFT_MIGRATION_DONE     , ///< send to leader when ft_state is FT_INIT
+ MIG_JOIN_GFT_MIGRATION_ALL      , ///< The final message from leader after recving MIGRATION_DONE from all members
+ MIG_JOIN_GFT_EPOCH_COMMIT2        ///< CMD bcast after recv COMMIT1 from all members, will run current MigrationState
+};
 
 typedef struct
 {

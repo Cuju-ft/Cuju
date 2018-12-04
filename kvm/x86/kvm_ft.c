@@ -306,7 +306,11 @@ int kvm_shm_extend(struct kvm *kvm, struct kvm_shmem_extend *ext)
 
     return 0;
 }
-
+/**
+ * kvm_shm_alloc_page : allocate pages in kernel
+ * a[index1][index2] corresponds to page_array[i][j] in qemu
+ * allocate one page at a time
+ */
 struct page *kvm_shm_alloc_page(struct kvm *kvm,
         struct kvm_shm_alloc_pages *param)
 {
@@ -318,7 +322,7 @@ struct page *kvm_shm_alloc_page(struct kvm *kvm,
 
     if (page) {
         if (param->index1 > ctx->max_desc_count || param->index2 >= ctx->shared_page_num) {
-            printk("%s index1 %d index2 %d\n", __func__, param->index1, param->index2);
+            printk(KERN_ERR"%s index1 %d index2 %d\n", __func__, param->index1, param->index2);
             __free_pages(page, param->order);
             return NULL;
         }
@@ -1216,7 +1220,56 @@ err_out:
 	kvm_shm_free_trackable(kvm);
 	return ret;
 }
+static int restore_one_epoch(struct kvm * kvm, int index){
 
+
+    struct kvmft_context *ctx = &kvm->ft_context;
+    void **shared_pages_k;
+    struct kvmft_dirty_list *dlist;
+    int i,count;
+    dlist = ctx->page_nums_snapshot_k[index];
+    count = dlist->put_off;
+    shared_pages_k = ctx->shared_pages_snapshot_k[index];
+
+    printk("in function %s , applying patch for index = %d,count = %d \n",__func__,index,count);
+     for (i = 0; i < count; i++) {
+        gfn_t gfn = dlist->pages[i];
+        void * hva = (void * ) gfn_to_hva(kvm,gfn);
+        void * orig = (void *)((unsigned long)hva & ~0x0FFFULL);
+        memcpy_page_ermsb(orig,shared_pages_k[i]);
+        //printk("gfn = %d\n",gfn);
+        /*if (!last_memslot || !in_memslot(last_memslot, gfn))
+            last_memslot = gfn_to_memslot(kvm, gfn);
+        clear_bit(gfn - last_memslot->base_gfn, last_memslot->lock_dirty_bitmap);
+        kvm_mmu_write_protect_single_fast(kvm, last_memslot, gfn - last_memslot->base_gfn);*/
+    }
+
+    printk("in function %s , applying patch for index = %d done \n",__func__,index);
+    return count;
+
+}
+
+
+int kvmft_restore_previous_epoch(struct kvm* kvm,void * __user bitmap){
+	struct kvm_memory_slot *last_memslot = NULL;
+    struct kvmft_context *ctx = &kvm->ft_context;
+    int count , cur_index , prev_index;
+
+    cur_index = ctx->cur_index;
+    prev_index = !(ctx->cur_index);
+
+
+    spin_lock(&kvm->mmu_lock);
+
+    count = restore_one_epoch(kvm,cur_index);
+    count += restore_one_epoch(kvm,prev_index);
+
+    if (count > 0)
+        kvm_flush_remote_tlbs(kvm);
+
+     spin_unlock(&kvm->mmu_lock);
+    return 0;
+}
 int kvm_shm_collect_trackable_dirty(struct kvm *kvm,
 									void * __user bitmap)
 {
@@ -1649,7 +1702,7 @@ static inline int transfer_16x8_page_diff(unsigned long gfn,
         int r = memcmp_avx_32(backup + i, page + i);
         if (r) {
             offsets[offsets_off++] = i;
-            header->h[i / 256] |= (1 << ((i % 256) / 32));
+            header->h[i >> 8] |= (1 << ((i & 255) >> 5));
         }
     }
 

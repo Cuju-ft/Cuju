@@ -47,7 +47,7 @@ static void dirty_pages_userspace_add(unsigned long gfn)
     for (i = 0; i < cnt; i++)
         if (dirty_pages_userspace[i] == gfn)
             return;
-    
+
     i = __sync_fetch_and_add(&dirty_pages_userspace_off, 1);
     dirty_pages_userspace[i] = gfn;
     assert(i < 1024);
@@ -275,6 +275,13 @@ void kvmft_pre_init(void)
 }
 
 // called in vl.c
+
+/**
+ * kvm_share_mem_init : intialize dirty page tracking structures in kvm
+ * call kvm_shmem_alloc_pages to allocate page in kernel
+ * mmap the reutrn value to ram_fd = fopen(/dev/mem )
+ *
+ */
 void kvm_share_mem_init(unsigned long ram_size)
 {
     struct kvm_shmem_init shmem_init;
@@ -535,6 +542,10 @@ int kvm_shmem_flip_sharing(int cur_index)
     return ret;
 }
 
+void kvm_shmem_cancel_timer(void){
+    kvm_vm_ioctl(kvm_state, KVM_SHM_CANCEL_TIMER);
+}
+
 void kvm_shmem_start_timer(void)
 {
     kvm_vm_ioctl(kvm_state, KVM_SHM_START_TIMER);
@@ -583,14 +594,14 @@ static inline int memcmp_avx2(void *orig, void *curr)
   __m256d a = _mm256_load_pd((double const *)orig);
   __m256d b = _mm256_load_pd((double const *)curr);
   __m256d e = _mm256_cmp_pd(a, b, _CMP_EQ_OQ);
-  
+
   if (!_mm256_testc_pd(e, memcmp_256pd_allone))
     return 1;
 
   a = _mm256_load_pd((double const *)(orig + 32));
   b = _mm256_load_pd((double const *)(curr + 32));
   e = _mm256_cmp_pd(a, b, _CMP_EQ_OQ);
-  
+
   if (!_mm256_testc_pd(e, memcmp_256pd_allone))
     return 1;
 
@@ -684,7 +695,7 @@ static inline int memcmp_sse2_64(void *orig, void *curr)
 static inline int gather_16(char *orig_page, char *curr_page)
 {
   return memcmp_sse2_16(orig_page, curr_page);
- 
+
 }
 
 static inline int gather_32(char *orig_page, char *curr_page)
@@ -768,7 +779,7 @@ static void compress_init(void)
     x1[63] = 63;
     assert(memcmp_sse2_64(x1, x2) == 0);
 
- 
+
 
     for (i = 0; i < 64; ++i) {
         x1[i] = i;
@@ -865,7 +876,7 @@ void *kvm_shmem_alloc_trackable(unsigned int size)
 		printf("%s out of trackable_ptrs array.\n", __func__);
 		return NULL;
 	}
-	
+
 	ptr->ptr = mmap(NULL, (size_t)size, PROT_READ | PROT_WRITE,
 					MAP_ANONYMOUS | MAP_SHARED | MAP_LOCKED | MAP_POPULATE,
 					-1, 0);
@@ -962,7 +973,9 @@ void kvm_shmem_sortup_trackable(void)
 	}
 
 	trackable_number = j;
+#ifdef ft_debug_mode_enable
 	printf("\n\n%s trackable_number = %d\n\n", __func__, trackable_number);
+#endif
 
     for (i = 0; i < trackable_number; i++) {
         for (j = i + 1; j < trackable_number; j++) {
@@ -1090,7 +1103,9 @@ int kvm_shmem_mark_page_dirty(void *ptr, unsigned long gfn)
     }
     return 0;
 }
-
+/**
+ * @ram_fd is the corresponing socket
+ */
 static int kvm_start_kernel_transfer(int trans_index, int ram_fd, int conn_index, int max_conn)
 {
     struct kvm_shmem_start_kernel_transfer req;
@@ -1130,7 +1145,10 @@ static int kvm_start_kernel_transfer(int trans_index, int ram_fd, int conn_index
 
     return ret;
 }
-
+/**
+ * Send a header followed by full page
+ * return the length of data sent (header + page)
+ */
 static inline int transfer_flat_page(int fd, unsigned int gfn, void *page)
 {
     struct __attribute__((__packed__)) c16x8_header {
@@ -1160,7 +1178,10 @@ static void thread_set_realtime(void)
         exit(-1);
     }
 }
-
+/**
+ * Used to do initial migration
+ * Will call kvm_start_kernel_transfer
+ */
 static void* trans_ram_conn_thread_func(void *opaque)
 {
     struct trans_ram_conn_descriptor *d = opaque;
@@ -1222,7 +1243,7 @@ void trans_ram_init(void)
                             QEMU_THREAD_JOINABLE);
     }
 
-#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
+/*#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
     QTAILQ_INIT(&trans_ram_waiting_list);
     qemu_mutex_init(&trans_ram_mutex);
     qemu_cond_init(&trans_ram_cond);
@@ -1230,7 +1251,7 @@ void trans_ram_init(void)
                         kvmft_transfer_func_userspace,
                         (void *)0,
                         QEMU_THREAD_JOINABLE);
-#endif
+#endif */
 }
 
 void trans_ram_add(MigrationState *s)
@@ -1239,18 +1260,18 @@ void trans_ram_add(MigrationState *s)
 
     dirty_pages_userspace_commit();
 
-#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
+/*#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
     qemu_mutex_lock(&trans_ram_mutex);
     QTAILQ_INSERT_TAIL(&trans_ram_waiting_list, s, node);
     qemu_mutex_unlock(&trans_ram_mutex);
     qemu_cond_signal(&trans_ram_cond);
-#else
+#else*/
 
     qemu_mutex_lock(&d->mutex);
     QTAILQ_INSERT_TAIL(&d->list, s, nodes[0]);
     qemu_mutex_unlock(&d->mutex);
     qemu_cond_signal(&d->cond);
-#endif
+//#endif
 }
 
 void kvm_shmem_send_dirty_kernel(MigrationState *s)
@@ -1260,10 +1281,10 @@ void kvm_shmem_send_dirty_kernel(MigrationState *s)
     kvmft_assert_ram_hash_and_dlist(dlist->pages, dlist->put_off);
     s->dirty_pfns_len = dlist->put_off;
 
-#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
+/*#ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
     s->dirty_pfns = g_malloc(sizeof(s->dirty_pfns[0]) * s->dirty_pfns_len);
     memcpy(s->dirty_pfns, dlist->pages, sizeof(s->dirty_pfns[0]) * s->dirty_pfns_len);
-#endif
+#endif */
 
     trans_ram_add(s);
 }
@@ -1537,7 +1558,7 @@ void kvmft_update_epoch_flush_time_linear(double time_s)
         a0 = y1 / n - a1 * x1 / n;
         e = y[0] - a0 - a1 * x[0];
         a0 += e;
-        printf("\nY=%.2f+%.2fX\n",a0,a1); 
+        printf("\nY=%.2f+%.2fX\n",a0,a1);
         new_f = (max_s - a0) / a1;
         if (time_s > max_s)
             new_f -= 0.01;
@@ -1557,4 +1578,11 @@ void kvmft_update_epoch_flush_time_linear(double time_s)
         last_f = new_f;
     }
 }
-
+/*
+kvm_vm_ioctl_proxy : used in cuju-ft-trans-file.c
+just call kvm_vm_ioctl in cuju-kvm-share-mem.c to make sure that it works
+*/
+int kvm_vm_ioctl_proxy(void *s)
+{
+    return kvm_vm_ioctl(kvm_state, KVMFT_RESTORE_PREVIOUS_EPOCH, s);
+}

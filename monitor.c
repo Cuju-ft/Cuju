@@ -1803,6 +1803,14 @@ static void hmp_loadvm(Monitor *mon, const QDict *qdict)
     }
 }
 
+void monitor_list_fd(Monitor *mon){
+    mon_fd_t *monfd;
+    printf("in func %s\n",__func__);
+    QLIST_FOREACH(monfd, &mon->fds, next) {
+        printf("in %s, listing monitor %s\n",__func__,monfd->name);
+    }
+}
+
 int monitor_get_fd(Monitor *mon, const char *fdname, Error **errp)
 {
     mon_fd_t *monfd;
@@ -2492,11 +2500,11 @@ static int default_fmt_size = 4;
 static int is_valid_option(const char *c, const char *typestr)
 {
     char option[3];
-  
+
     option[0] = '-';
     option[1] = *c;
     option[2] = '\0';
-  
+
     typestr = strstr(typestr, option);
     return (typestr != NULL);
 }
@@ -2861,7 +2869,7 @@ static QDict *monitor_parse_arguments(Monitor *mon,
                     p++;
                     if(c != *p) {
                         if(!is_valid_option(p, typestr)) {
-                  
+
                             monitor_printf(mon, "%s: unsupported option -%c\n",
                                            cmd->name, *p);
                             goto fail;
