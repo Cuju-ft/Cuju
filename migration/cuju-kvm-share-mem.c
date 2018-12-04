@@ -973,9 +973,7 @@ void kvm_shmem_sortup_trackable(void)
 	}
 
 	trackable_number = j;
-#ifdef ft_debug_mode_enable
 	printf("\n\n%s trackable_number = %d\n\n", __func__, trackable_number);
-#endif
 
     for (i = 0; i < trackable_number; i++) {
         for (j = i + 1; j < trackable_number; j++) {
