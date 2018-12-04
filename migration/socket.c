@@ -37,7 +37,6 @@
 #endif
 
 static char* slave_host_port;
-extern enum GFT_STATUS gft_status ;
 
 static void backup_slave_host_port(const char *host_port)
 {
@@ -242,8 +241,7 @@ void cuju_tcp_start_outgoing_migration(MigrationState *s,
                                   Error **errp)
 {
     backup_slave_host_port(host_port);
-    if(gft_status == GFT_WAIT)
-        migrate_fd_connect(s);
+
     Error *err = NULL;
     SocketAddress *saddr = tcp_build_address(host_port, &err);
     if (!err) {
