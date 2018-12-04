@@ -2360,7 +2360,6 @@ static void flush_dev(void *opaque)
 
 // we need this bh because only main-io-thread can send/recv
 // control messages to/from slave.
-// will be called interchangably with flush_dev
 void kvm_shmem_trans_ram_bh(void *opaque)
 {
     MigrationState *s = opaque;

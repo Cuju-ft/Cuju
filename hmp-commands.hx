@@ -853,22 +853,6 @@ Inject an NMI on the default CPU (x86/s390) or all CPUs (ppc64).
 
 ETEXI
 
-   {
-        .name       = "migrate_pause",
-        .args_type  = "",
-        .params     = "",
-        .help       = "pause migration",
-        .cmd = hmp_migrate_pause,
-    },
-
-    {
-        .name       = "migrate_resume",
-        .args_type  = "",
-        .params     = "",
-        .help       = "resume migration",
-        .cmd = hmp_migrate_resume,
-    },
-
     {
         .name       = "ringbuf_write",
         .args_type  = "device:s,data:s",

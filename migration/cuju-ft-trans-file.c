@@ -1287,10 +1287,3 @@ void cuju_socket_set_quickack(int fd)
     setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, (void *)&i, sizeof(i));
 }
 
-void qmp_migrate_pause(void){
-    printf("in function %s\n",__func__);
-}
-
-void qmp_migrate_resume(void){
-    printf("in function %s\n",__func__);
-}

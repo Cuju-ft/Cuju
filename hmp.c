@@ -43,9 +43,6 @@
 #include <spice/enums.h>
 #endif
 
-extern void qmp_migrate_resume(void);
-extern void qmp_migrate_pause(void);
-
 static void hmp_handle_error(Monitor *mon, Error **errp)
 {
     assert(errp);
@@ -2635,12 +2632,4 @@ void hmp_gft_init(Monitor *mon, const QDict *qdict)
         error_free(err);
         return;
     }
-}
-
-void hmp_migrate_pause(Monitor *mon , const QDict *qdict){
-    qmp_migrate_pause();
-}
-
-void hmp_migrate_resume(Monitor *mon, const QDict *qdict){
-    qmp_migrate_resume();
 }
