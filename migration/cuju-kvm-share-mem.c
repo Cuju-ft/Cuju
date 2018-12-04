@@ -1212,7 +1212,10 @@ static void* trans_ram_conn_thread_func(void *opaque)
 
     return NULL;
 }
-
+/**
+ * called in vl.c, after __migrate_init
+ * create qemu thread (1) with function trans_ram_conn_thread_func
+ */
 void trans_ram_init(void)
 {
     int i;

@@ -34,7 +34,6 @@ struct AioHandler
 
     //For CUJU-FT
     bool mig_survive;
-    bool pause;
 };
 
 static bool ft_pause;

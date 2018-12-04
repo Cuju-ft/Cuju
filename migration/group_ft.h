@@ -14,6 +14,7 @@ enum MIG_JOIN_GFT_STATE{
   /**
   * \enum MIG_JOIN_GFT_STATE :: MIG_JOINGFT_SNAPSHOT_START
   * \brief CMD send to before start of snapshot stage
+  * state transfered from MIG_JOIN_GFT_EPOHC_COMMIT1 in kvmft_tick_func
   * broadcasted in ft_tick_func
   *
   * upon recv

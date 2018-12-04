@@ -502,6 +502,5 @@ void qmp_gft_add_host(int gft_id, const char *master_host_ip,
                       Error **errp);
 void qmp_gft_leader_init(Error **errp);
 int gft_packet_can_send(const uint8_t *buf, int size);
-void print_fds(void);
 
 #endif
