@@ -38,7 +38,7 @@ enum MIG_JOIN_GFT_STATE{
  /**
   * \enum MIG_JOIN_GFT_STATE::MIG_JOIN_GFT_EPOCH_COMMIT
   * \breif MIG_JOIN_GFT_STATE block before start of next snapshot
-  * set in migrate_run / gft_master_accept_other_master,
+  * set in migrate_run / gft_master_accpet_other_master,
   *
   */
  MIG_JOIN_GFT_EPOCH_COMMIT                ,
