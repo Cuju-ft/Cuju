@@ -16,11 +16,11 @@ For more information see: https://cuju-ft.github.io/cuju-web/home.html
 ## The environment prepare
 ---
 ### All Node Install
-Assume you have already builded Primary, Backup and NFS node
+* Assume you have already builded Primary, Backup and NFS node.  
 *A recommended topology below:*
 ![](https://i.imgur.com/DuKZweZ.png)
 
-If you only have one or two machine, you can reference this setting
+* If you only have one or two machine, you can reference this setting. 
 *Another recommended topology below:*
 ![](https://i.imgur.com/38d0kzJ.png)
 
@@ -152,7 +152,7 @@ $ ./reinsmodkvm.sh
 
 * Boot VM (on Primary Host)
 
-    - ```rumvm.sh```
+```rumvm.sh```
 
 ```
 sudo ./x86_64-softmmu/qemu-system-x86_64 \
@@ -177,8 +177,7 @@ $ vncviewer :5900 &
 The default account/password is root/root if you use we provide guest image
 
 * Start Receiver (on Backup Host)
-    - ```recv.sh```
-
+```recv.sh```
 ```
 sudo x86_64-softmmu/qemu-system-x86_64 \
 -drive if=none,id=drive0,cache=none,format=raw,file=/mnt/nfs/Ubuntu20G-1604.img \
@@ -192,7 +191,7 @@ sudo x86_64-softmmu/qemu-system-x86_64 \
 
 You need to follow Boot VM script to change the related parameter
 or you can use following script to replace Receiver start script (if your VM start script is runvm.sh)
-    - ```recv.sh```
+```recv.sh```
 
 ```
 sed -e 's/mode=readline/mode=readline -incoming tcp\:0\:4441,ft_mode/g' -e 's/vm1.monitor/vm1r.monitor/g' -e 's/tap0/tap1/g' ./runvm.sh > tmp.sh
@@ -202,7 +201,7 @@ chmod +x ./tmp.sh
 ```
 
 After VM boot and Receiver ready, you can execute following script to enter FT mode
-    - ```ftmode.sh```
+```ftmode.sh```
 ```
 sudo echo "migrate_set_capability cuju-ft on" | sudo nc -U /home/cujuft/vm1.monitor
 sudo echo "migrate -d -c tcp:127.0.0.1:4441" | sudo nc -U /home/cujuft/vm1.monitor
