@@ -29,7 +29,7 @@ If you only have one or two machine, you can reference this setting
 - Install related packages in all nodes
 ```
  $ sudo apt-get update
- $ sudo apt-get install vim gcc make gdb fakeroot build-essential \
+ $ sudo apt-get install ssh vim gcc make gdb fakeroot build-essential \
 kernel-package libncurses5 libncurses5-dev zlib1g-dev \
 libglib2.0-dev qemu xorg bridge-utils openvpn vncviewer \
 libssl-dev libpixman-1-dev nfs-common git
@@ -155,7 +155,7 @@ $ ./reinsmodkvm.sh
     - ```rumvm.sh```
 
 ```
-# sudo ./x86_64-softmmu/qemu-system-x86_64 \
+sudo ./x86_64-softmmu/qemu-system-x86_64 \
 -drive if=none,id=drive0,cache=none,format=raw,file=/mnt/nfs/Ubuntu20G-1604.img \
 -device virtio-blk,drive=drive0 \
 -m 1G -enable-kvm \
@@ -170,7 +170,7 @@ You need to change the guest image path (file=/mnt/nfs/Ubuntu20G-1604.img) and m
 * Use VNC to see the console
 
 ```
-# vncviewer :5900 &
+$ vncviewer :5900 &
 
 ```
 
@@ -180,7 +180,7 @@ The default account/password is root/root if you use we provide guest image
     - ```recv.sh```
 
 ```
-# sudo x86_64-softmmu/qemu-system-x86_64 \
+sudo x86_64-softmmu/qemu-system-x86_64 \
 -drive if=none,id=drive0,cache=none,format=raw,file=/mnt/nfs/Ubuntu20G-1604.img \
 -device virtio-blk,drive=drive0 \
 -m 1G -enable-kvm \
