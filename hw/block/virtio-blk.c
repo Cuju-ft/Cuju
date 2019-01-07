@@ -218,10 +218,6 @@ static void virtio_blk_req_complete(VirtIOBlockReq *req, unsigned char status)
         QEMUIOVector qiov;
         qemu_iovec_init_external(&qiov, &req->elem.in_sg[0],
                                  req->elem.in_num -1);
-        if (qiov.size != req->qiov.size) {
-            printf("%s %d %d\n", __func__, (int)qiov.size, (int)req->qiov.size);
-        }
-        assert(qiov.size == req->qiov.size);
         qiov.nalloc = qiov.niov; // hack, stop qemu_iovec_copy from complaining
         qemu_iovec_copy_sup(&qiov, 0, &req->qiov, 0, qiov.size);
         qemu_iovec_free_by_external(&req->qiov);
@@ -650,7 +646,7 @@ static void virtio_blk_submit_multireq(BlockBackend *blk, MultiReqBuffer *mrb)
              * 2. merge would exceed maximum number of IOVs
              * 3. merge would exceed maximum transfer length of backend device
              */
-            if (kvmft_started() || sector_num + nb_sectors != req->sector_num ||
+            if (sector_num + nb_sectors != req->sector_num ||
                 niov > blk_get_max_iov(blk) - req->qiov.niov ||
                 req->qiov.size > max_transfer ||
                 nb_sectors > (max_transfer -

@@ -30,8 +30,11 @@
 #include "qemu/cutils.h"
 #include "qapi/error.h"
 #include "qemu/error-report.h"
+#include "migration/migration.h"
 
 #define NOT_DONE 0x7fffffff /* used while emulated sync operation in progress */
+
+extern enum GFT_STATUS gft_status ;
 
 static BlockAIOCB *bdrv_co_aio_prw_vector(BdrvChild *child,
                                           int64_t offset,
@@ -1666,16 +1669,18 @@ int bdrv_flush_all(void)
     BlockDriverState *bs = NULL;
     int result = 0;
 
-    for (bs = bdrv_first(&it); bs; bs = bdrv_next(&it)) {
-        AioContext *aio_context = bdrv_get_aio_context(bs);
-        int ret;
+    if(gft_status != GFT_WAIT){
+        for (bs = bdrv_first(&it); bs; bs = bdrv_next(&it)) {
+            AioContext *aio_context = bdrv_get_aio_context(bs);
+            int ret;
 
-        aio_context_acquire(aio_context);
-        ret = bdrv_flush(bs);
-        if (ret < 0 && !result) {
-            result = ret;
+            aio_context_acquire(aio_context);
+                ret = bdrv_flush(bs);
+            if (ret < 0 && !result) {
+                result = ret;
+            }
+            aio_context_release(aio_context);
         }
-        aio_context_release(aio_context);
     }
 
     return result;

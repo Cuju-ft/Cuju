@@ -49,7 +49,7 @@
 //#define DEBUG_MIGRATION
 //#define ft_debug_mode_enable
 
-#define GFT_RESYNC
+//#define GFT_RESYNC
 
 #ifdef DEBUG_MIGRATION
 #define DPRINTF(fmt, ...) \
@@ -111,13 +111,13 @@
         s->ft_state = state;\
     } while(0)
 #endif
-#ifdef ft_debug_mode_enable
+/*#ifdef ft_debug_mode_enable
 #define FTPRINTF(fmt, ...) \
     do { printf(fmt, ## __VA_ARGS__); } while (0)
 #else
 #define FTPRINTF(fmt, ...) \
     do { } while (0)
-#endif
+#endif*/
 
 #define GFT_SEND_CMD(file, cmd) do {\
     qemu_put_byte((file), (char)(cmd));\
@@ -2345,7 +2345,6 @@ static void gft_broadcast_commit2(MigrationState *s)
         if (conn->w_sock) {
             FTPRINTF("%s migrationState %d sending commit2\n", __func__, migrate_get_index(s));
             GFT_SEND_CMD(conn->w_file, MIG_JOIN_GFT_EPOCH_COMMIT2);
-//            printf("send commit2 done\n");
         }
     }
 }
@@ -2412,7 +2411,7 @@ static void migrate_ft_trans_flush_cb(void *opaque)
 {
     MigrationState *s = opaque;
 
-    FTPRINTF("%s(%lf) %d\n", __func__, time_in_double(), migrate_get_index(s));
+    FTPRINTF("%s(%lf) %d, s->ft_state = %d\n", __func__, time_in_double(), migrate_get_index(s), s->ft_state);
 
     migrate_set_ft_state(s, CUJU_FT_TRANSACTION_PRE_RUN);
     migrate_run(s);
@@ -2452,6 +2451,7 @@ static void gft_master_read_master(void *opaque)
         //
         //
         //printf("Bypassing Failover\n");
+        FTPRINTF("%s detect failover, ft_state = %d\n", __func__, s->ft_state);
         gft_status = GFT_WAIT;
         gft_reset_all();
         return;
@@ -2473,7 +2473,7 @@ static void gft_master_read_master(void *opaque)
             time_in_double(), migrate_get_index(s), cmd, conn->gft_id);
         switch (cmd) {
             case MIG_JOIN_GFT_SNAPSHOT_START:
-                FTPRINTF("in %s, case MIG_JOIN_GFT_SNAPSHOT_START\n", __func__);
+                FTPRINTF("in %s, case MIG_JOIN_GFT_SNAPSHOT_START, s->ft_state = %d\n", __func__, s->ft_state);
                 /**
                  * Receive Snapshot Start Broadcast from other nodes
                  * 1. if we are still in running stage, we must cancel our timer
@@ -2483,66 +2483,66 @@ static void gft_master_read_master(void *opaque)
                 FTPRINTF("%s owner is %d\n", __func__, migrate_token_owner ? migrate_token_owner->cur_off : -1);
                 if (s == migrate_token_owner) {
                     if (s->ft_state == CUJU_FT_TRANSACTION_RUN){
-//                        printf("fire timer\n");
+                        FTPRINTF("fire timer\n");
                         kvmft_fire_timer(s->cur_off);
                     }
                     else
                         s->epoch_timer_pending = true;
                 }
-                if(join->bitmaps_snapshot_started == ~0) {
+                /*if(join->bitmaps_snapshot_started == ~0) {
                     FTPRINTF("!!%s Get duplicated command snapshot %d!!\n", __func__, cmd);
                     break;
                 }
-                assert(join->bitmaps_snapshot_started != ~0);
+                assert(join->bitmaps_snapshot_started != ~0);*/
                 if (test_and_set_bit(conn->gft_id, &join->bitmaps_snapshot_started)){
                     FTPRINTF("abort snapshot\n");
-                    //abort();
-                    break;
+                    abort();
+                    //break;
                 }
                 if (join->bitmaps_snapshot_started == ~0) {
                     MigrationState *n = migrate_get_next(s);
                     if (n->join.wait_group_snapshot_start) {
                         n->join.wait_group_snapshot_start = false;
-//                        printf("MIG_JOIN_GFT_SNAPSHOT_START migrate run\n");
+                        FTPRINTF("migrationState %d MIG_JOIN_GFT_SNAPSHOT_START migrate run\n", migrate_get_index(s));
                         migrate_run(n);
                     }
                 }
                 break;
             case MIG_JOIN_GFT_EPOCH_COMMIT1:
-                FTPRINTF("in %s, case MIG_JOIN_GFT_EPOCH_COMMIT1\n", __func__);
+                FTPRINTF("in %s, case MIG_JOIN_GFT_EPOCH_COMMIT1, bitmaps_commit1 = %lx\n", __func__, join->bitmaps_commit1);
                 assert(join->bitmaps_commit1 != ~0);
                 if (test_and_set_bit(conn->gft_id, &join->bitmaps_commit1)){
                     FTPRINTF("abort commit1\n");
-                    //abort();
-                    break;
+                    abort();
+                    //break;
                 }
                 if (join->bitmaps_commit1 == ~0) {
-                    FTPRINTF("%s %d broadcast commit2\n", __func__, migrate_get_index(s));
-                    gft_broadcast_commit2(s);
                     if (join->wait_group_transfer_done) {
                         join->wait_group_transfer_done = false;
+                        FTPRINTF("%s %d broadcast commit2\n", __func__, migrate_get_index(s));
+                        gft_broadcast_commit2(s);
                         FTPRINTF("%s(%lf) %d flush output\n", __func__, time_in_double(), migrate_get_index(s));
-//                        printf("gft_reset_bitmaps_commit1\n");
                         gft_reset_bitmaps_commit1(s);
                         kvmft_flush_output(s);
                     }
                 }
                 break;
             case MIG_JOIN_GFT_EPOCH_COMMIT2:
-                FTPRINTF("in %s, case MIG_JOIN_GFT_EPOCH_COMMIT2, bitmaps_commit2 = %lx\n",__func__, join->bitmaps_commit2);
-                if(join->bitmaps_commit2 == ~0) {
+                FTPRINTF("in %s, migrationState %d case MIG_JOIN_GFT_EPOCH_COMMIT2, bitmaps_commit2 = %lx\n",__func__, migrate_get_index(s), join->bitmaps_commit2);
+                FTPRINTF("(%d) MIG_JOIN_GFT_EPOCH_COMMIT2 s->ft_state = %d\n", migrate_get_index(s), s->ft_state);
+                /*if(join->bitmaps_commit2 == ~0) {
                     FTPRINTF("!!%s Get duplicated command commit2 %d!!\n", __func__, cmd);
                     break;
                 }
-                assert(join->bitmaps_commit2 != ~0);
+                assert(join->bitmaps_commit2 != ~0);*/
                 if (test_and_set_bit(conn->gft_id, &join->bitmaps_commit2)){
                     FTPRINTF("abort commit2\n");
-                    //abort();
-                    break;
+                    abort();
+                    //break;
                 }
                 if (join->bitmaps_commit2 == ~0 && join->wait_group_commit2) {
                     join->wait_group_commit2 = false;
-                    FTPRINTF("%s MIG_JOIN_GFT_EPOCH_COMMIT2 migrate run\n", __func__);
+                    FTPRINTF("%s migrationState %d MIG_JOIN_GFT_EPOCH_COMMIT2 migrate run\n", __func__, migrate_get_index(s));
                     migrate_run(s);
                 }
                 FTPRINTF("in %s, case MIG_JOIN_GFT_EPOCH_COMMIT2 exit, bitmaps_commit2 = %lx\n", __func__, join->bitmaps_commit2);
@@ -2864,6 +2864,7 @@ there:
         break;
 
     case CUJU_FT_TRANSACTION_TRANSFER:
+        FTPRINTF("%s migrate state %d\n", __func__, migrate_get_index(s));
         if ((ret = qemu_ft_trans_recv_ack1(s->file)) < 0) {
             printf("%s sender receive ACK1 failed.\n", __func__);
             goto error_out;
@@ -2878,6 +2879,9 @@ there:
         gft_broadcast_backup_done(s);
 
         if (s->join.bitmaps_commit1 == ~0) {
+            FTPRINTF("%s %d broadcast commit2\n", __func__, migrate_get_index(s));
+            assert(s->join.wait_group_transfer_done == false);
+            gft_broadcast_commit2(s);
             gft_reset_bitmaps_commit1(s);
             kvmft_flush_output(s);
         } else
@@ -3532,6 +3536,8 @@ static void migrate_timer(void *opaque)
     vm_stop_mig();
     qemu_iohandler_ft_pause(true);
 
+    gft_broadcast_snapshot_start(s);
+
 #ifdef ENABLE_DIRTY_PAGE_TRACKING
     dirty_page_tracking_backup(s->cur_off);
 #endif
@@ -3574,6 +3580,7 @@ static void migrate_timer(void *opaque)
     s->snapshot_finish_time = time_in_double();
 
     migrate_token_owner = migrate_get_next(s);
+    FTPRINTF("migrate_token_owner change from %d to %d\n", migrate_get_index(s), migrate_token_owner->cur_off);
     migrate_token_owner->run_sched_time = time_in_double();
     FTPRINTF("%s invoke migrate_run\n", __func__);
     migrate_run(migrate_token_owner);
@@ -3594,7 +3601,7 @@ static void ft_tick_func(void)
     migrate_set_ft_state(s, CUJU_FT_TRANSACTION_SNAPSHOT);
     s->snapshot_start_time = time_in_double();
 
-    gft_broadcast_snapshot_start(s);
+    //gft_broadcast_snapshot_start(s); // moved to migrate_timer()
 
     migrate_timer(s);
 }
@@ -4026,7 +4033,7 @@ static void gft_reset_connections(MigrationState *s){
     s->join.wait_group_transfer_done = false;
 }
 void gft_clear_group_info(void);
-void gft_clear_group_info(void ){
+void gft_clear_group_info(void){
     group_ft_members_size_tmp = 0;
     group_ft_members_size = 0;
     group_ft_members_ready = 0;
@@ -4052,8 +4059,10 @@ static void gft_reset_all(void){
     group_ft_leader_inited = false;
     kvmft_first_ack = true;
     gft_clear_group_info();
-    qmp_migrate_pause();
     vm_stop_force_state(0);
+    //vm_stop(0);
+    //vm_stop_mig();
+    qmp_migrate_pause();
     //kvm_vm_ioctl(kvm_state,KVMFT_RESTORE_PREVIOUS_EPOCH,(void *)s);
     s->ft_state = CUJU_FT_INIT;
     n->ft_state = CUJU_FT_TRANSACTION_PRE_RUN;
