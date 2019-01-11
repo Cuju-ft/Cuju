@@ -194,6 +194,11 @@ static inline bool kvm_blk_check_ack_cb(KvmBlkSession *s) {
 }
 
 //send write callback to client
+#define BLK_SERVER_WRITE_CALLBACK_LIMIT 10                              
 void kvm_blk_server_wcallback(KvmBlkSession *s);
+
+//for failover:handle pending request
+struct kvm_blk_request *kvm_blk_save_pending_request(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque,int cmd);
+void kvm_blk_do_pending_request(KvmBlkSession *s);
 
 #endif

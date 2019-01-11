@@ -1,5 +1,6 @@
 #include "kvm_blk.h"
 extern uint32_t debug_flag;
+struct kvm_blk_request *pending_read_head=NULL,*pending_read_now=NULL;
 
 int kvm_blk_client_handle_cmd(void *opaque)
 {
@@ -180,4 +181,73 @@ void kvm_blk_epoch_commit(KvmBlkSession *s)
 void kvm_blk_notify_ft(KvmBlkSession *s)
 {
     _kvm_blk_send_cmd(s, KVM_BLK_CMD_FT);
+}
+
+struct kvm_blk_request *kvm_blk_save_pending_request(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque,int cmd) {
+    struct kvm_blk_request *br;
+    
+		br = g_malloc0(sizeof(*br));
+    br->sector = sector_num;
+    br->nb_sectors = iov->size;
+    if(cmd == KVM_BLK_CMD_READ)
+        br->cmd = KVM_BLK_CMD_READ;
+    else if(cmd == KVM_BLK_CMD_WRITE)
+        br->cmd = KVM_BLK_CMD_WRITE;
+    br->cb = cb;
+    br->opaque = opaque;
+    br->piov = iov;
+    br->flags = flags;
+
+    if(!pending_read_head)
+        pending_read_head = br;
+    else
+        pending_read_now->next = br;
+
+    pending_read_now = br;
+    return br;
+}
+
+void kvm_blk_do_pending_request(KvmBlkSession *s) {
+    if(!pending_read_head)
+        return;
+    pending_read_now = pending_read_head;
+    while(pending_read_now) {
+        QEMUIOVector *iov;
+        struct kvm_blk_read_control c;
+
+        if(pending_read_now->cmd == KVM_BLK_CMD_WRITE) {
+            struct kvm_blk_request *br;
+            pending_read_now->cb(pending_read_now->opaque,0);
+            br = pending_read_now;
+            pending_read_now = pending_read_now->next;
+            free(br);
+            continue;
+        }
+
+        pending_read_now->session = s;
+        pending_read_now->id = ++s->id;
+        
+        iov = pending_read_now->piov;
+        c.sector_num = pending_read_now->sector;
+        c.nb_sectors = iov->size;
+           
+        QTAILQ_INSERT_TAIL(&s->request_list, pending_read_now, node);
+        if(pending_read_now->cmd == KVM_BLK_CMD_READ) {
+            s->send_hdr.cmd = KVM_BLK_CMD_READ;
+            s->send_hdr.payload_len = sizeof(c);
+        }
+        /*else if(pending_read_now->cmd == KVM_BLK_CMD_WRITE) {
+            s->send_hdr.cmd = KVM_BLK_CMD_WRITE;
+            s->send_hdr.payload_len = sizeof(c)+iov->size;
+        }*/
+        s->send_hdr.id = s->id;
+        s->send_hdr.num_reqs = 1;
+
+        kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
+        kvm_blk_output_append(s, &c, sizeof(c));
+        /*if(pending_read_now->cmd == KVM_BLK_CMD_WRITE)
+            kvm_blk_output_append_iov(s, iov);*/
+        kvm_blk_output_flush(s);
+        pending_read_now = pending_read_now->next;
+    }
 }

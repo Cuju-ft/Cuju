@@ -13,8 +13,6 @@
 #include "migration/migration.h"
 extern QTAILQ_HEAD(, BlockDriverState) all_bdrv_states;
 
-
-#define BLK_SERVER_WRITE_CALLBACK_LIMIT 10
 #define BLK_SERVER_SESSION_INIT_BUF  4096000
 
 KvmBlkSession *kvm_blk_session = NULL;
@@ -341,5 +339,8 @@ int kvm_blk_client_init(const char *ipnport)
 
     kvm_blk_session = s;
     qemu_mutex_init(&s->mutex);
+		
+		//failover 
+		kvm_blk_do_pending_request(s);
     return 0;
 }
