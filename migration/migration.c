@@ -3367,10 +3367,6 @@ static void migrate_timer(void *opaque)
     if (kvm_blk_session)
         kvm_blk_epoch_timer(kvm_blk_session);
 
-#ifdef ENABLE_DIRTY_PAGE_TRACKING
-    dirty_page_tracking_backup(s->cur_off);
-#endif
-
     s->flush_vs_commit1 = false;
     s->transfer_start_time = time_in_double();
     s->ram_len = 0;
