@@ -5,6 +5,19 @@ extern uint32_t debug_flag;
 extern int wreq_quota;
 extern struct kvm_blk_request *wreq_head,*wreq_last;
 
+void kvm_blk_server_free_wreq(void) {
+		struct kvm_blk_request *br;
+
+		if(!wreq_head)
+				return;
+		
+		while(wreq_head) {
+				br = wreq_head;
+				wreq_head = wreq_head->next;
+				free(br);
+		}
+}
+
 void kvm_blk_server_wcallback(KvmBlkSession *s) {
 		struct kvm_blk_request *br;
 

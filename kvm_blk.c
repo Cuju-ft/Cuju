@@ -232,6 +232,7 @@ printf("accepted blk client %d.\n", c);
     }
 
     session = kvm_blk_serv_wait_prev(wid);
+		kvm_blk_server_free_wreq();
 
     session = g_malloc0(sizeof(KvmBlkSession));
 
