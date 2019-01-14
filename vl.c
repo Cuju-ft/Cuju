@@ -3052,8 +3052,6 @@ int main(int argc, char **argv, char **envp)
     Error *err = NULL;
     bool list_data_dirs = false;
 
-    kvmft_pre_init();
-
     signal(SIGPIPE, SIG_IGN);
 
     module_call_init(MODULE_INIT_TRACE);

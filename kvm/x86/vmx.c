@@ -67,6 +67,7 @@
 #include <linux/slab.h>
 #include <linux/tboot.h>
 #include <linux/hrtimer.h>
+#include <linux/irq.h>
 #include "kvm_cache_regs.h"
 #include "x86.h"
 

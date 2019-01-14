@@ -1288,3 +1288,9 @@ void cuju_socket_set_quickack(int fd)
     int i = 1;
     setsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, (void *)&i, sizeof(i));
 }
+
+void qmp_cuju_failover(Error **errp)
+{
+	printf("qmp_cuju_failover\n");
+	cuju_ft_trans_close(last_cuju_ft_trans);
+}
