@@ -1316,8 +1316,8 @@ struct kvm_shmem_init {
   unsigned long shared_page_num;
   unsigned long shared_watermark;
   unsigned long page_nums_size;
-  unsigned long page_nums_pfn_dirty[2]; // start of struct 
-  unsigned long page_nums_pfn_snapshot[2]; // start of struct 
+  unsigned long page_nums_pfn_dirty[2]; // start of struct
+  unsigned long page_nums_pfn_snapshot[2]; // start of struct
   unsigned long epoch_time_in_ms;
   unsigned long pages_per_ms;
 };
@@ -1358,7 +1358,7 @@ struct kvm_shmem_mark_page_dirty {
 struct kvm_shmem_extend {
   // output from kvm to qemu
   unsigned long page_nums_size;
-  unsigned long page_nums_pfn_snapshot; // start of struct 
+  unsigned long page_nums_pfn_snapshot; // start of struct
 };
 #define KVM_SHM_EXTEND                    _IOW(KVMIO, 0xcb, struct kvm_shmem_extend)
 struct kvm_shmem_start_kernel_transfer {
@@ -1371,7 +1371,7 @@ struct kvm_shmem_start_kernel_transfer {
 #define KVM_START_KERNEL_TRANSFER         _IOW(KVMIO,  0xcc, struct kvm_shmem_start_kernel_transfer)
 struct kvm_vcpu_get_shared_all_state {
     __u32 pfn;
-    __u32 order;                                                                                             
+    __u32 order;
 };
 #define KVM_VCPU_GET_SHARED_ALL_STATE     _IOW(KVMIO,  0xcd, struct kvm_vcpu_get_shared_all_state)
 #define KVM_FT_PROTECT_SPECULATIVE_PREPARE_NEXT_SPECULATIVE        _IOW(KVMIO,  0xce, __u32)
@@ -1381,6 +1381,42 @@ struct kvmft_set_master_slave_sockets {
     __u32 socks[10];
 };
 #define KVMFT_SET_MASTER_SLAVE_SOCKETS    _IOW(KVMIO, 0xcf, struct kvmft_set_master_slave_sockets)
+
+
+#define KVMFT_BD_CALC_DIRTY_BYTES         _IO(KVMIO, 0xd0)
+#define KVMFT_BD_CHECK_DIRTY_PAGE_NUMBER  _IO(KVMIO, 0xd1)
+struct kvmft_update_latency {
+    __u32 dirty_page;
+    __u32 runtime_us;
+    __u32 trans_us;
+    __u32 latency_us;
+    int dirty_byte;
+
+    __u32 epoch_time_us;
+    int last_trans_rate;
+    int predic_trans_rate;
+    int beta;
+    int ram_len;
+
+    int compress_dirty_page_time;
+
+};
+#define KVMFT_BD_UPDATE_LATENCY           _IOW(KVMIO, 0xd2, struct kvmft_update_latency)
+#define KVMFT_BD_SET_ALPHA                _IOW(KVMIO, 0xd3, __u32)
+#define KVMFT_BD_CALC_LEFT_RUNTIME        _IO(KVMIO, 0xd4)
+#define KVMFT_BD_RUNTIME_EXCEEDS          _IO(KVMIO, 0xd5)
+#define KVMFT_BD_PREDIC_STOP              _IO(KVMIO, 0Xd6)
+#define KVMFT_BD_PERCEPTRON               _IO(KVMIO, 0xd7)
+#define KVMFT_BD_GET_RUNTIME              _IO(KVMIO, 0xd8)
+
+#define KVM_SHM_GET_TIME_MARK             _IO(KVMIO, 0xd9)
+#define KVM_SHM_GET_TIME_MARK_START       _IO(KVMIO, 0xda)
+
+#define KVMFT_BD_PAGE_FAULT_CHECK         _IO(KVMIO, 0xdb)
+
+
+
+
 
 
 
@@ -1451,7 +1487,7 @@ struct kvm_cpu_state {
 
 #define KVM_SHM_SNAPMODE_OFF		0
 // will check dirty_bitmap of previous epoch
-#define KVM_SHM_SNAPMODE_NORMAL		1	
+#define KVM_SHM_SNAPMODE_NORMAL		1
 #define KVM_SHM_SNAPMODE_TESTING	2
 
 #endif /* __LINUX_KVM_H */

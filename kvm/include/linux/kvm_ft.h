@@ -27,6 +27,7 @@ struct kvm_shmem_child;
 struct kvm_vcpu;
 struct kvm_vcpu_get_shared_all_state;
 struct kvmft_set_master_slave_sockets;
+struct kvmft_update_latency;
 
 struct kvmft_dirty_list {
     volatile __u32 put_off;     // [spcl_put_off, put_off) stores dirty pages tracked by fault
@@ -36,14 +37,16 @@ struct kvmft_dirty_list {
     __u32 gva_spcl_pages_off;
     __u32 *gva_spcl_pages;
 
+    __u64 epoch_start_time;
+
     __u32 *spcl_bitmap;         // if set, the speculated page corresponding in pages is dirty
     __u32 pages[];
 };
 
-struct kvm_collect_log {    
+struct kvm_collect_log {
     __u32 cur_index;
     __u32 is_last;
-};  
+};
 
 struct zerocopy_callback_arg {
 	struct kvm *kvm;
@@ -81,7 +84,7 @@ struct kvmft_context {
     bool log_full;
 
     // array of (struct kvmft_dirty_list *)
-    struct kvmft_dirty_list **page_nums_snapshot_k;  
+    struct kvmft_dirty_list **page_nums_snapshot_k;
     // array of (struct page*)
     struct page **page_nums_snapshot_page;
 
@@ -89,7 +92,7 @@ struct kvmft_context {
 
     // array of
     //  [k1,k2,...,kn], kx points to a kernel page, size is shared_log_size
-    void ***shared_pages_snapshot_k;  
+    void ***shared_pages_snapshot_k;
     // array of
     //  [struct page*, struct page*, ...]
     struct page ***shared_pages_snapshot_pages;
@@ -104,6 +107,23 @@ struct kvmft_context {
 
     int pending_tran_num;
     wait_queue_head_t tran_event;
+
+#define BD_HISTORY_MAX  4
+    int bd_average_consts[BD_HISTORY_MAX];
+    int bd_average_latencies[BD_HISTORY_MAX];   // in us
+    int bd_average_rates[BD_HISTORY_MAX];       // pages per ms
+    int bd_average_put_off;
+
+    int bd_average_const;
+    int bd_average_latency; // in us
+    int bd_average_rate;    // pages per ms
+
+    int bd_average_dirty_bytes;
+
+    int bd_last_dp_num;
+    int bd_last_average_dirty_bytes;
+    int bd_alpha;
+
 };
 
 int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info);
@@ -115,6 +135,7 @@ int kvm_shm_enable(struct kvm *kvm);
 int kvm_shm_start_log_share_dirty_pages(struct kvm *kvm, struct kvm_collect_log *log);
 int kvm_shm_flip_sharing(struct kvm *kvm, __u32 cur_off, __u32 run_serial);
 void kvm_shm_start_timer(struct kvm_vcpu *vcpu);
+//void kvm_shm_start_timer2(void *info);
 //int kvm_shm_log_full(struct kvm *kvm);
 int kvmft_page_dirty(struct kvm *kvm, unsigned long gfn,
                      void *orig, bool is_user,
@@ -152,5 +173,24 @@ void kvmft_gva_spcl_unprotect_page(struct kvm *kvm, unsigned long gfn);
 int kvmft_ioctl_set_master_slave_sockets(struct kvm *kvm,
     struct kvmft_set_master_slave_sockets *socks);
 
+
+void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *update);
+int kvmft_ioctl_bd_set_alpha(struct kvm *kvm, int alpha);
+int kvmft_ioctl_bd_calc_dirty_bytes(struct kvm *kvm);
+int bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *global_ft_ctx, struct kvmft_dirty_list *dlist);
+
+int kvmft_ioctl_bd_check_dirty_page_number(struct kvm *kvm);
+int kvmft_ioctl_bd_calc_left_runtime(struct kvm *kvm);
+int kvmft_ioctl_bd_runtime_exceeds(struct kvm *kvm, int *epoch_runtime);
+int kvmft_ioctl_bd_predic_stop(struct kvm *kvm, struct kvmft_update_latency *update);
+int kvmft_ioctl_bd_predic_stop2(void);
+int kvmft_ioctl_bd_perceptron(int latency_us);
+int kvmft_ioctl_bd_get_runtime(struct kvm *kvm, int *epoch_runtime);
+
+int kvmft_bd_page_fault_check(void);
+
+
+
 #endif
+
 
