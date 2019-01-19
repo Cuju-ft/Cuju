@@ -173,6 +173,12 @@ static void migrate_run(MigrationState *s);
 
 int qio_ft_sock_fd = 0;
 
+
+int target_latency = EPOCH_TIME_IN_MS*1000;
+
+extern struct kvmft_update_latency mybdupdate;
+
+
 // At the time setting up FT, current will pointer to 2nd MigrationState.
 static int migration_states_current;
 
@@ -2253,6 +2259,161 @@ static void kvmft_flush_output(MigrationState *s)
         kvm_blk_epoch_commit(kvm_blk_session);
 	*/
 
+	s->flush_start_time = time_in_double();
+
+    static unsigned long count   = 0;
+    static unsigned long exceeds = 0;
+    static unsigned long latency_sum_us = 0;
+
+    int runtime_us = (int)((s->snapshot_start_time - s->run_real_start_time) * 1000000);
+    int latency_us = (int)((s->flush_start_time - s->run_real_start_time) * 1000000);
+    int trans_us = (int)((s->recv_ack1_time - s->transfer_start_time) * 1000000);
+
+
+	int trans_rate = s->ram_len/trans_us;
+	if(trans_rate == 0) trans_rate = 1;
+    static unsigned long total_ram_trans = 0;
+    static unsigned long total_trans_t = 0;
+
+    static unsigned long total_epochs_count = 0;
+    static unsigned long total_run_stage_count = 0;
+    total_run_stage_count += runtime_us;
+	total_epochs_count++;
+
+    total_ram_trans += s->ram_len;
+    total_trans_t += trans_us;
+    if(total_ram_trans > 1024*1024*512) {
+        total_ram_trans = s->ram_len;
+        total_trans_t = trans_us;
+	}
+
+    unsigned int now_trans_r = total_ram_trans/total_trans_t;
+	if(now_trans_r < 400) now_trans_r = 400;
+
+    mybdupdate.predic_trans_rate = trans_rate + (trans_rate - mybdupdate.last_trans_rate);
+    if(mybdupdate.predic_trans_rate < 100) mybdupdate.predic_trans_rate = 100;
+
+	static int trans_rate_h[5];
+    static int trans_rate_c = 0;
+
+    trans_rate_h[trans_rate_c++] = trans_rate;
+    int i = 0;
+    int all = 0;
+    for(i = 0; i < trans_rate_c; i++) {
+        all += trans_rate_h[i];
+	}
+
+
+    if(mybdupdate.last_trans_rate >= 0)
+        mybdupdate.last_trans_rate = all/trans_rate_c;
+    if(trans_rate_c == 5) trans_rate_c = 0;
+
+	mybdupdate.last_trans_rate = (mybdupdate.last_trans_rate + trans_rate)/2;
+
+	if(count == 0) {
+        exceeds = 0;
+    }
+
+    static unsigned long latency_exceed_count = 0;
+    static unsigned long latency_less_count = 0;
+    static unsigned long latency_exceed = 0;
+    static unsigned long latency_less = 0;
+
+    static unsigned long latency_exceed_current_count = 0;
+
+
+    static unsigned long int ok = 0;
+    static unsigned long int mcount = 0;
+
+    static long ok_runtime = 0;
+	static int ok_average_runtime = 0;
+
+    if(latency_us > target_latency + 1000) {
+        latency_exceed_count++;
+        latency_exceed_current_count++;
+        latency_exceed += latency_us;
+        exceeds++;
+        mybdupdate.ram_len = mybdupdate.ram_len -  (latency_us - target_latency - 1000);
+	}
+    else if(latency_us < target_latency-1000) {
+        latency_less_count++;
+        latency_less += latency_us;
+        mybdupdate.ram_len = mybdupdate.ram_len +  (target_latency-1000-latency_us);
+	} else {
+        ok_runtime+=runtime_us;
+        mybdupdate.ram_len = s->ram_len;
+        ok++;
+    }
+
+	static unsigned long latency_sum = 0;
+    latency_sum += latency_us;
+
+    mcount++;
+	count++;
+
+
+    static double last_ok_percen = 0;
+    static int down_count = 0;
+
+
+    if(mcount == 0)
+	mcount = ok = 1;
+
+
+    if(mcount%800 == 0) {
+        double ok_percentage = (double)ok/mcount;
+        if(ok_percentage < last_ok_percen) {
+            down_count++;
+        }
+        else {
+            down_count--;
+            if(down_count < 0) down_count = 0;
+        }
+        last_ok_percen =  ok_percentage;
+	}
+
+	int average_run = 0;
+
+    static double ok_percentage = 0;
+
+    ok_percentage = (double)ok/mcount;
+
+    if(mcount%500 == 0) {
+        printf("test ok percentage is %lf\n", ok_percentage);
+
+        ok_average_runtime = ok_runtime/500;
+        printf("test ok average runtime = %d\n", ok_average_runtime);
+        ok_runtime = 0;
+
+        average_run = total_run_stage_count/total_epochs_count;
+
+        printf("test average run stage time = %d\n", average_run);
+
+        latency_sum /= 500;
+        latency_sum = 0;
+    }
+
+
+    latency_sum_us += latency_us;
+    if(latency_sum_us < latency_us) {
+        latency_sum_us = latency_us;
+        count = 1;
+        latency_exceed_count = latency_less_count = 0;
+    }
+    static int current_latency_sum_us = 0;
+    static int range_count = 0;
+
+    if(latency_us>=9000 && latency_us<=11000) {
+        range_count++;
+    }
+
+    current_latency_sum_us += latency_us;
+
+
+
+    assert(!kvmft_bd_update_latency(s->ram_len, runtime_us, trans_us, latency_us));
+
+
     virtio_blk_commit_temp_list(s->virtio_blk_temp_list);
     s->virtio_blk_temp_list = NULL;
     s->net_list_empty = event_tap_net_list_empty(s->ft_event_tap_net_list);
@@ -2301,6 +2462,8 @@ static int migrate_ft_trans_get_ready(void *opaque)
             printf("%s sender receive ACK1 failed.\n", __func__);
             goto error_out;
         }
+
+		s->recv_ack1_time = time_in_double();
 
         FTPRINTF("%s slave ack1 time %lf\n", __func__,
             time_in_double() - s->transfer_finish_time);
@@ -2570,6 +2733,9 @@ static void *migration_thread(void *opaque)
 
         assert(!kvmft_set_master_slave_sockets(s, ft_ram_conn_count));
         assert(!kvmft_set_master_slave_sockets(s2, ft_ram_conn_count));
+
+		// bounded latency
+		bd_reset_epoch_timer();
 
 		return NULL;
     }
@@ -2859,6 +3025,7 @@ static void migrate_run(MigrationState *s)
 #ifdef CONFIG_EPOCH_OUTPUT_TRIGGER
     kvmft_output_notified = 0;
 #else
+	bd_reset_epoch_timer();
     kvm_shmem_start_timer();
 #endif
 }

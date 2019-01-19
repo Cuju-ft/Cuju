@@ -1415,6 +1415,24 @@ struct kvmft_set_master_slave_sockets {
 };
 #define KVMFT_SET_MASTER_SLAVE_SOCKETS    _IOW(KVMIO, 0xcf, struct kvmft_set_master_slave_sockets)
 
+#define KVMFT_BD_CALC_DIRTY_BYTES         _IO(KVMIO, 0xd0)
+#define KVMFT_BD_CHECK_DIRTY_PAGE_NUMBER  _IO(KVMIO, 0xd1)
+struct kvmft_update_latency {
+    __u32 dirty_page;
+    __u32 runtime_us;
+    __u32 trans_us;
+    __u32 latency_us;
+    int dirty_byte;
+    //__u32 count;
+    __u32 epoch_time_us;
+    int last_trans_rate;
+    int predic_trans_rate;
+    int beta;
+    int ram_len;
+
+    int compress_dirty_page_time;
+};
+#define KVMFT_BD_UPDATE_LATENCY _IOW(KVMIO, 0xd2, struct kvmft_update_latency)
 
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
 #define KVM_DEV_ASSIGN_PCI_2_3		(1 << 1)

@@ -135,7 +135,7 @@ int kvm_shm_enable(struct kvm *kvm);
 int kvm_shm_start_log_share_dirty_pages(struct kvm *kvm, struct kvm_collect_log *log);
 int kvm_shm_flip_sharing(struct kvm *kvm, __u32 cur_off, __u32 run_serial);
 void kvm_shm_start_timer(struct kvm_vcpu *vcpu);
-//void kvm_shm_start_timer2(void *info);
+void kvm_shm_start_timer2(void *info);
 //int kvm_shm_log_full(struct kvm *kvm);
 int kvmft_page_dirty(struct kvm *kvm, unsigned long gfn,
                      void *orig, bool is_user,
@@ -188,6 +188,8 @@ int kvmft_ioctl_bd_perceptron(int latency_us);
 int kvmft_ioctl_bd_get_runtime(struct kvm *kvm, int *epoch_runtime);
 
 int kvmft_bd_page_fault_check(void);
+
+
 
 
 

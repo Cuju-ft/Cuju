@@ -865,11 +865,11 @@ static int kvm_extend_dirty_bitmap(struct kvm_memory_slot *memslot)
 #ifndef CONFIG_S390
     size_t array_size;
     int ret;
- 
+
     ret = shared_page_array_extend(&memslot->epoch_dirty_bitmaps);
     if (ret < 0)
         return ret;
- 
+
     ret = shared_page_array_extend(&memslot->epoch_gfn_to_put_offs);
     if (ret < 0)
         return ret;
@@ -2082,7 +2082,7 @@ int kvm_write_guest_cached(struct kvm *kvm, struct gfn_to_hva_cache *ghc,
 
     if (kvm_is_error_hva(ghc->hva))
         return -EFAULT;
-    
+
     r = kvmft_page_dirty(kvm, ghc->gpa >> PAGE_SHIFT,
                             (void *)ghc->hva, 1, NULL);
 
@@ -2610,7 +2610,12 @@ static int kvm_vm_ioctl_create_vcpu(struct kvm *kvm, u32 id)
 
 	mutex_unlock(&kvm->lock);
 	kvm_arch_vcpu_postcreate(vcpu);
-	kvm_shm_setup_vcpu_hrtimer(vcpu);
+
+ 	if(id == 0) {
+    	vcpu->last_trans_rate = 100;
+        vcpu->task = current;
+    	smp_call_function_single(7, kvm_shm_setup_vcpu_hrtimer, vcpu, true);
+	}
 
 	return r;
 
@@ -2825,11 +2830,6 @@ out_free1:
 		r = kvm_arch_vcpu_ioctl_set_fpu(vcpu, fpu);
 		break;
 	}
-	case KVM_SHM_START_TIMER: {
-        	r = 0;
-        	kvm_shm_start_timer(vcpu);
-       		break;
-    	}
 	default:
 		r = kvm_arch_vcpu_ioctl(filp, ioctl, arg);
 	}
@@ -3206,9 +3206,14 @@ static long kvm_vm_ioctl(struct file *filp,
         break;
     }
     case KVM_SHM_START_TIMER: {
-      r = 0;
-      kvm_shm_start_timer(kvm->vcpus[0]);
-      break;
+    	r = 0;
+
+      	kvm->vcpus[0]->mark_start_time = ktime_get();
+      	kvm->vcpus[0]->old_dirty_count = 0;
+      	kvm->vcpus[0]->old_runtime = 0;
+
+	  	smp_call_function_single(7, kvm_shm_start_timer2, kvm->vcpus[0], false);
+      	break;
     }
     case KVM_SHM_SET_CHILD_PID: {
         struct kvm_shmem_child info;
@@ -3486,6 +3491,15 @@ out_free_irq_routing:
         r = kvmft_ioctl_set_master_slave_sockets(kvm, &socks);
         break;
     }
+    case KVMFT_BD_UPDATE_LATENCY: {
+        struct kvmft_update_latency update;
+        r = -EFAULT;
+        if (copy_from_user(&update, argp, sizeof update))
+            goto out;
+        r = 0;
+        kvmft_bd_update_latency(kvm, &update);
+        break;
+	}
 	default:
 		r = kvm_arch_vm_ioctl(filp, ioctl, arg);
 	}
