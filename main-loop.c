@@ -31,10 +31,17 @@
 #include "slirp/libslirp.h"
 #include "qemu/main-loop.h"
 #include "block/aio.h"
+#include "hw/virtio/virtio-blk.h"
 
 #ifndef _WIN32
 
 #include "qemu/compatfd.h"
+
+//for inturruptible virtio_blk_handle_vq
+extern VirtIOBlock *global_virtio_block;
+extern bool wait_iothread;
+extern bool blk_is_pending;
+extern bool check_is_blk;
 
 //int io_thread_fd = -1;  //TODO find io thread fd
 
@@ -262,6 +269,10 @@ static int os_host_main_loop_wait(int64_t timeout)
         qemu_mutex_lock_iothread();
     }
 
+		if(check_is_blk && blk_is_pending && !wait_iothread) {
+				blk_is_pending = false;
+				virtio_blk_handle_vq(global_virtio_block,global_virtio_block->parent_obj.vq);
+		}
     glib_pollfds_poll();
     return ret;
 }

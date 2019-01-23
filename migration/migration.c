@@ -200,6 +200,8 @@ static struct group_ft_wait_all {
 extern int my_gft_id;
 
 int qio_ft_sock_fd = 0;
+//Blk-server
+bool wait_iothread = false;
 
 // At the time setting up FT, current will pointer to 2nd MigrationState.
 static int migration_states_current;
@@ -2239,7 +2241,7 @@ static void send_commit1(MigrationState *s)
     s->time_buf_off += sprintf(s->time_buf+s->time_buf_off, "\t%.4lf", (s->transfer_real_finish_time-s->transfer_real_start_time) * 1000);
     s->time_buf_off += sprintf(s->time_buf+s->time_buf_off, "\ttrntm\t%.4lf", (s->transfer_finish_time-s->transfer_start_time)*1000);
     s->time_buf_off += sprintf(s->time_buf+s->time_buf_off, "\t%4d\n", s->dirty_pfns_len);
-    //printf(s->time_buf);
+    //printf("%s",s->time_buf);
     s->time_buf_off = 0;
 
     FTPRINTF("\n%s %d (%lf) send commmit1\n", __func__, migrate_get_index(s), time_in_double());
@@ -3324,6 +3326,7 @@ static void migrate_run(MigrationState *s)
     cuju_qemu_set_last_cmd(s->file, CUJU_QEMU_VM_TRANSACTION_BEGIN);
 
     qemu_iohandler_ft_pause(false);
+		wait_iothread = false;
     vm_start_mig();
 
     s->run_real_start_time = time_in_double();
@@ -3360,7 +3363,7 @@ static void migrate_timer(void *opaque)
     migrate_token_owner = NULL;
 
     s->trans_serial = ++trans_serial;
-
+		wait_iothread = true;
     qemu_mutex_lock_iothread();
     vm_stop_mig();
     qemu_iohandler_ft_pause(true);
