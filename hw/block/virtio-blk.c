@@ -829,19 +829,11 @@ static int virtio_blk_handle_request(VirtIOBlockReq *req, MultiReqBuffer *mrb, u
 
         if (is_write) {
             qemu_iovec_init_external(&req->qiov, iov, out_num);
-						Wreqrecord *wrq;
-
-						wrq = g_malloc0(sizeof(Wreqrecord));
-						wrq->reqs = req;
-						wrq->list = head;
-						wrq->idx =  virtio_get_queue_index(req->vq);
-						QTAILQ_INSERT_TAIL(&s->pending_wrq,wrq,node);
-						++s->pending_wlen; 
             
 						trace_virtio_blk_handle_write(req, req->sector_num,
                                           req->qiov.size / BDRV_SECTOR_SIZE);
 
-/*			if (kvmft_started()) {
+			if (kvmft_started()) {
 
                 if(!check_is_blk){
                     //virtio_blk_save_write_head(s, req, head);         //temp_list
@@ -851,7 +843,17 @@ static int virtio_blk_handle_request(VirtIOBlockReq *req, MultiReqBuffer *mrb, u
 #endif
                     break;
                 }
-			}*/
+								else {
+										Wreqrecord *wrq;
+
+										wrq = g_malloc0(sizeof(Wreqrecord));
+										wrq->reqs = req;
+										wrq->list = head;
+										wrq->idx =  virtio_get_queue_index(req->vq);
+										QTAILQ_INSERT_TAIL(&s->pending_wrq,wrq,node);
+										++s->pending_wlen; 
+								}
+			}
         } else {
             if (kvmft_started()) {
                 qemu_iovec_alloc_by_external(&req->qiov, in_iov,

@@ -39,6 +39,9 @@ int kvm_blk_client_handle_cmd(void *opaque)
 	if (s->recv_hdr.cmd == KVM_BLK_CMD_WRITE) {
 				br->cb(br->opaque, 0);
         // for quick write
+    if (debug_flag == 2) {
+		printf("[reveice] write cmd: %ld %d %d\n", (long)br->sector, br->nb_sectors, br->id);
+	}
         goto out;
 	}
 
@@ -62,6 +65,9 @@ int kvm_blk_client_handle_cmd(void *opaque)
 
 	kvm_blk_input_to_iov(s, br->piov);
 	br->cb(br->opaque, 0);
+    if (debug_flag == 2) {
+		printf("[reveice] read cmd: %ld %d %d\n", (long)br->sector, br->nb_sectors, br->id);
+	}
 
 out:
 	g_free(br);
@@ -110,6 +116,9 @@ struct kvm_blk_request *kvm_blk_aio_readv(BlockBackend *blk,
     if (debug_flag == 1) {
 		debug_printf("sent read cmd: %ld %d %d\n", (long)c.sector_num, c.nb_sectors, s->id);
 	}
+    if (debug_flag == 2) {
+		printf("[send] read cmd: %ld %d %d\n", (long)c.sector_num, c.nb_sectors, s->id);
+	}
 
 	return br;
 }
@@ -150,6 +159,9 @@ struct kvm_blk_request *kvm_blk_aio_write(BlockBackend *blk,int64_t sector_num,Q
 
     qemu_mutex_unlock(&s->mutex);
 	//cb(opaque, 0);
+    if (debug_flag == 2) {
+		printf("[send] write cmd: %ld %d %d\n", (long)c.sector_num, c.nb_sectors, s->id);
+	}
 
 	return br;
 }
@@ -171,11 +183,16 @@ static void _kvm_blk_send_cmd(KvmBlkSession *s, int cmd)
 void kvm_blk_epoch_timer(KvmBlkSession *s)
 {
     _kvm_blk_send_cmd(s, KVM_BLK_CMD_EPOCH_TIMER);
+		if (debug_flag == 2)  
+				printf("epoch\n");
+
 }
 
 void kvm_blk_epoch_commit(KvmBlkSession *s)
 {
     _kvm_blk_send_cmd(s, KVM_BLK_CMD_COMMIT);
+		if (debug_flag == 2)  
+				printf("commit\n");
 }
 
 void kvm_blk_notify_ft(KvmBlkSession *s)
@@ -215,14 +232,14 @@ void kvm_blk_do_pending_request(KvmBlkSession *s) {
         QEMUIOVector *iov;
         struct kvm_blk_read_control c;
 
-        if(pending_read_now->cmd == KVM_BLK_CMD_WRITE) {
+        /*if(pending_read_now->cmd == KVM_BLK_CMD_WRITE) {
             struct kvm_blk_request *br;
             pending_read_now->cb(pending_read_now->opaque,0);
             br = pending_read_now;
             pending_read_now = pending_read_now->next;
             free(br);
             continue;
-        }
+        }*/
 
         pending_read_now->session = s;
         pending_read_now->id = ++s->id;
@@ -236,17 +253,17 @@ void kvm_blk_do_pending_request(KvmBlkSession *s) {
             s->send_hdr.cmd = KVM_BLK_CMD_READ;
             s->send_hdr.payload_len = sizeof(c);
         }
-        /*else if(pending_read_now->cmd == KVM_BLK_CMD_WRITE) {
+        else if(pending_read_now->cmd == KVM_BLK_CMD_WRITE) {
             s->send_hdr.cmd = KVM_BLK_CMD_WRITE;
             s->send_hdr.payload_len = sizeof(c)+iov->size;
-        }*/
+        }
         s->send_hdr.id = s->id;
         s->send_hdr.num_reqs = 1;
 
         kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
         kvm_blk_output_append(s, &c, sizeof(c));
-        /*if(pending_read_now->cmd == KVM_BLK_CMD_WRITE)
-            kvm_blk_output_append_iov(s, iov);*/
+        if(pending_read_now->cmd == KVM_BLK_CMD_WRITE)
+            kvm_blk_output_append_iov(s, iov);
         kvm_blk_output_flush(s);
         pending_read_now = pending_read_now->next;
     }
