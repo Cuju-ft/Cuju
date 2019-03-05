@@ -834,23 +834,23 @@ static int virtio_blk_handle_request(VirtIOBlockReq *req, MultiReqBuffer *mrb, u
 			if (kvmft_started()) {
 
                 if(!check_is_blk){
-                    //virtio_blk_save_write_head(s, req, head);         //temp_list
+                    virtio_blk_save_write_head(s, req, head);         //temp_list
 #ifdef CONFIG_EPOCH_OUTPUT_TRIGGER
                 extern kvmft_notify_new_output();
                 kvmft_notify_new_output();
 #endif
                     break;
                 }
-								else {
-										Wreqrecord *wrq;
+				else {
+					Wreqrecord *wrq;
 
-										wrq = g_malloc0(sizeof(Wreqrecord));
-										wrq->reqs = req;
-										wrq->list = head;
-										wrq->idx =  virtio_get_queue_index(req->vq);
-										QTAILQ_INSERT_TAIL(&s->pending_wrq,wrq,node);
-										++s->pending_wlen; 
-								}
+					wrq = g_malloc0(sizeof(Wreqrecord));
+					wrq->reqs = req;
+					wrq->list = head;
+					wrq->idx =  virtio_get_queue_index(req->vq);
+					QTAILQ_INSERT_TAIL(&s->pending_wrq,wrq,node);
+					++s->pending_wlen; 
+				}
 			}
         } else {
             if (kvmft_started()) {

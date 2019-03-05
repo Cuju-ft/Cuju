@@ -2239,7 +2239,7 @@ static void send_commit1(MigrationState *s)
     s->time_buf_off += sprintf(s->time_buf+s->time_buf_off, "\t%.4lf", (s->transfer_real_finish_time-s->transfer_real_start_time) * 1000);
     s->time_buf_off += sprintf(s->time_buf+s->time_buf_off, "\ttrntm\t%.4lf", (s->transfer_finish_time-s->transfer_start_time)*1000);
     s->time_buf_off += sprintf(s->time_buf+s->time_buf_off, "\t%4d\n", s->dirty_pfns_len);
-    //printf(s->time_buf);
+    //printf("%s",s->time_buf);
     s->time_buf_off = 0;
 
     FTPRINTF("\n%s %d (%lf) send commmit1\n", __func__, migrate_get_index(s), time_in_double());
