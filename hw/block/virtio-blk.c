@@ -36,8 +36,6 @@
 // to prove that retry-method works for one virtual block.
 VirtIOBlock *global_virtio_block;
 extern char *blk_server;
-extern bool wait_iothread;
-bool blk_is_pending = false;
 bool check_is_blk = false;
 static void confirm_req_read_memory_mapped(VirtIOBlockReq *req)
 {
@@ -932,11 +930,6 @@ void virtio_blk_handle_vq(VirtIOBlock *s, VirtQueue *vq)
     MultiReqBuffer mrb = {};
     unsigned int head;
 
-		if(check_is_blk && wait_iothread) {
-				blk_is_pending = true;
-				return;
-		}
-
     blk_io_plug(s->blk);
 
     while ((req = virtio_blk_get_request(s, vq, &head))) {
@@ -945,19 +938,9 @@ void virtio_blk_handle_vq(VirtIOBlock *s, VirtQueue *vq)
             virtio_blk_free_request(req);
             break;
         }
-				if(check_is_blk) {
-						if(mrb.num_reqs) {
-								virtio_blk_submit_multireq(s->blk, &mrb);
-								mrb.num_reqs = 0;
-						}
-						if(wait_iothread) {
-								blk_is_pending = true;
-								break;
-						}
-				}
     }
 
-    if (mrb.num_reqs && !check_is_blk) {
+    if (mrb.num_reqs) {
         virtio_blk_submit_multireq(s->blk, &mrb);
     }
 
