@@ -165,8 +165,12 @@ static void kvm_blk_write_ready(void *opaque)
     if (s->output_buf_tail == s->output_buf_head) {
         s->output_buf_head = 0;
         s->output_buf_tail = 0;
-    } else
-        qemu_set_fd_handler(s->sockfd, CUJU_IO_HANDLER_KEEP, kvm_blk_signal_send_thread, s);
+    } else {
+		if(kvm_blk_is_server)
+			qemu_set_fd_handler(s->sockfd, CUJU_IO_HANDLER_KEEP, kvm_blk_write_ready, s);
+		else
+			qemu_set_fd_handler(s->sockfd, CUJU_IO_HANDLER_KEEP, kvm_blk_signal_send_thread, s);
+	}
     return;
 error:
     if (debug_flag == 1) {
