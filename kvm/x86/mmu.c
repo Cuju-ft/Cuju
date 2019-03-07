@@ -2672,18 +2672,9 @@ static int set_spte(struct kvm_vcpu *vcpu, u64 *sptep,
 	}
 
 	if (pte_access & ACC_WRITE_MASK) {
-		unsigned long hva;
 
 		kvm_vcpu_mark_page_dirty(vcpu, gfn);
 		spte |= shadow_dirty_mask;
-
-		hva = gfn_to_hva(vcpu->kvm, gfn);
-		if (kvm_is_error_hva(hva)) {
-			printk("%s error hva for %lx\n", __func__, (long)gfn);
-		} 
-		else {
-			kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
-		}
 	}
 
 set_pte:
@@ -3643,6 +3634,7 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 	unsigned long mmu_seq;
 	int write = error_code & PFERR_WRITE_MASK;
 	bool map_writable;
+	unsigned long hva;
 
 	MMU_WARN_ON(!VALID_PAGE(vcpu->arch.mmu.root_hpa));
 
@@ -3697,6 +3689,14 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 
 	if (handle_abnormal_pfn(vcpu, 0, gfn, pfn, ACC_ALL, &r))
 		return r;
+
+	if (kvm_shm_is_enabled(vcpu->kvm)){
+            hva = gfn_to_hva(vcpu->kvm, gfn);
+            if (!kvm_is_error_hva(hva)) {
+	        //If this hva is valid, this case is write protect page fault, we can backup page and mark dirty
+	        kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
+            }
+	}
 
 	spin_lock(&vcpu->kvm->mmu_lock);
 	if (mmu_notifier_retry(vcpu->kvm, mmu_seq))
