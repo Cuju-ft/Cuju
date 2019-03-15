@@ -242,7 +242,7 @@ printf("accepted blk client %d.\n", c);
     }
 
     session = kvm_blk_serv_wait_prev(wid);
-		kvm_blk_server_free_wreq();
+	kvm_blk_server_free_wreq();
 
     session = g_malloc0(sizeof(KvmBlkSession));
 
@@ -271,11 +271,17 @@ printf("accepted blk client %d.\n", c);
     qemu_set_fd_handler(c, kvm_blk_read_ready,
                        NULL, session);
     kvm_blk_session = session;
-		//for wreq list callback to client
-		wreq_quota = BLK_SERVER_WRITE_CALLBACK_LIMIT; 
-		wreq_head = NULL;
-		wreq_last = NULL;
-    return;
+	//for wreq list callback to client
+	wreq_quota = 0; 
+	wreq_head = NULL;
+	wreq_last = NULL;
+	//for control call back speed
+	session->disk_speed = 0.0;
+	qemu_mutex_init(&session->send_mutex);
+	qemu_mutex_init(&session->list_mutex);
+	qemu_cond_init(&session->cond);
+	qemu_thread_create(&session->send_thread,"Wcallback_thread",kvm_blk_server_wcallback,session,QEMU_THREAD_DETACHED);
+	return;
 out:
     qemu_set_fd_handler(s, NULL, NULL, NULL);
     close(s);
