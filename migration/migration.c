@@ -2704,7 +2704,8 @@ static ssize_t cuju_ft_dev_writev_buffer(void *opaque, struct iovec *iov, int io
         s->ft_dev->ft_dev_put_off += len;
 
         if (s->ft_dev->ft_dev_file->free_buf_on_flush)
-            g_free((void *)data);
+            memset(data, 0, sizeof(uint8_t) * len);
+            //g_free((void *)data);
 
         done += len;
     }
