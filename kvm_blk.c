@@ -359,6 +359,7 @@ static void kvm_blk_copy_to_send_buf(KvmBlkSession *s,struct kvm_blk_request *br
 			s->send_hdr.cmd = br->cmd;
 			s->send_hdr.payload_len = 0;
 			kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
+			free(br);
 			break;
 	}
 }
