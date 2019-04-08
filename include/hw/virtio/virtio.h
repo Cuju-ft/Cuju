@@ -53,7 +53,7 @@ typedef struct VirtQueueElement
     struct iovec *out_sg;
 } VirtQueueElement;
 
-#define VIRTIO_QUEUE_MAX 1024
+#define VIRTIO_QUEUE_MAX 32
 
 #define VIRTIO_NO_VECTOR 0xffff
 
