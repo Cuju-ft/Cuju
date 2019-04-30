@@ -87,11 +87,8 @@ struct kvm_blk_request {
 
     int ret_fast_read;
 		
-	struct kvm_blk_request *next;
-	struct kvm_blk_request *prev;
-	
-	//for control disk call back speed
-	double time_write,time_cb,time_recv;
+		struct kvm_blk_request *next;
+		struct kvm_blk_request *prev;
 
     QTAILQ_ENTRY(kvm_blk_request) node;
 };
@@ -134,9 +131,7 @@ typedef struct kvm_blk_session {
 	QemuMutex send_mutex;
     int id;
     int ft_mode;
-	//for control disk call back speed
-	double disk_speed;
-	double time_last_send;
+
 } KvmBlkSession;
 
 struct kvm_blk_read_control {
@@ -203,11 +198,9 @@ static inline bool kvm_blk_check_ack_cb(KvmBlkSession *s) {
 }
 
 //send write callback to client
-#define BLK_SERVER_WRITE_CALLBACK_LIMIT 32
-void* kvm_blk_server_wcallback(void*);
+#define BLK_SERVER_WRITE_CALLBACK_LIMIT 1
+void kvm_blk_server_wcallback(KvmBlkSession *s);
 void kvm_blk_server_free_wreq(void);
-void kvm_blk_write_speed(KvmBlkSession *s,struct kvm_blk_request *br);
-void kvm_blk_fake_write_waiting(struct kvm_blk_request *br);
 
 //for failover:handle pending request
 struct kvm_blk_request *kvm_blk_save_pending_request(BlockBackend *blk,int64_t sector_num,QEMUIOVector *iov, BdrvRequestFlags flags,BlockCompletionFunc *cb,void *opaque,int cmd);
