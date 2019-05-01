@@ -272,7 +272,7 @@ printf("accepted blk client %d.\n", c);
                        NULL, session);
     kvm_blk_session = session;
 		//for wreq list callback to client
-		wreq_quota = BLK_SERVER_WRITE_CALLBACK_LIMIT; 
+		wreq_quota = 0;
 		wreq_head = NULL;
 		wreq_last = NULL;
     return;

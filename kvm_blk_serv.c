@@ -36,6 +36,7 @@ void kvm_blk_server_wcallback(KvmBlkSession *s) {
 				wreq_head = wreq_head->next;
 				wreq_head->prev = NULL;
 		}
+		--wreq_quota;
 		//callback to client
 		s->send_hdr.cmd = KVM_BLK_CMD_WRITE;
 		s->send_hdr.id = br->id;
@@ -159,9 +160,9 @@ static void kvm_blk_rw_cb(void *opaque, int ret)
             if (--br->num_reqs)
                 return;
 						//TODO:s is br->session if fall over;
-						if(wreq_quota < 0)
-								kvm_blk_server_wcallback(s);
 						++wreq_quota;
+						if(wreq_quota == 1 && wreq_head)
+								kvm_blk_server_wcallback(s);
             //s->send_hdr.payload_len = 0;
             //s->send_hdr.num_reqs = 0;
             //kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
@@ -211,6 +212,7 @@ static void __kvm_blk_wait_read_done(KvmBlkSession *s)
 
 static void __kvm_blk_server_ack_commit(KvmBlkSession *s)
 {
+
 	s->send_hdr.cmd = KVM_BLK_CMD_COMMIT_ACK;
 	s->send_hdr.payload_len = 0;
 	kvm_blk_output_append(s, &s->send_hdr, sizeof(s->send_hdr));
@@ -433,7 +435,6 @@ int kvm_blk_serv_handle_cmd(void *opaque)
 				//weather to call back or not
 				if(wreq_quota > 0) 
 						kvm_blk_server_wcallback(s);
-				--wreq_quota;
 						
 
         if (!s->ft_mode) {
@@ -477,6 +478,7 @@ int kvm_blk_serv_handle_cmd(void *opaque)
         QTAILQ_INSERT_TAIL(&s->request_list, br, node);
         s->issue = br;
         s->ft_mode = 1;
+				wreq_quota += BLK_SERVER_WRITE_CALLBACK_LIMIT;
         break;
     }
 
