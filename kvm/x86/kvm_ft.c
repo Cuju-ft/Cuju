@@ -105,7 +105,6 @@ extern unsigned long address_to_pte(unsigned long addr);
 
 #define MS_TO_NS(x) (((unsigned int)x) * ((unsigned int)1E6))
 
-static unsigned long epoch_time_in_us;
 static unsigned long pages_per_ms;
 
 // TODO each VM should its own.
@@ -174,7 +173,7 @@ void kvm_shm_start_timer(struct kvm_vcpu *vcpu)
 {
 	ktime_t ktime;
 
-    ktime = ktime_set(0, epoch_time_in_us * 1000);
+    ktime = ktime_set(0, vcpu->epoch_time_in_us * 1000);
     hrtimer_start(&vcpu->hrtimer, ktime, HRTIMER_MODE_REL);
 }
 
@@ -468,12 +467,15 @@ static int confirm_prev_dirty_bitmap_clear(struct kvm *kvm, int cur_index)
             continue;
 		base = memslot->base_gfn;
         npages = memslot->npages;
-		for (i = 0; i < npages; ++i) {
+		/*for (i = 0; i < npages; ++i) {
 			if (test_bit(i, dirty_bitmap)) {
 				printk("%s %x is still set.\n", __func__, (long)base + i);
 //                return -EINVAL;
 			}
-		}
+		}*/
+        if(*dirty_bitmap != 0)
+            printk("%s is still set.\n", __func__);
+
 	}
     return 0;
 }
@@ -995,7 +997,8 @@ int kvmft_page_dirty(struct kvm *kvm, unsigned long gfn,
         return -1;
     }
 
-    if (unlikely(put_index >= dlist->dirty_stop_num))
+	//Now collect the largest collectable dirty pages
+	if (unlikely(put_index >= ctx->shared_watermark))
 		ctx->log_full = true;
 
 #ifdef ENABLE_PRE_DIFF
@@ -1565,7 +1568,7 @@ int kvm_vm_ioctl_adjust_dirty_tracking(struct kvm* kvm, int diff)
 
 int kvm_vm_ioctl_adjust_epoch(struct kvm* kvm, unsigned long newepoch)
 {
-    epoch_time_in_us = newepoch;
+    kvm->vcpus[0]->epoch_time_in_us = newepoch;
     printk("%s new epoch is %lu\n", __func__, newepoch);
 
     return 0;
@@ -2454,6 +2457,8 @@ static int __diff_to_buf(unsigned long gfn, struct page *page1,
         }
     }
 
+    kernel_fpu_end();
+
     if (block == buf + sizeof(*header)) {
 		#ifdef ft_debug_mode_enable
         printk("warning: not found diff page\n");
@@ -2462,8 +2467,6 @@ static int __diff_to_buf(unsigned long gfn, struct page *page1,
         memcpy(block, page, 4096);
         block += 4096;
     }
-
-    kernel_fpu_end();
 
     kunmap_atomic(backup);
     kunmap_atomic(page);
@@ -3232,6 +3235,21 @@ void kvm_shm_exit(struct kvm *kvm)
     master_slave_conn_free(kvm);
 }
 
+unsigned long kvm_get_put_off(struct kvm *kvm, int cur_index){
+	struct kvmft_dirty_list *dlist;
+    struct kvmft_context *ctx = &kvm->ft_context;
+	dlist = ctx->page_nums_snapshot_k[cur_index];
+	return dlist->put_off;
+}
+
+int kvm_reset_put_off(struct kvm *kvm, int cur_index){
+    struct kvmft_dirty_list *dlist;
+    struct kvmft_context *ctx = &kvm->ft_context;
+    dlist = ctx->page_nums_snapshot_k[cur_index];
+	dlist->put_off = 0;
+    return 0;
+}
+
 int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
 {
     int ret = -ENOMEM;
@@ -3281,7 +3299,7 @@ int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
 
     ctx->max_desc_count = KVM_DIRTY_BITMAP_INIT_COUNT;
 
-    epoch_time_in_us = info->epoch_time_in_ms * 1000;
+    kvm->vcpus[0]->epoch_time_in_us = info->epoch_time_in_ms * 1000;
     pages_per_ms = info->pages_per_ms;
 
     ctx->shared_page_num = info->shared_page_num; // + 1024; // 1024 is guard

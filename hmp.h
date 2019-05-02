@@ -143,4 +143,9 @@ void hmp_gft_add_host(Monitor *mon, const QDict *qdict);
 void hmp_gft_init(Monitor *mon, const QDict *qdict);
 void hmp_migrate_pause(Monitor *mon, const QDict *qdict);
 void hmp_migrate_resume(Monitor *mon, const QDict *qdict);
+//#ifdef GFT_RESYNC
+void hmp_gft_member_live_mig(Monitor *mon, const QDict *qdict);
+void hmp_gft_add_member(Monitor *mon, const QDict *qdict);
+//#endif
+
 #endif

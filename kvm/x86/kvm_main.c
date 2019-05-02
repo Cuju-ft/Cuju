@@ -2080,14 +2080,15 @@ int kvm_write_guest_cached(struct kvm *kvm, struct gfn_to_hva_cache *ghc,
 	if (slots->generation != ghc->generation)
 		kvm_gfn_to_hva_cache_init(kvm, ghc, ghc->gpa, ghc->len);
 
+    if (kvm_is_error_hva(ghc->hva))
+        return -EFAULT;
+
+    r = kvmft_page_dirty(kvm, ghc->gpa >> PAGE_SHIFT,
+                            (void *)ghc->hva, 1, NULL);
+
 	if (unlikely(!ghc->memslot))
 		return kvm_write_guest(kvm, ghc->gpa, data, len);
 
-	if (kvm_is_error_hva(ghc->hva))
-		return -EFAULT;
-
-	r = kvmft_page_dirty(kvm, ghc->gpa >> PAGE_SHIFT,
-                       		(void *)ghc->hva, 1, NULL);
 	if (r < 0)
        		return r;
 
@@ -3059,6 +3060,7 @@ static long kvm_vm_ioctl(struct file *filp,
 	struct kvm *kvm = filp->private_data;
 	void   *argp = (void   *)arg;
 	int r;
+	int __cur_index;
 
 	if (kvm->mm != current->mm)
 		return -EIO;
@@ -3187,6 +3189,16 @@ static long kvm_vm_ioctl(struct file *filp,
             goto out;
         break;
     }
+    case KVM_GET_PUT_OFF:
+        if (copy_from_user(&__cur_index, argp, sizeof(__cur_index)))
+            goto out;
+        r = kvm_get_put_off(kvm, __cur_index);
+        break;
+    case KVM_RESET_PUT_OFF:
+        if (copy_from_user(&__cur_index, argp, sizeof(__cur_index)))
+            goto out;
+        r = kvm_reset_put_off(kvm, __cur_index);
+        break;
     case KVM_SHM_ENABLE: {
         r = kvm_shm_enable(kvm);
         if (r)

@@ -877,6 +877,27 @@ ETEXI
     },
 
     {
+        .name       = "gft_member_live_mig",
+        .args_type  = "detach:-d,blk:-b,inc:-i,cuju:-c,uri:s",
+        .params     = "[-d] [-b] [-i] [-c] uri",
+        .help       = "do live migration memory backup and pause VM (using -d to not wait for completion)"
+		      "\n\t\t\t -b for migration without shared storage with"
+		      " full copy of disk\n\t\t\t -i for migration without "
+		      "\n\t\t\t -c enter cuju ft mode"
+		      "shared storage with incremental copy of disk "
+		      "(base image shared between src and destination)",
+        .cmd        = hmp_gft_member_live_mig,
+    },
+
+    {
+        .name       = "gft_add_member",
+        .args_type  = "master_host_ip:s,master_host_gft_port:i,master_mac:s,slave_host_ip:s,slave_host_ft_port:i",
+        .params     = "master_host_ip master_host_gft_port master_mac slave_host_ip slave_host_ft_port",
+        .help       = "add member which is already done live migration to GFT",
+        .cmd = hmp_gft_add_member,
+    },
+
+    {
         .name       = "ringbuf_write",
         .args_type  = "device:s,data:s",
         .params     = "device data",

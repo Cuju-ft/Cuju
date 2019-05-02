@@ -1778,7 +1778,6 @@ static int kvm_guest_time_update(struct kvm_vcpu *v)
 {
 	unsigned long flags, this_tsc_khz, tgt_tsc_khz;
 	struct kvm_vcpu_arch *vcpu = &v->arch;
-	void *shared_kaddr;
 	struct kvm_arch *ka = &v->kvm->arch;
 	s64 kernel_ns;
 	u64 tsc_timestamp, host_tsc;
@@ -1906,7 +1905,6 @@ static int kvm_guest_time_update(struct kvm_vcpu *v)
 	kvm_write_guest_cached(v->kvm, &vcpu->pv_time,
 				&vcpu->hv_clock,
 				sizeof(vcpu->hv_clock.version));
-	kvmft_page_dirty(v->kvm, vcpu->time >> PAGE_SHIFT, shared_kaddr, 0, NULL);
 	return 0;
 }
 
@@ -8147,7 +8145,7 @@ void kvm_arch_commit_memory_region(struct kvm *kvm,
 	 *
 	 * FIXME: const-ify all uses of struct kvm_memory_slot.
 	 */
-	
+
 	if (change != KVM_MR_DELETE)
 		kvm_mmu_slot_apply_flags(kvm, (struct kvm_memory_slot *) new);
 }
