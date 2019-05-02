@@ -47,6 +47,15 @@
 extern void qmp_migrate_resume(void);
 extern void qmp_migrate_pause(void);
 
+//#ifdef GFT_RESYNC
+extern void gft_reset_all(void);
+extern void qmp_gft_add_member(void);
+extern int is_gft_new_member;
+extern int is_gft_adding_new_member;
+extern int group_ft_members_size;
+extern int group_ft_members_size_tmp;
+//#endif
+
 static void hmp_handle_error(Monitor *mon, Error **errp)
 {
     assert(errp);
@@ -2656,4 +2665,68 @@ void hmp_migrate_pause(Monitor *mon , const QDict *qdict){
 
 void hmp_migrate_resume(Monitor *mon, const QDict *qdict){
     qmp_migrate_resume();
+}
+
+void hmp_gft_member_live_mig(Monitor *mon, const QDict *qdict){
+    is_gft_new_member = 1;
+    bool detach = qdict_get_try_bool(qdict, "detach", false);
+    bool blk = qdict_get_try_bool(qdict, "blk", false);
+    bool inc = qdict_get_try_bool(qdict, "inc", false);
+    bool cuju = qdict_get_try_bool(qdict, "cuju", false);
+    const char *uri = qdict_get_str(qdict, "uri");
+    Error *err = NULL;
+
+    qmp_migrate(uri, !!blk, blk, !!inc, inc, false, false, !!cuju, cuju, &err);
+    if (err) {
+        error_report_err(err);
+        return;
+    }
+
+    if (!detach && !cuju) {
+        HMPMigrationStatus *status;
+
+        if (monitor_suspend(mon) < 0) {
+            monitor_printf(mon, "terminal does not allow synchronous "
+                           "migration, continuing detached\n");
+            return;
+        }
+
+        status = g_malloc0(sizeof(*status));
+        status->mon = mon;
+        status->is_block_migration = blk || inc;
+        status->timer = timer_new_ms(QEMU_CLOCK_REALTIME, hmp_migrate_status_cb,
+                                          status);
+        timer_mod(status->timer, qemu_clock_get_ms(QEMU_CLOCK_REALTIME));
+    }
+}
+
+void hmp_gft_add_member(Monitor *mon, const QDict *qdict){
+    //int gft_id = qdict_get_int(qdict, "gft_id");
+    const char *master_host_ip = qdict_get_str(qdict, "master_host_ip");
+    int master_host_gft_port = qdict_get_int(qdict, "master_host_gft_port");
+    const char *master_mac = qdict_get_str(qdict, "master_mac");
+    const char *slave_host_ip = qdict_get_str(qdict, "slave_host_ip");
+    int slave_host_ft_port = qdict_get_int(qdict, "slave_host_ft_port");
+
+    int new_member_gft_id = group_ft_members_size;
+    Error *err = NULL;
+    qmp_gft_add_member();
+    is_gft_adding_new_member = 1;
+    gft_status = GFT_WAIT;
+    gft_reset_all();
+    qmp_gft_add_host(new_member_gft_id,
+                     master_host_ip,
+                     master_host_gft_port,
+                     master_mac,
+                     slave_host_ip,
+                     slave_host_ft_port,
+                     &err);
+    if (err) {
+        monitor_printf(mon, "gft_add_host: %s\n", error_get_pretty(err));
+        error_free(err);
+        return;
+    }
+    printf("%s add host finish\n",__func__);
+    group_ft_members_size = group_ft_members_size_tmp;
+    qmp_gft_leader_init(&err);
 }

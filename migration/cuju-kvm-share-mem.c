@@ -1494,11 +1494,3 @@ void kvmft_update_epoch_flush_time_linear(double time_s)
         last_f = new_f;
     }
 }
-/*
-kvm_vm_ioctl_proxy : used in cuju-ft-trans-file.c
-just call kvm_vm_ioctl in cuju-kvm-share-mem.c to make sure that it works
-*/
-int kvm_vm_ioctl_proxy(void *s)
-{
-    return kvm_vm_ioctl(kvm_state, KVMFT_RESTORE_PREVIOUS_EPOCH, s);
-}

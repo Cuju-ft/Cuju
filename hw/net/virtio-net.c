@@ -1300,11 +1300,11 @@ static int32_t virtio_net_flush_tx(VirtIONetQueue *q)
             out_num = sg_num;
             out_sg = sg;
         }
-
+        // For CUJU-FT
         //ret = qemu_sendv_packet_async(qemu_get_subqueue(n->nic, queue_index),
         //                              out_sg, out_num, virtio_net_tx_complete);
         ret = qemu_sendv_packet_async_proxy(qemu_get_subqueue(n->nic, queue_index),
-                                      out_sg, out_num, virtio_net_tx_complete);
+                                     out_sg, out_num, virtio_net_tx_complete);
         if (ret == 0) {
             virtio_queue_set_notification(q->tx_vq, 0);
             q->async_tx.elem = elem;
@@ -1595,7 +1595,7 @@ static int virtio_net_load_device(VirtIODevice *vdev, QEMUFile *f,
         n->mac_table.multi_overflow = n->mac_table.uni_overflow = 1;
         n->mac_table.in_use = 0;
     }
- 
+
     qemu_get_buffer(f, (uint8_t *)n->vlans, MAX_VLAN >> 3);
 
     if (qemu_get_be32(f) && !peer_has_vnet_hdr(n)) {

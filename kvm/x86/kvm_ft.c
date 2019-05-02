@@ -467,12 +467,15 @@ static int confirm_prev_dirty_bitmap_clear(struct kvm *kvm, int cur_index)
             continue;
 		base = memslot->base_gfn;
         npages = memslot->npages;
-		for (i = 0; i < npages; ++i) {
+		/*for (i = 0; i < npages; ++i) {
 			if (test_bit(i, dirty_bitmap)) {
 				printk("%s %x is still set.\n", __func__, (long)base + i);
 //                return -EINVAL;
 			}
-		}
+		}*/
+        if(*dirty_bitmap != 0)
+            printk("%s is still set.\n", __func__);
+
 	}
     return 0;
 }

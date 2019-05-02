@@ -50,7 +50,8 @@ enum MIG_JOIN_GFT_STATE{
  MIG_JOIN_GFT_NEW                ,
  MIG_JOIN_GFT_MIGRATION_DONE     , ///< send to leader when ft_state is FT_INIT
  MIG_JOIN_GFT_MIGRATION_ALL      , ///< The final message from leader after recving MIGRATION_DONE from all members
- MIG_JOIN_GFT_EPOCH_COMMIT2        ///< CMD bcast after recv COMMIT1 from all members, will run current MigrationState
+ MIG_JOIN_GFT_EPOCH_COMMIT2      ,  ///< CMD bcast after recv COMMIT1 from all members, will run current MigrationState
+ MIG_JOIN_GFT_ADDING_MEMBER
 };
 
 typedef struct
