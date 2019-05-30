@@ -3,7 +3,7 @@
 
 #include "qemu-common.h"
 
-#define MIG_MAX_JOIN    5
+#define MIG_MAX_JOIN    100
 #define IP_LEN          16
 #define MAC_LEN         6
 

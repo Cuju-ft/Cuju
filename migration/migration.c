@@ -2477,6 +2477,7 @@ static void gft_master_read_master(void *opaque)
         TODO:send a signal (gft_id) to leader VM.
         If recv return 0, then it's the failed VM.
         If original leader failed, change leader to next gft_id VM
+        add member will let leader reset the connection and trigger this func
         */
         if(!is_gft_adding_new_member){
             for(i = 0;i < group_ft_members_size;i++){
@@ -2860,6 +2861,7 @@ static void gft_master_wait_all_migration_done(void *opaque)
 #ifdef GFT_RESYNC
         else if(is_gft_new_member){
             gft_status = GFT_WAIT;
+            is_gft_adding_new_member = 1;
             gft_reset_all();
             //printf("%s, new member live migration done\n", __func__);
             pre_live_mig_finish_time = time_in_double();
@@ -3736,7 +3738,7 @@ static MigrationJoinConn* gft_master_accept_other_master_one(int sd)
     socklen_t addrlen = sizeof(addr);
     int c, c2, index = 0;
     struct MigrationJoinConn *conn = NULL;
-    pthread_t accept_thread[20];
+    pthread_t accept_thread[GROUP_FT_MEMBER_MAX * 2];
     struct accept_info info;
     struct accept_info info2;
 
@@ -4125,6 +4127,7 @@ void gft_clear_group_info(void){
     group_ft_members_size_tmp = 0;
     //group_ft_members_size = 0;
     group_ft_members_ready = 0;
+    accept_count = 0;
 }
 /**
  * gft_reset_all : reset gft connections when failover detected
