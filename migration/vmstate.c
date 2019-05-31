@@ -6,6 +6,8 @@
 #include "qemu/bitops.h"
 #include "qemu/error-report.h"
 #include "trace.h"
+#include "hw/virtio/virtio.h"
+#include "migration/cuju-kvm-share-mem.h"
 
 static void vmstate_subsection_save(QEMUFile *f, const VMStateDescription *vmsd,
                                     void *opaque, QJSON *vmdesc);
@@ -111,7 +113,11 @@ int vmstate_load_state(QEMUFile *f, const VMStateDescription *vmsd,
             void *base_addr = vmstate_base_addr(opaque, field, true);
             int i, n_elems = vmstate_n_elems(opaque, field);
             int size = vmstate_size(opaque, field);
-
+            if(strcmp(field->name,"vq")==0 && kvmft_started()){
+                VirtIODevice *vdev;
+                vdev = opaque;
+                n_elems = vdev->size;
+            }
             for (i = 0; i < n_elems; i++) {
                 void *addr = base_addr + size * i;
 
@@ -317,7 +323,12 @@ void vmstate_save_state(QEMUFile *f, const VMStateDescription *vmsd,
             int size = vmstate_size(opaque, field);
             int64_t old_offset, written_bytes;
             QJSON *vmdesc_loop = vmdesc;
-
+            
+            if(strcmp(field->name,"vq")==0 && kvmft_started()){
+                VirtIODevice *vdev;
+                vdev = opaque;
+                n_elems = vdev->size;
+            }
             for (i = 0; i < n_elems; i++) {
                 void *addr = base_addr + size * i;
 

@@ -1775,6 +1775,7 @@ void virtio_save(VirtIODevice *vdev, QEMUFile *f)
         }
     }
 
+    vdev->size = i;
     if (vdc->save != NULL) {
         vdc->save(vdev, f);
     }
