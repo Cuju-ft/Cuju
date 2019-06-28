@@ -198,7 +198,7 @@ static inline bool kvm_blk_check_ack_cb(KvmBlkSession *s) {
 }
 
 //send write callback to client
-#define BLK_SERVER_WRITE_CALLBACK_LIMIT 1
+#define BLK_SERVER_WRITE_CALLBACK_LIMIT 32
 void kvm_blk_server_wcallback(KvmBlkSession *s);
 void kvm_blk_server_free_wreq(void);
 
