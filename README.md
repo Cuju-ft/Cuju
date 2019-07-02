@@ -102,7 +102,6 @@ auto eth1
 iface eth1 inet static
 address 192.168.111.2
 netmask 255.255.255.0 
-
 ```
 
 - Build the high-speed connections (ex. 10G NIC) with Primary and Backup nodes by the eth1
@@ -142,17 +141,15 @@ $ git clone https://github.com/Cuju-ft/Cuju.git
 $ cd Cuju
 $ ./configure --enable-cuju --enable-kvm --disable-pie --target-list=x86_64-softmmu
 $ make -j8
-
 ```
 
-* Configure, Compile & insmod Cuju-kvm module
+* Configure, Compile & insmod Cuju-kvm module *1
 
 ```
 $ cd Cuju/kvm
 $ ./configure
 $ make -j8
 $ ./reinsmodkvm.sh
-
 ```
 
 Execute Cuju
@@ -164,7 +161,7 @@ $ ./reinsmodkvm.sh
 ```
 
 * Boot VM (on Primary Host)
-* ```rumvm.sh```
+* ```runvm.sh```
 
 ```
 sudo ./x86_64-softmmu/qemu-system-x86_64 \
@@ -172,18 +169,18 @@ sudo ./x86_64-softmmu/qemu-system-x86_64 \
 -device virtio-blk,drive=drive0 \
 -m 1G -enable-kvm \
 -net tap,ifname=tap0 -net nic,model=virtio,vlan=0,macaddr=ae:ae:00:00:00:25 \
--vga std -chardev socket,id=mon,path=/home/cujuft/vm1.monitor,server,nowait -mon chardev=mon,id=monitor,mode=readline
+-cpu host \
+-vga std -chardev socket,id=mon,path=/home/[your username]/vm1.monitor,server,nowait -mon chardev=mon,id=monitor,mode=readline
 
 ```
 
-You need to change the guest image path (file=/mnt/nfs/Ubuntu20G-1604.img) and monitor path (path=/home/cujuft/vm1.monitor) for your environment
+You need to change the guest image path (file=/mnt/nfs/Ubuntu20G-1604.img) and monitor path (path=/home/[your username]/vm1.monitor) for your environment
 
 
 * Use VNC to see the console
 
 ```
 $ vncviewer :5900 &
-
 ```
 
 The default account/password is root/root if you use we provide guest image
@@ -197,9 +194,9 @@ sudo x86_64-softmmu/qemu-system-x86_64 \
 -device virtio-blk,drive=drive0 \
 -m 1G -enable-kvm \
 -net tap,ifname=tap1 -net nic,model=virtio,vlan=0,macaddr=ae:ae:00:00:00:25 \
--vga std -chardev socket,id=mon,path=/home/cujuft/vm1r.monitor,server,nowait -mon chardev=mon,id=monitor,mode=readline \
+-vga std -chardev socket,id=mon,path=/home/[your username]/vm1r.monitor,server,nowait -mon chardev=mon,id=monitor,mode=readline \
+-cpu host \
 -incoming tcp:0:4441,ft_mode
-
 ```
 
 * You need to follow Boot VM script to change the related parameter or you can use following script to replace Receiver start script (if your VM start script is runvm.sh)
@@ -209,19 +206,26 @@ sudo x86_64-softmmu/qemu-system-x86_64 \
 sed -e 's/mode=readline/mode=readline -incoming tcp\:0\:4441,ft_mode/g' -e 's/vm1.monitor/vm1r.monitor/g' -e 's/tap0/tap1/g' ./runvm.sh > tmp.sh
 chmod +x ./tmp.sh
 ./tmp.sh
-
 ```
 
 * After VM boot and Receiver ready, you can execute following script to enter FT mode
 * ```ftmode.sh```
 ```
-sudo echo "migrate_set_capability cuju-ft on" | sudo nc -U /home/cujuft/vm1.monitor
-sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -U /home/cujuft/vm1.monitor
-
+sudo echo "migrate_set_capability cuju-ft on" | sudo nc -U /home/[your username]/vm1.monitor
+sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -U /home/[your username]/vm1.monitor
 ```
 You need to change the ip address and port (tcp:192.168.111.2:4441) for your environment, this is Backup Host's IP
-And change the monitor path (/home/cujuft/vm1.monitor) for your environment
+And change the monitor path (/home/[your username]/vm1.monitor) for your environment
 
 * If you successfully start Cuju, you will see the following message show on Primary side:
 ![](https://i.imgur.com/nUdwKkB.jpg)
 
+* If you close Primary node, you will lose ```vncviewer :5900 &``` connection
+![](https://i.imgur.com/wsp1zNQ.png)
+You will need new session with vncviewer:
+```
+$ vncviewer :5901 &
+```
+
+## Notice
+*1. Function ```__get_user_pages_unlocked()``` error in make 'Cuju/kvm' [Link](https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/commit/?h=linux-4.4.y&id=ab424c8eb71ee9ea4ba798faaeaf62e84048cb9a)
