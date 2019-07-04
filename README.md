@@ -38,7 +38,7 @@ libssl-dev libpixman-1-dev nfs-common git
 ```
 - Set up the bridge and network environment 
     - You can follow our recommended topology to set up the network environment 
-    - The example of network interfaces set up below (edit your /etc/network/interfaces):
+    - The example of network interfaces set up below (edit your `/etc/network/interfaces`):
 - NFS node
 ```
 auto lo
@@ -102,12 +102,11 @@ auto eth1
 iface eth1 inet static
 address 192.168.111.2
 netmask 255.255.255.0 
-
 ```
 
-- Build the high-speed connections (ex. 10G NIC) with Primary and Backup nodes by the eth1
+- Build the high-speed connections (ex. 10G NIC) with Primary and Backup nodes by the `eth1`
 
-- After editing these network interfaces, type "/etc/init.d/networking restart" or reboot
+- After editing these network interfaces, type `/etc/init.d/networking restart` or `reboot`
 
 ### NFS Node Setup
 
@@ -115,19 +114,19 @@ netmask 255.255.255.0
 ```
  $ sudo apt-get install nfs-kernel-server
 ```
-- Insert this line in "/etc/exports" to add your NFS folder: 
+- Insert this line in `/etc/exports` to add your NFS folder: 
 ```
  /home/[your username]/nfsfolder *(rw,no_root_squash,no_subtree_check) 
 ```
-- After editing /etc/exports, type "/etc/init.d/nfs-kernel-server restart" or reboot
+- After editing `/etc/exports`, type `/etc/init.d/nfs-kernel-server restart` or `reboot`
 
-- Go to your nfs folder, then download [Cuju](https://github.com/Cuju-ft/Cuju) and build a VM image file (or download our [Ubuntu-16.04 VM image](https://drive.google.com/file/d/0B9au9R9FzSWKNjZpWUNlNDZLcEU/view?usp=sharing) file, the account/password is root/root), they will be synced with Primary and Backup node.
+- Go to your nfs folder, then download [Cuju](https://github.com/Cuju-ft/Cuju) and build a VM image file (or download our [Ubuntu-16.04 VM image](https://drive.google.com/file/d/0B9au9R9FzSWKNjZpWUNlNDZLcEU/view?usp=sharing) file, the `account/password` is `root/root`), they will be synced with Primary and Backup node.
 
 ### Primary and Backup Node Setup
 - Mount the NFS folder
 ```
-$ mkdir /mnt/nfs
-$ mount -t nfs 192.168.11.1:/home/[your username]/nfsfolder /mnt/nfs
+$ sudo mkdir /mnt/nfs
+$ sudo mount -t nfs 192.168.11.1:/home/[your username]/nfsfolder /mnt/nfs
 ```
 ## Build Cuju
 ---
@@ -142,18 +141,28 @@ $ git clone https://github.com/Cuju-ft/Cuju.git
 $ cd Cuju
 $ ./configure --enable-cuju --enable-kvm --disable-pie --target-list=x86_64-softmmu
 $ make -j8
-
 ```
 
-* Configure, Compile & insmod Cuju-kvm module
+* Configure, Compile & insmod Cuju-kvm module `*1` `*2`
 
 ```
 $ cd Cuju/kvm
 $ ./configure
 $ make -j8
 $ ./reinsmodkvm.sh
-
 ```
+
+>`*1` If you meet `error: incompatible type for argument 5 of '__get_user_pages_unlocked'`, you can use this patch:
+>```
+>$ cd Cuju
+>$ patch -p1 < ./patch/__get_user_pages_unlocked.patch
+>```
+>
+>`*2` If you meet `error: implicit declaration of function 'use_eager_fpu' [-werror=implicit-function-declaration]`, you can use this patch:
+>```
+>$ cd Cuju
+>$ patch -p1 < ./patch/use_eager_fpu.patch
+>```
 
 Execute Cuju
 -------
@@ -164,7 +173,7 @@ $ ./reinsmodkvm.sh
 ```
 
 * Boot VM (on Primary Host)
-* ```rumvm.sh```
+* ```runvm.sh```
 
 ```
 sudo ./x86_64-softmmu/qemu-system-x86_64 \
@@ -172,21 +181,21 @@ sudo ./x86_64-softmmu/qemu-system-x86_64 \
 -device virtio-blk,drive=drive0 \
 -m 1G -enable-kvm \
 -net tap,ifname=tap0 -net nic,model=virtio,vlan=0,macaddr=ae:ae:00:00:00:25 \
--vga std -chardev socket,id=mon,path=/home/cujuft/vm1.monitor,server,nowait -mon chardev=mon,id=monitor,mode=readline
+-cpu host \
+-vga std -chardev socket,id=mon,path=/home/[your username]/vm1.monitor,server,nowait -mon chardev=mon,id=monitor,mode=readline
 
 ```
 
-You need to change the guest image path (file=/mnt/nfs/Ubuntu20G-1604.img) and monitor path (path=/home/cujuft/vm1.monitor) for your environment
+You need to change the guest image path (`file=/mnt/nfs/Ubuntu20G-1604.img`) and monitor path (`path=/home/[your username]/vm1.monitor`) for your environment
 
 
 * Use VNC to see the console
 
 ```
 $ vncviewer :5900 &
-
 ```
 
-The default account/password is root/root if you use we provide guest image
+The default `account/password` is `root/root` if you use we provide guest image
 
 * Start Receiver (on Backup Host)
 * ```recv.sh```
@@ -197,9 +206,9 @@ sudo x86_64-softmmu/qemu-system-x86_64 \
 -device virtio-blk,drive=drive0 \
 -m 1G -enable-kvm \
 -net tap,ifname=tap1 -net nic,model=virtio,vlan=0,macaddr=ae:ae:00:00:00:25 \
--vga std -chardev socket,id=mon,path=/home/cujuft/vm1r.monitor,server,nowait -mon chardev=mon,id=monitor,mode=readline \
+-vga std -chardev socket,id=mon,path=/home/[your username]/vm1r.monitor,server,nowait -mon chardev=mon,id=monitor,mode=readline \
+-cpu host \
 -incoming tcp:0:4441,ft_mode
-
 ```
 
 * You need to follow Boot VM script to change the related parameter or you can use following script to replace Receiver start script (if your VM start script is runvm.sh)
@@ -209,19 +218,24 @@ sudo x86_64-softmmu/qemu-system-x86_64 \
 sed -e 's/mode=readline/mode=readline -incoming tcp\:0\:4441,ft_mode/g' -e 's/vm1.monitor/vm1r.monitor/g' -e 's/tap0/tap1/g' ./runvm.sh > tmp.sh
 chmod +x ./tmp.sh
 ./tmp.sh
-
 ```
 
 * After VM boot and Receiver ready, you can execute following script to enter FT mode
 * ```ftmode.sh```
 ```
-sudo echo "migrate_set_capability cuju-ft on" | sudo nc -U /home/cujuft/vm1.monitor
-sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -U /home/cujuft/vm1.monitor
-
+sudo echo "migrate_set_capability cuju-ft on" | sudo nc -U /home/[your username]/vm1.monitor
+sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -U /home/[your username]/vm1.monitor
 ```
-You need to change the ip address and port (tcp:192.168.111.2:4441) for your environment, this is Backup Host's IP
-And change the monitor path (/home/cujuft/vm1.monitor) for your environment
+You need to change the ip address and port (`tcp:192.168.111.2:4441`) for your environment, this is Backup Host's IP
+And change the monitor path (`/home/[your username]/vm1.monitor`) for your environment
 
 * If you successfully start Cuju, you will see the following message show on Primary side:
 ![](https://i.imgur.com/nUdwKkB.jpg)
 
+* If you want to test failover
+ You can `kill` or `ctrl-c` VM on the Primary Host
+![](https://i.imgur.com/JWIhtDz.png)
+
+* You will need new session with vncviewer:
+   * If you have Primary Host and Backup Host, execute on Backup Host: <br>`$ vncviewer :5900 &`
+   * If you only have Primary Host with two VM: <br>`$ vncviewer :5901 &`
