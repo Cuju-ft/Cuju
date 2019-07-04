@@ -152,19 +152,17 @@ $ make -j8
 $ ./reinsmodkvm.sh
 ```
 
-`*1` Function `__get_user_pages_unlocked()` error in make `Cuju/kvm`
-![](https://i.imgur.com/7FNnFYA.png)
-```
-$ cd Cuju
-$ patch -p1 < ./patch/__get_user_pages_unlocked.patch
-```
-
-`*2` Function `use_eager_fpu()` error in make `Cuju/kvm`
-![](https://i.imgur.com/R9KWwfQ.png)
-```
-$ cd Cuju
-$ patch -p1 < ./patch/use_eager_fpu.patch
-```
+>`*1` If you meet `error: incompatible type for argument 5 of '__get_user_pages_unlocked'`, you can use this patch:
+>```
+>$ cd Cuju
+>$ patch -p1 < ./patch/__get_user_pages_unlocked.patch
+>```
+>
+>`*2` If you meet `error: implicit declaration of function 'use_eager_fpu' [-werror=implicit-function-declaration]`, you can use this patch:
+>```
+>$ cd Cuju
+>$ patch -p1 < ./patch/use_eager_fpu.patch
+>```
 
 Execute Cuju
 -------
@@ -236,8 +234,8 @@ And change the monitor path (`/home/[your username]/vm1.monitor`) for your envir
 
 * If you want to test failover
  You can `kill` or `ctrl-c` VM on the Primary Host
-![](https://i.imgur.com/wsp1zNQ.png)
-You will need new session with vncviewer:
-```
-$ vncviewer :5901 &
-```
+![](https://i.imgur.com/JWIhtDz.png)
+
+* You will need new session with vncviewer:
+   * If you have Primary Host and Backup Host, execute on Backup Host: <br>`$ vncviewer :5900 &`
+   * If you only have Primary Host with two VM: <br>`$ vncviewer :5901 &`
