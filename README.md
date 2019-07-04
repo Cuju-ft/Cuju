@@ -152,6 +152,20 @@ $ make -j8
 $ ./reinsmodkvm.sh
 ```
 
+`*1` Function `__get_user_pages_unlocked()` error in make `Cuju/kvm`
+![](https://i.imgur.com/7FNnFYA.png)
+```
+$ cd Cuju
+$ patch -p1 < ./patch/__get_user_pages_unlocked.patch
+```
+
+`*2` Function `use_eager_fpu()` error in make `Cuju/kvm`
+![](https://i.imgur.com/R9KWwfQ.png)
+```
+$ cd Cuju
+$ patch -p1 < ./patch/use_eager_fpu.patch
+```
+
 Execute Cuju
 -------
 * Before launching your VM, you should update kvm module in Primary and Backup nodes: 
@@ -226,19 +240,4 @@ And change the monitor path (`/home/[your username]/vm1.monitor`) for your envir
 You will need new session with vncviewer:
 ```
 $ vncviewer :5901 &
-```
-
-## Notice
-*1. Function ```__get_user_pages_unlocked()``` error in make `Cuju/kvm`
-![](https://i.imgur.com/7FNnFYA.png)
-```
-$ cd Cuju
-$ patch -p1 < ./patch/__get_user_pages_unlocked.patch
-```
-
-*2. Function ```use_eager_fpu()``` error in make `Cuju/kvm`
-![](https://i.imgur.com/R9KWwfQ.png)
-```
-$ cd Cuju
-$ patch -p1 < ./patch/use_eager_fpu.patch
 ```
