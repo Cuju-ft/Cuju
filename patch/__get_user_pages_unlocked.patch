@@ -1,0 +1,74 @@
+diff --git a/kvm/external-module-compat-comm.h b/kvm/external-module-compat-comm.h
+index c20b1ed..48afc22 100644
+--- a/kvm/external-module-compat-comm.h
++++ b/kvm/external-module-compat-comm.h
+@@ -279,10 +279,17 @@ static inline int get_user_pages_fast(unsigned long start, int nr_pages,
+ 				      int write, struct page **pages)
+ {
+ 	int npages;
++	unsigned int flags = 0;
++	unsigned int force = 0;
++
++	if (write)
++		flags |= FOLL_WRITE;
++	if (force)
++		flags |= FOLL_FORCE;
+ 
+ 	down_read(&current->mm->mmap_sem);
+-	npages = get_user_pages(current, current->mm, start, nr_pages, write,
+-				0, pages, NULL);
++	npages = get_user_pages(current, current->mm, start, nr_pages, flags,
++				pages, NULL);
+ 	up_read(&current->mm->mmap_sem);
+ 
+ 	return npages;
+diff --git a/kvm/x86/async_pf.c b/kvm/x86/async_pf.c
+index d27ccad..95003bb 100644
+--- a/kvm/x86/async_pf.c
++++ b/kvm/x86/async_pf.c
+@@ -110,11 +110,19 @@ static void async_pf_execute(struct work_struct *work)
+ 	struct mm_struct *mm = apf->mm;
+ 	struct kvm_vcpu *vcpu = apf->vcpu;
+ 	unsigned long addr = apf->addr;
++	unsigned int flags = 0;
++	unsigned int write = 1;
++	unsigned int force = 0;
+ 	gva_t gva = apf->gva;
+ 
+ 	might_sleep();
+ 
+-	get_user_pages_unlocked(NULL, mm, addr, 1, 1, 0, NULL);
++	if (write)
++		flags |= FOLL_WRITE;
++	if (force)
++		flags |= FOLL_FORCE;
++
++	get_user_pages_unlocked(NULL, mm, addr, 1, NULL, flags);
+ 	kvm_async_page_present_sync(vcpu, apf);
+ 
+ 	spin_lock(&vcpu->async_pf.lock);
+
+diff --git a/kvm/x86/kvm_main.c b/kvm/x86/kvm_main.c
+index ac5d2a6..357f64e 100644
+--- a/kvm/x86/kvm_main.c
++++ b/kvm/x86/kvm_main.c
+@@ -1569,10 +1569,16 @@ static int hva_to_pfn_slow(unsigned long addr, bool *async, bool write_fault,
+ 		npages = get_user_page_nowait(current, current->mm,
+ 					      addr, write_fault, page);
+ 		up_read(&current->mm->mmap_sem);
+-	} else
++	} else {
++		unsigned int flags = FOLL_TOUCH | FOLL_HWPOISON;
++
++		if (write_fault)
++			flags |= FOLL_WRITE;
++
+ 		npages = __get_user_pages_unlocked(current, current->mm, addr, 1,
+-						   write_fault, 0, page,
+-						   FOLL_TOUCH|FOLL_HWPOISON);
++						   page,
++						   flags);
++	}
+ 	if (npages != 1)
+ 		return npages;
+ 
