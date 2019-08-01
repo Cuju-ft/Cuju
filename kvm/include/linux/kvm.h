@@ -32,6 +32,7 @@
 #endif
 
 #endif
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 #ifndef __LINUX_KVM_H
 #define __LINUX_KVM_H
 
@@ -45,7 +46,6 @@
 #include <linux/compiler.h>
 #include <linux/ioctl.h>
 #include <asm/kvm.h>
-#include <linux/kvm_ft.h>
 
 #define KVM_API_VERSION 12
 
@@ -127,9 +127,6 @@ struct kvm_memory_region {
 	__u64 memory_size; /* bytes */
 };
 
-// sync the one in kvm_host.h
-#define KVM_DIRTY_BITMAP_INIT_COUNT    2
-
 /* for KVM_SET_USER_MEMORY_REGION */
 struct kvm_userspace_memory_region {
 	__u32 slot;
@@ -137,11 +134,6 @@ struct kvm_userspace_memory_region {
 	__u64 guest_phys_addr;
 	__u64 memory_size; /* bytes */
 	__u64 userspace_addr; /* start of the userspace allocated memory */
-	__u64 dirty_bitmap_pfn[KVM_DIRTY_BITMAP_INIT_COUNT]; /* bitmap start pfn */
-	__u64 dirty_bitmap_plen; /* bitmap length in page */
-	__u64 gfn_to_put_off_pfn[KVM_DIRTY_BITMAP_INIT_COUNT];
-	__u64 gfn_to_put_off_plen;
-	__u64 gfn_to_put_off[KVM_DIRTY_BITMAP_INIT_COUNT];
 };
 
 /*
@@ -198,8 +190,38 @@ struct kvm_s390_skeys {
 	__u32 reserved[9];
 };
 
+#define KVM_S390_CMMA_PEEK (1 << 0)
+
+/**
+ * kvm_s390_cmma_log - Used for CMMA migration.
+ *
+ * Used both for input and output.
+ *
+ * @start_gfn: Guest page number to start from.
+ * @count: Size of the result buffer.
+ * @flags: Control operation mode via KVM_S390_CMMA_* flags
+ * @remaining: Used with KVM_S390_GET_CMMA_BITS. Indicates how many dirty
+ *             pages are still remaining.
+ * @mask: Used with KVM_S390_SET_CMMA_BITS. Bitmap of bits to actually set
+ *        in the PGSTE.
+ * @values: Pointer to the values buffer.
+ *
+ * Used in KVM_S390_{G,S}ET_CMMA_BITS ioctls.
+ */
+struct kvm_s390_cmma_log {
+	__u64 start_gfn;
+	__u32 count;
+	__u32 flags;
+	union {
+		__u64 remaining;
+		__u64 mask;
+	};
+	__u64 values;
+};
+
 struct kvm_hyperv_exit {
 #define KVM_EXIT_HYPERV_SYNIC          1
+#define KVM_EXIT_HYPERV_HCALL          2
 	__u32 type;
 	union {
 		struct {
@@ -208,6 +230,11 @@ struct kvm_hyperv_exit {
 			__u64 evt_page;
 			__u64 msg_page;
 		} synic;
+		struct {
+			__u64 input;
+			__u64 result;
+			__u64 params[2];
+		} hcall;
 	} u;
 };
 
@@ -242,7 +269,6 @@ struct kvm_hyperv_exit {
 #define KVM_EXIT_S390_STSI        25
 #define KVM_EXIT_IOAPIC_EOI       26
 #define KVM_EXIT_HYPERV           27
-#define KVM_EXIT_HRTIMER	  28
 
 /* For KVM_EXIT_INTERNAL_ERROR */
 /* Emulate instruction failed. */
@@ -256,7 +282,8 @@ struct kvm_hyperv_exit {
 struct kvm_run {
 	/* in */
 	__u8 request_interrupt_window;
-	__u8 padding1[7];
+	__u8 immediate_exit;
+	__u8 padding1[6];
 
 	/* out */
 	__u32 exit_reason;
@@ -479,14 +506,10 @@ struct kvm_interrupt {
 	__u32 irq;
 };
 
-#define KVM_DIRTY_LOG_FLAG_SWAP     (1 << 0)
-#define KVM_DIRTY_LOG_FLAG_NOCLEAN  (1 << 1)
-
 /* for KVM_GET_DIRTY_LOG */
 struct kvm_dirty_log {
 	__u32 slot;
 	__u32 padding1;
-	__u32 flags;
 	union {
 		void __user *dirty_bitmap; /* one bit per page */
 		__u64 padding2;
@@ -589,7 +612,13 @@ struct kvm_s390_pgm_info {
 	__u8 exc_access_id;
 	__u8 per_access_id;
 	__u8 op_access_id;
-	__u8 pad[3];
+#define KVM_S390_PGM_FLAGS_ILC_VALID	0x01
+#define KVM_S390_PGM_FLAGS_ILC_0	0x02
+#define KVM_S390_PGM_FLAGS_ILC_1	0x04
+#define KVM_S390_PGM_FLAGS_ILC_MASK	0x06
+#define KVM_S390_PGM_FLAGS_NO_REWIND	0x08
+	__u8 flags;
+	__u8 pad[2];
 };
 
 struct kvm_s390_prefix_info {
@@ -635,9 +664,9 @@ struct kvm_s390_irq {
 
 struct kvm_s390_irq_state {
 	__u64 buf;
-	__u32 flags;
+	__u32 flags;        /* will stay unused for compatibility reasons */
 	__u32 len;
-	__u32 reserved[4];
+	__u32 reserved[4];  /* will stay unused for compatibility reasons */
 };
 
 /* for KVM_SET_GUEST_DEBUG */
@@ -687,6 +716,9 @@ struct kvm_enable_cap {
 };
 
 /* for KVM_PPC_GET_PVINFO */
+
+#define KVM_PPC_PVINFO_FLAGS_EV_IDLE   (1<<0)
+
 struct kvm_ppc_pvinfo {
 	/* out */
 	__u32 flags;
@@ -714,11 +746,17 @@ struct kvm_ppc_one_seg_page_size {
 struct kvm_ppc_smmu_info {
 	__u64 flags;
 	__u32 slb_size;
-	__u32 pad;
+	__u16 data_keys;	/* # storage keys supported for data */
+	__u16 instr_keys;	/* # storage keys supported for instructions */
 	struct kvm_ppc_one_seg_page_size sps[KVM_PPC_PAGE_SIZES_MAX_SZ];
 };
 
-#define KVM_PPC_PVINFO_FLAGS_EV_IDLE   (1<<0)
+/* for KVM_PPC_RESIZE_HPT_{PREPARE,COMMIT} */
+struct kvm_ppc_resize_hpt {
+	__u64 flags;
+	__u32 shift;
+	__u32 pad;
+};
 
 #define KVMIO 0xAE
 
@@ -728,6 +766,10 @@ struct kvm_ppc_smmu_info {
 /* on ppc, 0 indicate default, 1 should force HV and 2 PR */
 #define KVM_VM_PPC_HV 1
 #define KVM_VM_PPC_PR 2
+
+/* on MIPS, 0 forces trap & emulate, 1 forces VZ ASE */
+#define KVM_VM_MIPS_TE		0
+#define KVM_VM_MIPS_VZ		1
 
 #define KVM_S390_SIE_PAGE_OFFSET 1
 
@@ -897,6 +939,35 @@ struct kvm_ppc_smmu_info {
 #define KVM_CAP_SPLIT_IRQCHIP 121
 #define KVM_CAP_IOEVENTFD_ANY_LENGTH 122
 #define KVM_CAP_HYPERV_SYNIC 123
+#define KVM_CAP_S390_RI 124
+#define KVM_CAP_SPAPR_TCE_64 125
+#define KVM_CAP_ARM_PMU_V3 126
+#define KVM_CAP_VCPU_ATTRIBUTES 127
+#define KVM_CAP_MAX_VCPU_ID 128
+#define KVM_CAP_X2APIC_API 129
+#define KVM_CAP_S390_USER_INSTR0 130
+#define KVM_CAP_MSI_DEVID 131
+#define KVM_CAP_PPC_HTM 132
+#define KVM_CAP_SPAPR_RESIZE_HPT 133
+#define KVM_CAP_PPC_MMU_RADIX 134
+#define KVM_CAP_PPC_MMU_HASH_V3 135
+#define KVM_CAP_IMMEDIATE_EXIT 136
+#define KVM_CAP_MIPS_VZ 137
+#define KVM_CAP_MIPS_TE 138
+#define KVM_CAP_MIPS_64BIT 139
+#define KVM_CAP_S390_GS 140
+#define KVM_CAP_S390_AIS 141
+#define KVM_CAP_SPAPR_TCE_VFIO 142
+#define KVM_CAP_X86_GUEST_MWAIT 143
+#define KVM_CAP_ARM_USER_IRQ 144
+#define KVM_CAP_S390_CMMA_MIGRATION 145
+#define KVM_CAP_PPC_FWNMI 146
+#define KVM_CAP_PPC_SMT_POSSIBLE 147
+#define KVM_CAP_HYPERV_SYNIC2 148
+#define KVM_CAP_HYPERV_VP_INDEX 149
+#define KVM_CAP_S390_AIS_MIGRATION 150
+#define KVM_CAP_PPC_GET_CPU_CHAR 151
+#define KVM_CAP_S390_BPB 152
 
 #ifdef KVM_CAP_IRQ_ROUTING
 
@@ -909,7 +980,10 @@ struct kvm_irq_routing_msi {
 	__u32 address_lo;
 	__u32 address_hi;
 	__u32 data;
-	__u32 pad;
+	union {
+		__u32 pad;
+		__u32 devid;
+	};
 };
 
 struct kvm_irq_routing_s390_adapter {
@@ -996,11 +1070,18 @@ struct kvm_irqfd {
 	__u8  pad[16];
 };
 
+/* For KVM_CAP_ADJUST_CLOCK */
+
+/* Do not use 1, KVM_CHECK_EXTENSION returned it before we had flags.  */
+#define KVM_CLOCK_TSC_STABLE		2
+
 struct kvm_clock_data {
 	__u64 clock;
 	__u32 flags;
 	__u32 pad[9];
 };
+
+/* For KVM_CAP_SW_TLB */
 
 #define KVM_MMU_FSL_BOOKE_NOHV		0
 #define KVM_MMU_FSL_BOOKE_HV		1
@@ -1055,12 +1136,14 @@ struct kvm_one_reg {
 	__u64 addr;
 };
 
+#define KVM_MSI_VALID_DEVID	(1U << 0)
 struct kvm_msi {
 	__u32 address_lo;
 	__u32 address_hi;
 	__u32 data;
 	__u32 flags;
-	__u8  pad[16];
+	__u32 devid;
+	__u8  pad[12];
 };
 
 struct kvm_arm_device_addr {
@@ -1089,6 +1172,7 @@ struct kvm_device_attr {
 #define  KVM_DEV_VFIO_GROUP			1
 #define   KVM_DEV_VFIO_GROUP_ADD			1
 #define   KVM_DEV_VFIO_GROUP_DEL			2
+#define   KVM_DEV_VFIO_GROUP_SET_SPAPR_TCE		3
 
 enum kvm_device_type {
 	KVM_DEV_TYPE_FSL_MPIC_20	= 1,
@@ -1105,7 +1189,14 @@ enum kvm_device_type {
 #define KVM_DEV_TYPE_FLIC		KVM_DEV_TYPE_FLIC
 	KVM_DEV_TYPE_ARM_VGIC_V3,
 #define KVM_DEV_TYPE_ARM_VGIC_V3	KVM_DEV_TYPE_ARM_VGIC_V3
+	KVM_DEV_TYPE_ARM_VGIC_ITS,
+#define KVM_DEV_TYPE_ARM_VGIC_ITS	KVM_DEV_TYPE_ARM_VGIC_ITS
 	KVM_DEV_TYPE_MAX,
+};
+
+struct kvm_vfio_spapr_tce {
+	__s32	groupfd;
+	__s32	tablefd;
 };
 
 /*
@@ -1189,6 +1280,8 @@ struct kvm_s390_ucas_mapping {
 /* Available with KVM_CAP_PPC_ALLOC_HTAB */
 #define KVM_PPC_ALLOCATE_HTAB	  _IOWR(KVMIO, 0xa7, __u32)
 #define KVM_CREATE_SPAPR_TCE	  _IOW(KVMIO,  0xa8, struct kvm_create_spapr_tce)
+#define KVM_CREATE_SPAPR_TCE_64	  _IOW(KVMIO,  0xa8, \
+				       struct kvm_create_spapr_tce_64)
 /* Available with KVM_CAP_RMA */
 #define KVM_ALLOCATE_RMA	  _IOR(KVMIO,  0xa9, struct kvm_allocate_rma)
 /* Available with KVM_CAP_PPC_HTAB_FD */
@@ -1197,8 +1290,15 @@ struct kvm_s390_ucas_mapping {
 #define KVM_ARM_SET_DEVICE_ADDR	  _IOW(KVMIO,  0xab, struct kvm_arm_device_addr)
 /* Available with KVM_CAP_PPC_RTAS */
 #define KVM_PPC_RTAS_DEFINE_TOKEN _IOW(KVMIO,  0xac, struct kvm_rtas_token_args)
-#define KVM_EXTEND_MEMORY_REGION_DIRTY_BITMAP _IOW(KVMIO, 0xad, \
-					struct kvm_userspace_memory_region)
+/* Available with KVM_CAP_SPAPR_RESIZE_HPT */
+#define KVM_PPC_RESIZE_HPT_PREPARE _IOR(KVMIO, 0xad, struct kvm_ppc_resize_hpt)
+#define KVM_PPC_RESIZE_HPT_COMMIT  _IOR(KVMIO, 0xae, struct kvm_ppc_resize_hpt)
+/* Available with KVM_CAP_PPC_RADIX_MMU or KVM_CAP_PPC_HASH_MMU_V3 */
+#define KVM_PPC_CONFIGURE_V3_MMU  _IOW(KVMIO,  0xaf, struct kvm_ppc_mmuv3_cfg)
+/* Available with KVM_CAP_PPC_RADIX_MMU */
+#define KVM_PPC_GET_RMMU_INFO	  _IOW(KVMIO,  0xb0, struct kvm_ppc_rmmu_info)
+/* Available with KVM_CAP_PPC_GET_CPU_CHAR */
+#define KVM_PPC_GET_CPU_CHAR	  _IOR(KVMIO,  0xb1, struct kvm_ppc_cpu_char)
 
 /* ioctl for vm fd */
 #define KVM_CREATE_DEVICE	  _IOWR(KVMIO,  0xe0, struct kvm_create_device)
@@ -1293,96 +1393,9 @@ struct kvm_s390_ucas_mapping {
 #define KVM_S390_GET_IRQ_STATE	  _IOW(KVMIO, 0xb6, struct kvm_s390_irq_state)
 /* Available with KVM_CAP_X86_SMM */
 #define KVM_SMI                   _IO(KVMIO,   0xb7)
-#define KVM_START_LOG_SHARE_DIRTY_PAGES _IOW(KVMIO,  0xb8, struct kvm_collect_log)
-struct kvm_shm_flip_run {
-    __u32 index;
-    __u32 serial;
-};
-#define KVM_SHM_FLIP_SHARING      _IOW(KVMIO,  0xb9, struct kvm_shm_flip_run)
-struct kvm_shm_alloc_pages {
-    unsigned long pfn;      // out;
-    unsigned int order;     // to alloc (1 << order) pages
-    unsigned int index1;    // index for the page array
-    unsigned int index2;    // index inside the page array
-};
-#define KVM_SHM_ALLOC_PAGES       _IOW(KVMIO,  0xba, struct kvm_shm_alloc_pages)
-struct kvm_shm_free_pages {
-  unsigned int pfn;
-  unsigned int order;
-};
-#define KVM_SHM_FREE_PAGES       _IOW(KVMIO,  0xbb, struct kvm_shm_free_pages)
-struct kvm_shmem_init {
-  unsigned long ram_page_num;     // total num of ram pages
-  unsigned long shared_page_num;
-  unsigned long shared_watermark;
-  unsigned long page_nums_size;
-  unsigned long page_nums_pfn_dirty[2]; // start of struct 
-  unsigned long page_nums_pfn_snapshot[2]; // start of struct 
-  unsigned long epoch_time_in_ms;
-  unsigned long pages_per_ms;
-};
-#define KVM_SHM_INIT              _IOW(KVMIO, 0xbc, struct kvm_shmem_init)
-#define KVM_SHM_ENABLE            _IO(KVMIO, 0xbd)
-#define KVM_SHM_START_TIMER       _IO(KVMIO, 0xbe)
-
-struct kvm_shmem_child {
-    __u32 child_pid;
-#define KVM_SHM_MAPS_COUNT  10
-    __u32 maps_len;
-    void *maps_starts[KVM_SHM_MAPS_COUNT];
-    void *maps_ends[KVM_SHM_MAPS_COUNT];
-};
-#define KVM_SHM_SET_CHILD_PID     _IOW(KVMIO, 0xbf, struct kvm_shmem_child)
-#define KVM_SHM_SNAPSHOT_DEV      _IO(KVMIO, 0xc1)
-#define KVMFT_FIRE_TIMER          _IOW(KVMIO, 0xc2, __u32)
-#define KVM_SHM_REPORT_TRACKABLE_COUNT  64  // multiple of 8
-struct kvm_shmem_report_trackable {
-    __u32 trackable_count;
-    void *ptrs[KVM_SHM_REPORT_TRACKABLE_COUNT];
-    __u32 sizes[KVM_SHM_REPORT_TRACKABLE_COUNT];
-};
-#define KVM_SHM_REPORT_TRACKABLE  _IOW(KVMIO, 0xc3, struct kvm_shmem_report_trackable)
-#define KVM_SHM_COLLECT_TRACKABLE_DIRTY _IOW(KVMIO, 0xc4, void *)
-#define KVM_GET_DIRTY_LOG_BATCH      _IOW(KVMIO,  0xc5, __u32)
-#define KVM_CLEAR_DIRTY_BITMAP       _IOW(KVMIO,  0xc6, __u32)
-struct kvm_shmem_mark_page_dirty {
-    void *hptr;
-    __u32 gfn;
-};
-#define KVM_SHM_MARK_PAGE_DIRTY      _IOW(KVMIO,  0xc7, struct kvm_shmem_mark_page_dirty)
-#define KVM_SHM_ADJUST_DIRTY_TRACKING       _IOW(KVMIO,  0xc8, __u32)
-#define KVM_FT_WRITE_PROTECT_DIRTY        _IOW(KVMIO,  0xc9, __u32)
-#define KVM_SHM_ADJUST_EPOCH              _IOW(KVMIO,  0xca, __u32)
-#define KVM_GET_PUT_OFF                   _IOW(KVMIO,  0xd1, int)
-#define KVM_RESET_PUT_OFF                 _IOW(KVMIO,  0xd2, int)
-struct kvm_shmem_extend {
-  // output from kvm to qemu
-  unsigned long page_nums_size;
-  unsigned long page_nums_pfn_snapshot; // start of struct 
-};
-#define KVM_SHM_EXTEND                    _IOW(KVMIO, 0xcb, struct kvm_shmem_extend)
-struct kvm_shmem_start_kernel_transfer {
-    __u32 trans_index;
-    __u32 ram_fd;
-    __u32 interrupted;
-    __u32 conn_index;
-    __u32 max_conn;
-};
-#define KVM_START_KERNEL_TRANSFER         _IOW(KVMIO,  0xcc, struct kvm_shmem_start_kernel_transfer)
-struct kvm_vcpu_get_shared_all_state {
-    __u32 pfn;
-    __u32 order;                                                                                             
-};
-#define KVM_VCPU_GET_SHARED_ALL_STATE     _IOW(KVMIO,  0xcd, struct kvm_vcpu_get_shared_all_state)
-#define KVM_FT_PROTECT_SPECULATIVE_PREPARE_NEXT_SPECULATIVE        _IOW(KVMIO,  0xce, __u32)
-struct kvmft_set_master_slave_sockets {
-    __u32 trans_index;
-    __u32 nsocks;
-    __u32 socks[10];
-};
-#define KVMFT_SET_MASTER_SLAVE_SOCKETS    _IOW(KVMIO, 0xcf, struct kvmft_set_master_slave_sockets)
-
-
+/* Available with KVM_CAP_S390_CMMA_MIGRATION */
+#define KVM_S390_GET_CMMA_BITS      _IOWR(KVMIO, 0xb8, struct kvm_s390_cmma_log)
+#define KVM_S390_SET_CMMA_BITS      _IOW(KVMIO, 0xb9, struct kvm_s390_cmma_log)
 
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
 #define KVM_DEV_ASSIGN_PCI_2_3		(1 << 1)
@@ -1434,24 +1447,14 @@ struct kvm_assigned_msix_entry {
 	__u16 padding[3];
 };
 
-struct kvm_cpu_state {
-    struct kvm_regs regs;
-    struct kvm_xcrs xcrs;
-    struct kvm_sregs sregs;
-    struct {
-        struct kvm_msrs info;
-        struct kvm_msr_entry entries[100];
-    } msr_data;
-    struct kvm_mp_state mp_state;
-    struct kvm_lapic_state kapic;
-    struct kvm_vcpu_events events;
-    struct kvm_debugregs dbgregs;
-    struct kvm_xsave xsave;
-};
+#define KVM_X2APIC_API_USE_32BIT_IDS            (1ULL << 0)
+#define KVM_X2APIC_API_DISABLE_BROADCAST_QUIRK  (1ULL << 1)
 
-#define KVM_SHM_SNAPMODE_OFF		0
-// will check dirty_bitmap of previous epoch
-#define KVM_SHM_SNAPMODE_NORMAL		1	
-#define KVM_SHM_SNAPMODE_TESTING	2
+/* Available with KVM_CAP_ARM_USER_IRQ */
+
+/* Bits for run->s.regs.device_irq_level */
+#define KVM_ARM_DEV_EL1_VTIMER		(1 << 0)
+#define KVM_ARM_DEV_EL1_PTIMER		(1 << 1)
+#define KVM_ARM_DEV_PMU			(1 << 2)
 
 #endif /* __LINUX_KVM_H */

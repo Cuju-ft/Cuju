@@ -56,9 +56,10 @@ int kvm_hv_hypercall(struct kvm_vcpu *vcpu);
 void kvm_hv_irq_routing_update(struct kvm *kvm);
 int kvm_hv_synic_set_irq(struct kvm *kvm, u32 vcpu_id, u32 sint);
 void kvm_hv_synic_send_eoi(struct kvm_vcpu *vcpu, int vector);
-int kvm_hv_activate_synic(struct kvm_vcpu *vcpu);
+int kvm_hv_activate_synic(struct kvm_vcpu *vcpu, bool dont_zero_synic_pages);
 
 void kvm_hv_vcpu_init(struct kvm_vcpu *vcpu);
+void kvm_hv_vcpu_postcreate(struct kvm_vcpu *vcpu);
 void kvm_hv_vcpu_uninit(struct kvm_vcpu *vcpu);
 
 static inline struct kvm_vcpu_hv_stimer *vcpu_to_stimer(struct kvm_vcpu *vcpu,
@@ -83,5 +84,8 @@ static inline bool kvm_hv_has_stimer_pending(struct kvm_vcpu *vcpu)
 }
 
 void kvm_hv_process_stimers(struct kvm_vcpu *vcpu);
+
+void kvm_hv_setup_tsc_page(struct kvm *kvm,
+			   struct pvclock_vcpu_time_info *hv_clock);
 
 #endif
