@@ -1,0 +1,3 @@
+sed -e 's/mode=readline/mode=readline -incoming tcp\:0\:4442,ft_mode/g' -e 's/vm2.monitor/vm2r.monitor/g' -e 's/tap2/tap3/g' -e 's/5002/5003/g' ./sql_ft > tmp2.sh
+chmod +x ./tmp2.sh
+./tmp2.sh

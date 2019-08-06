@@ -2,7 +2,7 @@
 #define GROUP_FT_H
 
 #include "qemu-common.h"
-
+#define GROUP_FT_MEMBER_MAX     100
 #define MIG_MAX_JOIN    100
 #define IP_LEN          16
 #define MAC_LEN         6
@@ -51,7 +51,8 @@ enum MIG_JOIN_GFT_STATE{
  MIG_JOIN_GFT_MIGRATION_DONE     , ///< send to leader when ft_state is FT_INIT
  MIG_JOIN_GFT_MIGRATION_ALL      , ///< The final message from leader after recving MIGRATION_DONE from all members
  MIG_JOIN_GFT_EPOCH_COMMIT2      ,  ///< CMD bcast after recv COMMIT1 from all members, will run current MigrationState
- MIG_JOIN_GFT_ADDING_MEMBER
+ MIG_JOIN_GFT_ADDING_MEMBER      ,
+ MIG_JOIN_GFT_READY_TO_RESYNC
 };
 
 typedef struct
@@ -62,7 +63,15 @@ typedef struct
     char master_mac[MAC_LEN];
     char slave_host_ip[IP_LEN];
     int32_t slave_host_ft_port;
+    int32_t slave_host_join_port;
 } GroupFTMember;
+
+typedef struct
+{
+    char slave_host_ip[IP_LEN];
+    int32_t slave_host_gft_port;
+    int32_t slave_incoming_port;
+} GroupFTBackup;
 
 typedef struct MigrationJoinConn
 {

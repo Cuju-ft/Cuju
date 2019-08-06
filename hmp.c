@@ -47,14 +47,15 @@
 extern void qmp_migrate_resume(void);
 extern void qmp_migrate_pause(void);
 
-//#ifdef GFT_RESYNC
 extern void gft_reset_all(void);
 extern void qmp_gft_add_member(void);
+extern void qmp_gft_add_backup(const char *slave_host_ip,
+                        int slave_incoming_port,
+                        Error **errp);
 extern int is_gft_new_member;
-extern int is_gft_adding_new_member;
+extern bool is_gft_adding_new_member;
 extern int group_ft_members_size;
 extern int group_ft_members_size_tmp;
-//#endif
 
 static void hmp_handle_error(Monitor *mon, Error **errp)
 {
@@ -2647,6 +2648,33 @@ void hmp_gft_add_host(Monitor *mon, const QDict *qdict)
     }
 }
 
+void hmp_gft_add_host2(Monitor *mon, const QDict *qdict)
+{
+    int gft_id = qdict_get_int(qdict, "gft_id");
+    const char *master_host_ip = qdict_get_str(qdict, "master_host_ip");
+    int master_host_gft_port = qdict_get_int(qdict, "master_host_gft_port");
+    const char *master_mac = qdict_get_str(qdict, "master_mac");
+    const char *slave_host_ip = qdict_get_str(qdict, "slave_host_ip");
+    int slave_host_ft_port = qdict_get_int(qdict, "slave_host_ft_port");
+    int slave_host_join_port = qdict_get_int(qdict, "slave_host_join_port");
+
+    Error *err = NULL;
+
+    qmp_gft_add_host2(gft_id,
+                     master_host_ip,
+                     master_host_gft_port,
+                     master_mac,
+                     slave_host_ip,
+                     slave_host_ft_port,
+                     slave_host_join_port,
+                     &err);
+    if (err) {
+        monitor_printf(mon, "gft_add_host2: %s\n", error_get_pretty(err));
+        error_free(err);
+        return;
+    }
+}
+
 void hmp_gft_init(Monitor *mon, const QDict *qdict)
 {
     Error *err = NULL;
@@ -2729,4 +2757,20 @@ void hmp_gft_add_member(Monitor *mon, const QDict *qdict){
     printf("%s add host finish\n",__func__);
     group_ft_members_size = group_ft_members_size_tmp;
     qmp_gft_leader_init(&err);
+}
+
+void hmp_gft_add_backup(Monitor *mon, const QDict *qdict){
+    const char *slave_host_ip = qdict_get_str(qdict, "slave_host_ip");
+    //int slave_host_gft_port = qdict_get_int(qdict, "slave_host_gft_port");
+    int slave_incoming_port = qdict_get_int(qdict, "slave_incoming_port");
+    Error *err = NULL;
+
+    qmp_gft_add_backup(slave_host_ip,
+                        slave_incoming_port,
+                        &err);
+    if (err) {
+        monitor_printf(mon, "gft_add_backup: %s\n", error_get_pretty(err));
+        error_free(err);
+        return;
+    }
 }
