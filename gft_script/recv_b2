@@ -1,0 +1,3 @@
+sed -e 's/mode=readline/mode=readline -incoming tcp\:0\:4443,ft_mode/g' -e 's/vm3.monitor/vm3r.monitor/g' -e 's/tap4/tap5/g' -e 's/5004/5005/g' ./run_ft2 > tmp3.sh
+chmod +x ./tmp3.sh
+./tmp3.sh

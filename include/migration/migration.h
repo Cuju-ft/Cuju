@@ -500,6 +500,10 @@ void qmp_gft_add_host(int gft_id, const char *master_host_ip,
                       int master_host_gft_port, const char *master_mac,
                       const char *slave_host_ip, int slave_host_ft_port,
                       Error **errp);
+void qmp_gft_add_host2(int gft_id, const char *master_host_ip,
+                      int master_host_gft_port, const char *master_mac,
+                      const char *slave_host_ip, int slave_host_ft_port,
+                      int slave_host_join_port, Error **errp);
 void qmp_gft_leader_init(Error **errp);
 int gft_packet_can_send(const uint8_t *buf, int size);
 void print_fds(void);

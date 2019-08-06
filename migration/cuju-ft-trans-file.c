@@ -45,7 +45,10 @@ QemuCond cuju_load_cond;
 //extern int qemu_loadvm_dev(QEMUFile *f);
 //extern void kvm_shmem_load_ram(void *buf, int size);
 //extern void kvm_shmem_load_ram_with_hdr(void *buf, int size, void *hdr_buf, int hdr_size);
-
+extern int is_gft_new_member, gft_backup_used, gft_backup_pool_size;
+extern GroupFTBackup group_ft_backup[GROUP_FT_MEMBER_MAX];
+extern int group_ft_master_sock;
+extern int resync_sock;
 char *blk_server = NULL;
 
 
@@ -766,6 +769,10 @@ static int cuju_ft_trans_close(void *opaque)
     CujuQEMUFileFtTrans *s = opaque;
     int ret = -1;
 
+    GroupFTBackup *b = &group_ft_backup[gft_backup_used];
+    Error *err = NULL;
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof(addr);
     printf("%s\n", __func__);
 
     trace_cuju_ft_trans_close();
@@ -817,9 +824,34 @@ static int cuju_ft_trans_close(void *opaque)
         qemu_announce_self();
 
         cuju_ft_mode = CUJU_FT_TRANSACTION_HANDOVER;
-        vm_start();
-        printf("%s vm_started.\n", __func__);
+        if(gft_backup_used >= gft_backup_pool_size){
+            vm_start();
+            printf("%s vm_started.\n", __func__);
+        }
+        else{
+            vm_start();
+            qemu_set_fd_handler(group_ft_master_sock,
+                        NULL,
+                        NULL,
+                        NULL);
+            do {
+                resync_sock = qemu_accept(group_ft_master_sock, (struct sockaddr *)&addr, &addr_len);
+                printf("%s accepted, resync_sock = %d\n", __func__, resync_sock);
+            } while (resync_sock == -1);
+
+            is_gft_new_member = 1;
+            char tmp[128];
+
+            cuju_ft_mode = CUJU_FT_INIT;
+            sprintf(tmp, "tcp:%s:%d,", b->slave_host_ip,
+                b->slave_incoming_port);
+            printf("%s\n", tmp);
+            qmp_migrate(tmp, false, false, false, false, false, false, true, true, &err);
+            //qmp_migrate(tmp, !!blk, blk, !!inc, inc, false, false, !!cuju, cuju, &err);
+            gft_backup_used++;
+        }
     }
+
 
     return ret;
 }

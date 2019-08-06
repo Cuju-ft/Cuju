@@ -1,0 +1,3 @@
+sudo gdb -ex 'set confirm off' --args x86_64-softmmu/qemu-system-x86_64 -drive if=none,id=drive0,cache=none,format=raw,file=/mnt/nfs/Ubuntu20G-1604-2.img -device virtio-blk,drive=drive0,scsi=off \
+-m 2G -enable-kvm -net tap,ifname=tap4 -net nic,model=virtio,vlan=0,macaddr=ae:ae:00:00:00:23 -vga std \
+-chardev socket,id=mon,path=/mnt/nfs/vm3.monitor,server,nowait -mon chardev=mon,id=monitor,mode=readline -gft-id 2 -ft-join-port 5004

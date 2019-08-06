@@ -898,6 +898,15 @@ ETEXI
     },
 
     {
+        .name       = "gft_add_backup",
+        .args_type  = "slave_host_ip:s,slave_incoming_port:i",
+        .params     = "slave_host_ip slave_incoming_port",
+        .help       = "add backup VM to the pool. When GFT member failed, it will find a VM from the backup VMs pool to rebuild fault tolerance",
+        .cmd = hmp_gft_add_backup,
+    },
+
+
+    {
         .name       = "ringbuf_write",
         .args_type  = "device:s,data:s",
         .params     = "device data",
@@ -1882,3 +1891,18 @@ STEXI
 @findex gft_init
 Start group ft after gft_add_host.
 ETEXI
+
+    {
+        .name       = "gft_add_host2",
+        .args_type  = "gft_id:i,master_host_ip:s,master_host_gft_port:i,master_mac:s,slave_host_ip:s,slave_host_ft_port:i,slave_host_join_port:i",
+        .params     = "gft_id master_host_ip master_host_gft_port master_mac slave_host_ip slave_host_ft_port slave_host_join_port",
+        .help       = "add a master/slave pair to group ft with slave ft join port",
+        .cmd = hmp_gft_add_host2,
+    },
+
+STEXI
+@item gft_add_host2 gft_id master_host_ip master_host_gft_port master_mac slave_host_ip slave_host_ft_port slave_host_join_port
+@findex gft_add_host
+Add one master/slave pair to group ft.
+ETEXI
+
