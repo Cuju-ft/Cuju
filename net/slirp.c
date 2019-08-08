@@ -562,7 +562,13 @@ static void slirp_smb_cleanup(SlirpState *s)
     int ret;
 
     if (s->smb_dir[0] != '\0') {
-        snprintf(cmd, sizeof(cmd), "rm -rf %s", s->smb_dir);
+        // Cuju Begin
+        //snprintf(cmd, sizeof(cmd), "rm -rf %s", s->smb_dir);
+        int count = snprintf(cmd, sizeof(cmd), "rm -rf %s", s->smb_dir);
+        if (count >= sizeof(cmd)) {
+            cmd[0] = 0;
+        }
+        // Cuju End
         ret = system(cmd);
         if (ret == -1 || !WIFEXITED(ret)) {
             error_report("'%s' failed.", cmd);
@@ -606,7 +612,13 @@ static int slirp_smb(SlirpState* s, const char *exported_dir,
         s->smb_dir[0] = 0;
         return -1;
     }
-    snprintf(smb_conf, sizeof(smb_conf), "%s/%s", s->smb_dir, "smb.conf");
+    // Cuju Begin
+    //snprintf(smb_conf, sizeof(smb_conf), "%s/%s", s->smb_dir, "smb.conf");
+    int count = snprintf(smb_conf, sizeof(smb_conf), "%s/%s", s->smb_dir, "smb.conf");
+    if (count >= sizeof(smb_conf)) {
+        smb_conf[0] = 0;
+    }
+    // Cuju End
 
     f = fopen(smb_conf, "w");
     if (!f) {
@@ -651,8 +663,15 @@ static int slirp_smb(SlirpState* s, const char *exported_dir,
             );
     fclose(f);
 
-    snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -l %s -s %s",
+    // Cuju Begin
+    // snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -l %s -s %s",
+    //          CONFIG_SMBD_COMMAND, s->smb_dir, smb_conf);
+    int ret = snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -l %s -s %s",
              CONFIG_SMBD_COMMAND, s->smb_dir, smb_conf);
+    if (ret >= sizeof(smb_cmdline)) {
+        smb_cmdline[0] = 0;
+    }
+    // Cuju End
 
     if (slirp_add_exec(s->slirp, 0, smb_cmdline, &vserver_addr, 139) < 0 ||
         slirp_add_exec(s->slirp, 0, smb_cmdline, &vserver_addr, 445) < 0) {

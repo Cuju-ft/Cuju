@@ -314,10 +314,20 @@ static void blkverify_refresh_filename(BlockDriverState *bs, QDict *options)
     if (bs->file->bs->exact_filename[0]
         && s->test_file->bs->exact_filename[0])
     {
-        snprintf(bs->exact_filename, sizeof(bs->exact_filename),
-                 "blkverify:%s:%s",
-                 bs->file->bs->exact_filename,
-                 s->test_file->bs->exact_filename);
+        // Cuju Begin
+        // snprintf(bs->exact_filename, sizeof(bs->exact_filename),
+        //          "blkverify:%s:%s",
+        //          bs->file->bs->exact_filename,
+        //          s->test_file->bs->exact_filename);
+        int ret = snprintf(bs->exact_filename, sizeof(bs->exact_filename),
+                           "blkverify:%s:%s",
+                           bs->file->bs->exact_filename,
+                           s->test_file->bs->exact_filename);
+        if (ret >= sizeof(bs->exact_filename)) {
+            /* An overflow makes the filename unusable, so do not report any */
+            bs->exact_filename[0] = 0;
+        }
+        // Cuju End
     }
 }
 

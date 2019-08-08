@@ -81,6 +81,7 @@
 #include <asm/vmx.h>
 #include <asm/kvm_page_track.h>
 #include "trace.h"
+#include <linux/kvm_ft.h>	// Cuju
 
 /*
  * When setting this variable to true it enables Two-Dimensional-Paging
@@ -663,7 +664,7 @@ static bool is_dirty_spte(u64 spte)
  */
 static void mmu_spte_set(u64 *sptep, u64 new_spte)
 {
-	WARN_ON(is_shadow_present_pte(*sptep));
+	//WARN_ON(is_shadow_present_pte(*sptep));	// Cuju
 	__set_spte(sptep, new_spte);
 }
 
@@ -1540,7 +1541,8 @@ static bool __rmap_set_dirty(struct kvm *kvm, struct kvm_rmap_head *rmap_head)
  * Used when we do not need to care about huge page mappings: e.g. during dirty
  * logging we do not have any such mappings.
  */
-static void kvm_mmu_write_protect_pt_masked(struct kvm *kvm,
+//static void kvm_mmu_write_protect_pt_masked(struct kvm *kvm,	// Cuju
+void kvm_mmu_write_protect_pt_masked(struct kvm *kvm,	// Cuju
 				     struct kvm_memory_slot *slot,
 				     gfn_t gfn_offset, unsigned long mask)
 {
@@ -1604,6 +1606,39 @@ void kvm_arch_mmu_enable_log_dirty_pt_masked(struct kvm *kvm,
 		kvm_mmu_write_protect_pt_masked(kvm, slot, gfn_offset, mask);
 }
 
+// Cuju Begin
+void kvm_mmu_write_protect_single(struct kvm *kvm,
+                     struct kvm_memory_slot *slot,
+                     gfn_t gfn_offset)
+{
+    struct kvm_rmap_head *rmapp;
+
+    rmapp = __gfn_to_rmap(slot->base_gfn + gfn_offset,
+                                      PT_PAGE_TABLE_LEVEL, slot);
+    __rmap_write_protect(kvm, rmapp, false);
+}
+
+void kvm_mmu_write_protect_single_fast(struct kvm *kvm,
+                     struct kvm_memory_slot *slot,
+                     gfn_t gfn_offset)
+{
+    struct kvm_rmap_head *rmapp;
+    u64 *sptep;
+    struct rmap_iterator iter;
+
+    rmapp = __gfn_to_rmap(slot->base_gfn + gfn_offset,
+                                      PT_PAGE_TABLE_LEVEL, slot);
+
+	for_each_rmap_spte(rmapp, &iter, sptep) {
+        u64 spte = *sptep;
+        if (is_writable_pte(spte)) {
+            spte = spte & ~PT_WRITABLE_MASK;
+            mmu_spte_set(sptep, spte);
+        }
+    }
+}
+// Cuju End
+
 /**
  * kvm_arch_write_log_dirty - emulate dirty page logging
  * @vcpu: Guest mode vcpu
@@ -1641,6 +1676,56 @@ static bool rmap_write_protect(struct kvm_vcpu *vcpu, u64 gfn)
 	slot = kvm_vcpu_gfn_to_memslot(vcpu, gfn);
 	return kvm_mmu_slot_gfn_write_protect(vcpu->kvm, slot, gfn);
 }
+
+// Cuju Begin
+static void
+spte_remove_write_protect(struct kvm *kvm, u64 *sptep)
+{
+    u64 spte = *sptep;
+
+    if (is_writable_pte(spte))
+        return;
+
+    rmap_printk("rmap_remove_write_protect: spte %p %llx\n", sptep, *sptep);
+
+    BUG_ON(is_large_pte(*sptep));
+
+    spte = spte | PT_WRITABLE_MASK;
+    mmu_spte_update(sptep, spte);
+}
+
+static bool
+spte_remove_dirty_bit(struct kvm *kvm, u64 *sptep)
+{
+    u64 spte = *sptep;
+
+    if (!(spte & shadow_dirty_mask))
+        return false;
+
+    BUG_ON(is_large_pte(*sptep));
+
+    spte = spte & ~shadow_dirty_mask;
+    mmu_spte_update(sptep, spte);
+    return true;
+}
+
+void kvm_mmu_remove_write_protect_single(struct kvm *kvm, gfn_t gfn)
+{
+    struct kvm_memory_slot *slot;
+    struct kvm_rmap_head *rmapp;
+    struct rmap_iterator iter;
+    u64 *sptep;
+
+    slot = gfn_to_memslot(kvm, gfn);
+    if (unlikely(!slot))
+        return;
+
+    rmapp = &slot->rmap[gfn - slot->base_gfn];
+    for_each_rmap_spte(rmapp, &iter, sptep) {
+        spte_remove_write_protect(kvm, sptep);
+    }
+}
+// Cuju End
 
 static bool kvm_zap_rmapp(struct kvm *kvm, struct kvm_rmap_head *rmap_head)
 {
@@ -3155,6 +3240,7 @@ fast_pf_fix_direct_spte(struct kvm_vcpu *vcpu, struct kvm_mmu_page *sp,
 			u64 *sptep, u64 old_spte, u64 new_spte)
 {
 	gfn_t gfn;
+	unsigned long hva;	// Cuju
 
 	WARN_ON(!sp->role.direct);
 
@@ -3180,6 +3266,18 @@ fast_pf_fix_direct_spte(struct kvm_vcpu *vcpu, struct kvm_mmu_page *sp,
 		 */
 		gfn = kvm_mmu_page_get_gfn(sp, sptep - sp->spt);
 		kvm_vcpu_mark_page_dirty(vcpu, gfn);
+
+		// Cuju Begin
+		hva = gfn_to_hva(vcpu->kvm, gfn);
+		if (kvm_is_error_hva(hva)) {
+			printk("%s error hva for gfn %lx\n", __func__, (long)gfn);
+		} else {
+			// tlb not flushed yet, so should be safe.
+			// what if someelse vcpu flushed tlb right before?
+			kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
+		}
+		// Cuju End
+
 	}
 
 	return true;
@@ -3894,6 +3992,23 @@ check_hugepage_cache_consistency(struct kvm_vcpu *vcpu, gfn_t gfn, int level)
 	return kvm_mtrr_check_gfn_range_consistency(vcpu, gfn, page_num);
 }
 
+// Cuju Begin
+static bool kvmft_gva_spcl_remove_write_protect(struct kvm_vcpu *vcpu, gva_t gva)
+{
+    gfn_t gfn;
+
+    gva = kvm_mmu_gva_to_gpa_read(vcpu, gva, NULL);
+    if (unlikely(gva == UNMAPPED_GVA))
+        return false;
+
+    gfn = gva >> PAGE_SHIFT;
+    kvm_mmu_remove_write_protect_single(vcpu->kvm, gfn);
+    kvmft_gva_spcl_unprotect_page(vcpu->kvm, gfn);
+
+    return true;
+}
+// Cuju End
+
 static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 			  bool prefault)
 {
@@ -3905,6 +4020,7 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 	unsigned long mmu_seq;
 	int write = error_code & PFERR_WRITE_MASK;
 	bool map_writable;
+	unsigned long hva;	// Cuju
 
 	MMU_WARN_ON(!VALID_PAGE(vcpu->arch.mmu.root_hpa));
 
@@ -3925,8 +4041,29 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 		gfn &= ~(KVM_PAGES_PER_HPAGE(level) - 1);
 	}
 
-	if (fast_page_fault(vcpu, gpa, level, error_code))
+	if (fast_page_fault(vcpu, gpa, level, error_code)){
+		// Cuju Begin
+        if (false && kvm_shm_is_enabled(vcpu->kvm)) {
+            extern unsigned long ept_gva;
+            gva_t gva = ept_gva;
+            int i;
+            for (i = 1; i <= 50; i++)
+                if (!kvmft_gva_spcl_remove_write_protect(vcpu, gva + i*4096))
+                    break;
+            for (i = 1; i <= 50; i++)
+                if (!kvmft_gva_spcl_remove_write_protect(vcpu, gva - i*4096))
+                    break;
+        }
+        // unprotect gpa speculatively
+        // if this page is dirtied previously and not finished transfering,
+        // we need to make a copy, unprotect it and then run like old way;
+        //  (dirtied in previous epoch, close to gva, high chance to be dirtied again)
+        // otherwise, unprotect it and just let guest write. if guest actually wrote it,
+        // we need to make a copy in snapshot stage (postponed backup) and 
+        // transfer the whole page since we don't have a backup
+		// Cuju End
 		return RET_PF_RETRY;
+	}
 
 	mmu_seq = vcpu->kvm->mmu_notifier_seq;
 	smp_rmb();
@@ -3936,6 +4073,16 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 
 	if (handle_abnormal_pfn(vcpu, 0, gfn, pfn, ACC_ALL, &r))
 		return r;
+
+	// Cuju Begin
+	if (kvm_shm_is_enabled(vcpu->kvm)){
+		hva = gfn_to_hva(vcpu->kvm, gfn);
+		if (!kvm_is_error_hva(hva)) {
+			//If this hva is valid, this case is write protect page fault, we can backup page and mark dirty
+			kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
+		}
+	}
+	// Cuju End
 
 	spin_lock(&vcpu->kvm->mmu_lock);
 	if (mmu_notifier_retry(vcpu->kvm, mmu_seq))
@@ -4953,6 +5100,7 @@ int kvm_mmu_page_fault(struct kvm_vcpu *vcpu, gva_t cr2, u64 error_code,
 
 	r = RET_PF_INVALID;
 	if (unlikely(error_code & PFERR_RSVD_MASK)) {
+		// if handled ok, return 0	// Cuju
 		r = handle_mmio_page_fault(vcpu, cr2, direct);
 		if (r == RET_PF_EMULATE) {
 			emulation_type = 0;
@@ -5024,6 +5172,7 @@ EXPORT_SYMBOL_GPL(kvm_mmu_invlpg);
 void kvm_enable_tdp(void)
 {
 	tdp_enabled = true;
+	printk("%s.\n", __func__);	// Cuju
 }
 EXPORT_SYMBOL_GPL(kvm_enable_tdp);
 
@@ -5566,6 +5715,50 @@ unsigned int kvm_mmu_calculate_mmu_pages(struct kvm *kvm)
 
 	return nr_mmu_pages;
 }
+
+// Cuju Brgin
+int kvm_mmu_get_spte_hierarchy(struct kvm_vcpu *vcpu, u64 addr, u64 sptes[4])
+{
+    struct kvm_shadow_walk_iterator iterator;
+    u64 spte;
+    int nr_sptes = 0;
+
+    walk_shadow_page_lockless_begin(vcpu);
+    for_each_shadow_entry_lockless(vcpu, addr, iterator, spte) {
+        sptes[iterator.level-1] = spte;
+        nr_sptes++;
+        if (!is_shadow_present_pte(spte))
+            break;
+    }
+    walk_shadow_page_lockless_end(vcpu);
+
+    return nr_sptes;
+}
+EXPORT_SYMBOL_GPL(kvm_mmu_get_spte_hierarchy);
+
+bool kvm_mmu_clear_spte_dirty_bit(struct kvm *kvm, gfn_t gfn)
+{
+    struct kvm_memory_slot *slot;
+    struct kvm_rmap_head *rmapp;
+    struct rmap_iterator iter;
+    u64 *sptep;
+    bool dirty = false;
+
+    slot = gfn_to_memslot(kvm, gfn);
+    if (unlikely(!slot)) {
+        printk(KERN_WARNING"%s: no memslot for gfn = %lx\n", __func__,
+            (unsigned long)gfn);
+        return true;
+    }
+
+    rmapp = &slot->rmap[gfn - slot->base_gfn];
+    for_each_rmap_spte(rmapp, &iter, sptep) { 
+        dirty |= spte_remove_dirty_bit(kvm, sptep);
+    }
+
+    return dirty;
+}
+// Cuju End
 
 void kvm_mmu_destroy(struct kvm_vcpu *vcpu)
 {

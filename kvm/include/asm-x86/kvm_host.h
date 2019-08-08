@@ -75,6 +75,7 @@
 #define KVM_USER_MEM_SLOTS 509
 /* memory slots that are not exposed to userspace */
 #define KVM_PRIVATE_MEM_SLOTS 3
+#define KVM_MEMORY_SLOTS 32	// Cuju
 #define KVM_MEM_SLOTS_NUM (KVM_USER_MEM_SLOTS + KVM_PRIVATE_MEM_SLOTS)
 
 #define KVM_HALT_POLL_NS_DEFAULT 200000
@@ -817,6 +818,7 @@ struct kvm_arch {
 #define __KVM_HAVE_ARCH_ASSIGNED_DEVICE
 	atomic_t assigned_device_count;
 	struct kvm_pic *vpic;
+	struct kvm_test_dev *test_dev;	// Cuju
 	struct kvm_ioapic *vioapic;
 	struct kvm_pit *vpit;
 	atomic_t vapics_in_nmi_mode;
@@ -1139,6 +1141,17 @@ void kvm_mmu_set_mask_ptes(u64 user_mask, u64 accessed_mask,
 void kvm_mmu_reset_context(struct kvm_vcpu *vcpu);
 void kvm_mmu_slot_remove_write_access(struct kvm *kvm,
 				      struct kvm_memory_slot *memslot);
+// Cuju Begin
+void kvm_mmu_write_protect_pt_masked(struct kvm *kvm,
+                     struct kvm_memory_slot *slot,
+                     gfn_t gfn_offset, unsigned long mask);
+void kvm_mmu_write_protect_single(struct kvm *kvm,
+                     struct kvm_memory_slot *slot,
+                     gfn_t gfn_offset);
+void kvm_mmu_write_protect_single_fast(struct kvm *kvm,
+                     struct kvm_memory_slot *slot,
+                     gfn_t gfn_offset);
+// Cuju End
 void kvm_mmu_zap_collapsible_sptes(struct kvm *kvm,
 				   const struct kvm_memory_slot *memslot);
 void kvm_mmu_slot_leaf_clear_dirty(struct kvm *kvm,

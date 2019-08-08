@@ -72,7 +72,7 @@ int kvm_cpu_has_pending_timer(struct kvm_vcpu *vcpu)
 
 	return 0;
 }
-EXPORT_SYMBOL(kvm_cpu_has_pending_timer);
+//EXPORT_SYMBOL(kvm_cpu_has_pending_timer);	// Cuju
 
 /*
  * check if there is a pending userspace external interrupt

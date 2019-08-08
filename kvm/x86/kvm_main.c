@@ -106,6 +106,8 @@ MODULE_INFO(version, "kvm-devel");
 MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
 
+#define MMU_NOTIFIER_HAS_CHANGE_PTE 1	// Cuju
+
 /* Architectures should define their poll value according to the halt latency */
 unsigned int halt_poll_ns = KVM_HALT_POLL_NS_DEFAULT;
 module_param(halt_poll_ns, uint, 0644);
@@ -148,10 +150,12 @@ static const struct file_operations *stat_fops_per_vm[];
 
 static long kvm_vcpu_ioctl(struct file *file, unsigned int ioctl,
 			   unsigned long arg);
+#if 0	// Cuju
 #ifdef CONFIG_KVM_COMPAT
 static long kvm_vcpu_compat_ioctl(struct file *file, unsigned int ioctl,
 				  unsigned long arg);
 #endif
+#endif	// Cuju
 static int hardware_enable_all(void);
 static void hardware_disable_all(void);
 
@@ -441,13 +445,13 @@ static int kvm_mmu_notifier_clear_flush_young(struct mmu_notifier *mn,
 	int young, idx;
 
 	idx = srcu_read_lock(&kvm->srcu);
-	spin_lock(&kvm->mmu_lock);
+	//spin_lock(&kvm->mmu_lock);	// Cuju
 
 	young = kvm_age_hva(kvm, start, end);
 	if (young)
 		kvm_flush_remote_tlbs(kvm);
 
-	spin_unlock(&kvm->mmu_lock);
+	//spin_unlock(&kvm->mmu_lock);	// Cuju
 	srcu_read_unlock(&kvm->srcu, idx);
 
 	return young;
@@ -558,6 +562,35 @@ static void kvm_destroy_dirty_bitmap(struct kvm_memory_slot *memslot)
 	kvfree(memslot->dirty_bitmap);
 	memslot->dirty_bitmap = NULL;
 }
+
+// Cuju Begin
+static void kvm_destroy_dirty_bitmap_init(struct kvm_memory_slot *memslot)
+{
+    shared_pages_array_free(&memslot->epoch_dirty_bitmaps);
+    shared_pages_array_free(&memslot->epoch_gfn_to_put_offs);
+
+    if (memslot->lock_dirty_bitmap) {
+        kvm_kvfree(memslot->lock_dirty_bitmap);
+        memslot->lock_dirty_bitmap = NULL;
+    }
+
+    if (memslot->backup_transfer_bitmap) {
+        kvm_kvfree(memslot->backup_transfer_bitmap);
+        memslot->backup_transfer_bitmap = NULL;
+    }
+
+    if (memslot->epoch_gfn_to_put_off) {
+        kfree(memslot->epoch_gfn_to_put_off);
+        memslot->epoch_gfn_to_put_off = NULL;
+    }
+
+    if (!memslot->dirty_bitmap)
+        return;
+
+    kvfree(memslot->dirty_bitmap);
+    memslot->dirty_bitmap = NULL;
+}
+// Cuju End
 
 /*
  * Free any memory in @free but not in @dont.
@@ -726,6 +759,16 @@ out_err_no_disable:
 	return ERR_PTR(r);
 }
 
+// Cuju Begin
+void kvm_kvfree(const void *addr)
+{
+    if (is_vmalloc_addr(addr))
+        vfree((void *)addr);
+    else
+        kfree(addr);
+}
+// Cuju End
+
 static void kvm_destroy_devices(struct kvm *kvm)
 {
 	struct kvm_device *dev, *tmp;
@@ -798,6 +841,8 @@ static int kvm_vm_release(struct inode *inode, struct file *filp)
 
 	kvm_irqfd_release(kvm);
 
+	kvm_shm_exit(kvm);	// Cuju
+
 	kvm_put_kvm(kvm);
 	return 0;
 }
@@ -808,14 +853,98 @@ static int kvm_vm_release(struct inode *inode, struct file *filp)
  */
 static int kvm_create_dirty_bitmap(struct kvm_memory_slot *memslot)
 {
+#ifndef CONFIG_S390	// Cuju
 	unsigned long dirty_bytes = 2 * kvm_dirty_bitmap_bytes(memslot);
+
+	// Cuju Begin
+	unsigned long gfn_to_put_off_bytes;
+    size_t array_size;
+    int ret;
+	// Cuju End
 
 	memslot->dirty_bitmap = kvzalloc(dirty_bytes, GFP_KERNEL);
 	if (!memslot->dirty_bitmap)
 		return -ENOMEM;
 
+	// Cuju Begin
+	gfn_to_put_off_bytes = memslot->npages * sizeof(uint16_t);
+
+    ret = shared_pages_array_init(&memslot->epoch_dirty_bitmaps,
+                                  KVM_DIRTY_BITMAP_INIT_COUNT,
+                                  dirty_bytes);
+    if (ret < 0)
+        goto nomem;
+
+    ret = shared_pages_array_init(&memslot->epoch_gfn_to_put_offs,
+                                  KVM_DIRTY_BITMAP_INIT_COUNT,
+                                  gfn_to_put_off_bytes);
+    if (ret < 0)
+        goto nomem;
+
+    array_size = sizeof(unsigned long) * KVM_DIRTY_BITMAP_INIT_COUNT;
+    memslot->epoch_gfn_to_put_off = kmalloc(array_size, GFP_KERNEL | __GFP_ZERO);
+    if (!memslot->epoch_gfn_to_put_off) {
+        goto nomem;
+    }
+
+    if (memslot->lock_dirty_bitmap) {
+        kvm_kvfree(memslot->lock_dirty_bitmap);
+    }
+    memslot->lock_dirty_bitmap = kvzalloc(dirty_bytes, GFP_KERNEL);
+    if (!memslot->lock_dirty_bitmap) {
+        goto nomem;
+    }
+
+    if (memslot->backup_transfer_bitmap) {
+        kvm_kvfree(memslot->backup_transfer_bitmap);
+    }
+    memslot->backup_transfer_bitmap = kvzalloc(dirty_bytes, GFP_KERNEL);
+    if (!memslot->backup_transfer_bitmap) {
+        goto nomem;
+    }
+
+	memslot->bitmap_count = KVM_DIRTY_BITMAP_INIT_COUNT;
+
+#endif /* !CONFIG_S390 */
+	// Cuju End
 	return 0;
+	// Cuju Begin
+nomem:
+    kvm_destroy_dirty_bitmap_init(memslot);
+
+	return -ENOMEM;
+	// Cuju End
 }
+
+// Cuju Begin
+static int kvm_extend_dirty_bitmap(struct kvm_memory_slot *memslot)
+{
+#ifndef CONFIG_S390
+    size_t array_size;
+    int ret;
+ 
+    ret = shared_page_array_extend(&memslot->epoch_dirty_bitmaps);
+    if (ret < 0)
+        return ret;
+ 
+    ret = shared_page_array_extend(&memslot->epoch_gfn_to_put_offs);
+    if (ret < 0)
+        return ret;
+
+    array_size = sizeof(unsigned long) * (memslot->bitmap_count + 1);
+    memslot->epoch_gfn_to_put_off = krealloc(memslot->epoch_gfn_to_put_off,
+                                             array_size,
+                                             GFP_KERNEL | __GFP_ZERO);
+    if (!memslot->epoch_gfn_to_put_off) {
+        return -ENOMEM;
+    }
+
+    memslot->bitmap_count++;
+
+#endif /* !CONFIG_S390 */
+    return 0;
+}
+// Cuju End
 
 /*
  * Insert memslot and re-sort memslots based on their GFN,
@@ -928,7 +1057,8 @@ static struct kvm_memslots *install_new_memslots(struct kvm *kvm,
  * Must be called holding kvm->slots_lock for write.
  */
 int __kvm_set_memory_region(struct kvm *kvm,
-			    const struct kvm_userspace_memory_region *mem)
+			    struct kvm_userspace_memory_region *mem)	// Cuju
+			    //const struct kvm_userspace_memory_region *mem)	// Cuju
 {
 	int r;
 	gfn_t base_gfn;
@@ -938,6 +1068,7 @@ int __kvm_set_memory_region(struct kvm *kvm,
 	struct kvm_memslots *slots = NULL, *old_memslots;
 	int as_id, id;
 	enum kvm_mr_change change;
+	bool bitmap_created = false;	// Cuju
 
 	r = check_memory_region_flags(mem);
 	if (r)
@@ -1033,6 +1164,10 @@ int __kvm_set_memory_region(struct kvm *kvm,
 	if ((new.flags & KVM_MEM_LOG_DIRTY_PAGES) && !new.dirty_bitmap) {
 		if (kvm_create_dirty_bitmap(&new) < 0)
 			goto out_free;
+		// Cuju Begin
+		bitmap_created = true;
+		/* destroy any largepage mappings for dirty tracking */
+		// Cuju End
 	}
 
 	slots = kvzalloc(sizeof(struct kvm_memslots), GFP_KERNEL);
@@ -1073,6 +1208,13 @@ int __kvm_set_memory_region(struct kvm *kvm,
 		memset(&new.arch, 0, sizeof(new.arch));
 	}
 
+	// Cuju Begin
+	if (new.epoch_gfn_to_put_off) {
+		new.epoch_gfn_to_put_off[0] = mem->gfn_to_put_off[0];
+		new.epoch_gfn_to_put_off[1] = mem->gfn_to_put_off[1];
+	}
+	// Cuju End
+
 	update_memslots(slots, &new);
 	old_memslots = install_new_memslots(kvm, as_id, slots);
 
@@ -1080,6 +1222,21 @@ int __kvm_set_memory_region(struct kvm *kvm,
 
 	kvm_free_memslot(kvm, &old, &new);
 	kvfree(old_memslots);
+
+	// Cuju Begin
+	if (bitmap_created && new.epoch_dirty_bitmaps.plen) {
+		mem->dirty_bitmap_pfn[0] = new.epoch_dirty_bitmaps.pfn[0];
+		mem->dirty_bitmap_pfn[1] = new.epoch_dirty_bitmaps.pfn[1];
+		mem->dirty_bitmap_plen = new.epoch_dirty_bitmaps.plen;
+   	}
+
+	if (bitmap_created && new.epoch_gfn_to_put_offs.plen) {
+		mem->gfn_to_put_off_pfn[0] = new.epoch_gfn_to_put_offs.pfn[0];
+		mem->gfn_to_put_off_pfn[1] = new.epoch_gfn_to_put_offs.pfn[1];
+		mem->gfn_to_put_off_plen = new.epoch_gfn_to_put_offs.plen;
+	}
+	// Cuju End
+
 	return 0;
 
 out_slots:
@@ -1092,7 +1249,8 @@ out:
 EXPORT_SYMBOL_GPL(__kvm_set_memory_region);
 
 int kvm_set_memory_region(struct kvm *kvm,
-			  const struct kvm_userspace_memory_region *mem)
+			  struct kvm_userspace_memory_region *mem)	// Cuju
+			  //const struct kvm_userspace_memory_region *mem)	// Cuju
 {
 	int r;
 
@@ -1111,6 +1269,32 @@ static int kvm_vm_ioctl_set_memory_region(struct kvm *kvm,
 
 	return kvm_set_memory_region(kvm, mem);
 }
+
+// Cuju Begin
+int kvm_vm_ioctl_extend_memory_region_dirty_bitmap(struct kvm *kvm,
+                   struct kvm_userspace_memory_region *mem,
+                   int user_alloc)
+{
+    struct kvm_memory_slot *slot;
+    int r;
+
+    if (mem->slot >= KVM_MEMORY_SLOTS)
+        return -EINVAL;
+    mutex_lock(&kvm->slots_lock);
+    slot = id_to_memslot((struct kvm_memslots *)kvm->memslots, mem->slot);
+    r = kvm_extend_dirty_bitmap(slot);
+    if (!r) {
+        slot->epoch_gfn_to_put_off[slot->bitmap_count-1] = mem->gfn_to_put_off[0];
+        mem->dirty_bitmap_plen = slot->epoch_dirty_bitmaps.plen;
+        mem->dirty_bitmap_pfn[0] = slot->epoch_dirty_bitmaps.pfn[slot->bitmap_count - 1];
+        mem->gfn_to_put_off_plen = slot->epoch_gfn_to_put_offs.plen;
+        mem->gfn_to_put_off_pfn[0] = slot->epoch_gfn_to_put_offs.pfn[slot->bitmap_count - 1];
+
+        mutex_unlock(&kvm->slots_lock);
+    }
+    return r;
+}
+// Cuju End
 
 int kvm_get_dirty_log(struct kvm *kvm,
 			struct kvm_dirty_log *log, int *is_dirty)
@@ -1601,7 +1785,7 @@ kvm_pfn_t __gfn_to_pfn_memslot(struct kvm_memory_slot *slot, gfn_t gfn,
 	return hva_to_pfn(addr, atomic, async, write_fault,
 			  writable);
 }
-EXPORT_SYMBOL_GPL(__gfn_to_pfn_memslot);
+//EXPORT_SYMBOL_GPL(__gfn_to_pfn_memslot);	// Cuju
 
 kvm_pfn_t gfn_to_pfn_prot(struct kvm *kvm, gfn_t gfn, bool write_fault,
 		      bool *writable)
@@ -1872,7 +2056,8 @@ int kvm_vcpu_read_guest_atomic(struct kvm_vcpu *vcpu, gpa_t gpa,
 }
 EXPORT_SYMBOL_GPL(kvm_vcpu_read_guest_atomic);
 
-static int __kvm_write_guest_page(struct kvm_memory_slot *memslot, gfn_t gfn,
+//static int __kvm_write_guest_page(struct kvm_memory_slot *memslot, gfn_t gfn,	// Cuju
+static int __kvm_write_guest_page(struct kvm *kvm, struct kvm_memory_slot *memslot, gfn_t gfn,	// Cuju
 			          const void *data, int offset, int len)
 {
 	int r;
@@ -1881,6 +2066,13 @@ static int __kvm_write_guest_page(struct kvm_memory_slot *memslot, gfn_t gfn,
 	addr = gfn_to_hva_memslot(memslot, gfn);
 	if (kvm_is_error_hva(addr))
 		return -EFAULT;
+	
+	// Cuju Begin
+	r = kvmft_page_dirty(kvm, gfn, (void *)addr, 1, NULL);
+	if (r < 0)
+		return r;
+	// Cuju End
+
 	r = __copy_to_user((void __user *)addr + offset, data, len);
 	if (r)
 		return -EFAULT;
@@ -1893,7 +2085,8 @@ int kvm_write_guest_page(struct kvm *kvm, gfn_t gfn,
 {
 	struct kvm_memory_slot *slot = gfn_to_memslot(kvm, gfn);
 
-	return __kvm_write_guest_page(slot, gfn, data, offset, len);
+	//return __kvm_write_guest_page(slot, gfn, data, offset, len);	// Cuju
+	return __kvm_write_guest_page(kvm, slot, gfn, data, offset, len);	// Cuju
 }
 EXPORT_SYMBOL_GPL(kvm_write_guest_page);
 
@@ -1902,7 +2095,8 @@ int kvm_vcpu_write_guest_page(struct kvm_vcpu *vcpu, gfn_t gfn,
 {
 	struct kvm_memory_slot *slot = kvm_vcpu_gfn_to_memslot(vcpu, gfn);
 
-	return __kvm_write_guest_page(slot, gfn, data, offset, len);
+	//return __kvm_write_guest_page(slot, gfn, data, offset, len);	// Cuju
+	return __kvm_write_guest_page(vcpu->kvm, slot, gfn, data, offset, len);	// Cuju
 }
 EXPORT_SYMBOL_GPL(kvm_vcpu_write_guest_page);
 
@@ -2005,11 +2199,13 @@ int kvm_write_guest_offset_cached(struct kvm *kvm, struct gfn_to_hva_cache *ghc,
 	if (slots->generation != ghc->generation)
 		__kvm_gfn_to_hva_cache_init(slots, ghc, ghc->gpa, ghc->len);
 
+	// Cuju Begin
+	if (kvm_is_error_hva(ghc->hva))
+        return -EFAULT;
+	// Cuju End	
+
 	if (unlikely(!ghc->memslot))
 		return kvm_write_guest(kvm, gpa, data, len);
-
-	if (kvm_is_error_hva(ghc->hva))
-		return -EFAULT;
 
 	r = __copy_to_user((void __user *)ghc->hva + offset, data, len);
 	if (r)
@@ -2089,14 +2285,82 @@ static void mark_page_dirty_in_slot(struct kvm_memory_slot *memslot,
 	}
 }
 
-void mark_page_dirty(struct kvm *kvm, gfn_t gfn)
+// Cuju Begin
+int clear_page_dirty_in_slot(struct kvm *kvm, struct kvm_memory_slot *memslot,
+                 gfn_t gfn)
+{
+	if (memslot && memslot->dirty_bitmap) {
+		unsigned long rel_gfn = gfn - memslot->base_gfn;
+
+		set_bit_le(rel_gfn, memslot->dirty_bitmap);
+        	return test_and_clear_bit(rel_gfn, memslot->dirty_bitmap);
+    	}
+	return 0;
+}
+// Cuju End
+
+//void mark_page_dirty(struct kvm *kvm, gfn_t gfn)	// Cuju
+int mark_page_dirty(struct kvm *kvm, gfn_t gfn)	// Cuju
+{
+	//struct kvm_memory_slot *memslot;	// Cuju
+
+	//memslot = gfn_to_memslot(kvm, gfn);	// Cuju
+	//mark_page_dirty_in_slot(memslot, gfn);	// Cuju
+	return 0;	// Cuju
+}
+//EXPORT_SYMBOL_GPL(mark_page_dirty);	// Cuju
+
+// Cuju Begin
+int page_is_dirty(struct kvm *kvm, gfn_t gfn)
 {
 	struct kvm_memory_slot *memslot;
 
 	memslot = gfn_to_memslot(kvm, gfn);
-	mark_page_dirty_in_slot(memslot, gfn);
+	
+    if (memslot && memslot->dirty_bitmap) {
+        unsigned long rel_gfn = gfn - memslot->base_gfn;
+        return test_bit(rel_gfn, memslot->dirty_bitmap);
+    }
+    return 0;
 }
-EXPORT_SYMBOL_GPL(mark_page_dirty);
+EXPORT_SYMBOL_GPL(page_is_dirty);
+
+int page_is_dirty_in_prev(struct kvm *kvm, gfn_t gfn)
+{
+    struct kvm_memory_slot *memslot;
+    void *dirty_bitmap;
+
+    memslot = gfn_to_memslot(kvm, gfn);
+
+    if (memslot && memslot->dirty_bitmap) {
+        unsigned long rel_gfn = gfn - memslot->base_gfn;
+        dirty_bitmap = memslot->epoch_dirty_bitmaps.kaddr[0];
+        if (memslot->dirty_bitmap == dirty_bitmap)
+            dirty_bitmap = memslot->epoch_dirty_bitmaps.kaddr[1];
+        return test_bit(rel_gfn, dirty_bitmap);
+    }
+    return 0;
+}
+EXPORT_SYMBOL_GPL(page_is_dirty_in_prev);
+
+int test_and_clear_dirty_in_prev(struct kvm *kvm, gfn_t gfn)
+{
+    struct kvm_memory_slot *memslot;
+    void *dirty_bitmap;
+
+    memslot = gfn_to_memslot(kvm, gfn);
+
+    if (memslot && memslot->dirty_bitmap) {
+        unsigned long rel_gfn = gfn - memslot->base_gfn;
+        dirty_bitmap = memslot->epoch_dirty_bitmaps.kaddr[0];
+        if (memslot->dirty_bitmap == dirty_bitmap)
+            dirty_bitmap = memslot->epoch_dirty_bitmaps.kaddr[1];
+        return test_and_clear_bit(rel_gfn, dirty_bitmap);
+    }
+    return 0;
+}
+EXPORT_SYMBOL_GPL(test_and_clear_dirty_in_prev);
+// Cuju End
 
 void kvm_vcpu_mark_page_dirty(struct kvm_vcpu *vcpu, gfn_t gfn)
 {
@@ -2174,6 +2438,10 @@ static int kvm_vcpu_check_block(struct kvm_vcpu *vcpu)
 		return -EINTR;
 	if (signal_pending(current))
 		return -EINTR;
+	// Cuju Begin
+	if (vcpu->hrtimer_pending)
+           	return -EINTR;
+	// Cuju End
 
 	return 0;
 }
@@ -2428,9 +2696,12 @@ static int kvm_vcpu_mmap(struct file *file, struct vm_area_struct *vma)
 	return 0;
 }
 
+extern void kvm_shm_notify_vcpu_destroy(struct kvm_vcpu *);	// Cuju
 static int kvm_vcpu_release(struct inode *inode, struct file *filp)
 {
 	struct kvm_vcpu *vcpu = filp->private_data;
+
+	kvm_shm_notify_vcpu_destroy(vcpu);	// Cuju
 
 	debugfs_remove_recursive(vcpu->debugfs_dentry);
 	kvm_put_kvm(vcpu->kvm);
@@ -2440,9 +2711,11 @@ static int kvm_vcpu_release(struct inode *inode, struct file *filp)
 static struct file_operations kvm_vcpu_fops = {
 	.release        = kvm_vcpu_release,
 	.unlocked_ioctl = kvm_vcpu_ioctl,
+#if 0	// Cuju
 #ifdef CONFIG_KVM_COMPAT
 	.compat_ioctl   = kvm_vcpu_compat_ioctl,
 #endif
+#endif	// Cuju
 	.mmap           = kvm_vcpu_mmap,
 	.llseek		= noop_llseek,
 };
@@ -2488,6 +2761,7 @@ static int kvm_vm_ioctl_create_vcpu(struct kvm *kvm, u32 id)
 {
 	int r;
 	struct kvm_vcpu *vcpu;
+	extern void kvm_shm_setup_vcpu_hrtimer(struct kvm_vcpu *);	// Cuju 
 
 	if (id >= KVM_MAX_VCPU_ID)
 		return -EINVAL;
@@ -2544,6 +2818,7 @@ static int kvm_vm_ioctl_create_vcpu(struct kvm *kvm, u32 id)
 
 	mutex_unlock(&kvm->lock);
 	kvm_arch_vcpu_postcreate(vcpu);
+	kvm_shm_setup_vcpu_hrtimer(vcpu);	// Cuju
 	return r;
 
 unlock_vcpu_destroy:
@@ -2764,6 +3039,13 @@ out_free1:
 		r = kvm_arch_vcpu_ioctl_set_fpu(vcpu, fpu);
 		break;
 	}
+	// Cuju Begin
+	case KVM_SHM_START_TIMER: {
+		r = 0;
+		kvm_shm_start_timer(vcpu);
+		break;
+	}
+	// Cuju End
 	default:
 		r = kvm_arch_vcpu_ioctl(filp, ioctl, arg);
 	}
@@ -2773,7 +3055,7 @@ out:
 	kfree(kvm_sregs);
 	return r;
 }
-
+#if 0	// Cuju
 #ifdef CONFIG_KVM_COMPAT
 static long kvm_vcpu_compat_ioctl(struct file *filp,
 				  unsigned int ioctl, unsigned long arg)
@@ -2815,6 +3097,7 @@ out:
 	return r;
 }
 #endif
+#endif	// Cuju
 
 static int kvm_device_ioctl_attr(struct kvm_device *dev,
 				 int (*accessor)(struct kvm_device *dev,
@@ -2863,9 +3146,11 @@ static int kvm_device_release(struct inode *inode, struct file *filp)
 
 static const struct file_operations kvm_device_fops = {
 	.unlocked_ioctl = kvm_device_ioctl,
+#if 0	// Cuju
 #ifdef CONFIG_KVM_COMPAT
 	.compat_ioctl = kvm_device_ioctl,
 #endif
+#endif	// Cuju
 	.release = kvm_device_release,
 };
 
@@ -2996,7 +3281,8 @@ static long kvm_vm_ioctl(struct file *filp,
 {
 	struct kvm *kvm = filp->private_data;
 	void __user *argp = (void __user *)arg;
-	int r;
+	int r = 0;
+	int __cur_index;	// Cuju
 
 	if (kvm->mm != current->mm)
 		return -EIO;
@@ -3013,6 +3299,35 @@ static long kvm_vm_ioctl(struct file *filp,
 			goto out;
 
 		r = kvm_vm_ioctl_set_memory_region(kvm, &kvm_userspace_mem);
+
+	// Cuju Begin
+		r = -EFAULT;
+		if (copy_to_user(argp, &kvm_userspace_mem,
+						sizeof kvm_userspace_mem))
+			goto out;
+		r = 0;
+		break;
+	}
+	case KVM_EXTEND_MEMORY_REGION_DIRTY_BITMAP: {
+		struct kvm_userspace_memory_region kvm_userspace_mem;
+
+		r = -EFAULT;
+		if (copy_from_user(&kvm_userspace_mem, argp,
+							sizeof kvm_userspace_mem))
+			goto out;
+
+		r = kvm_vm_ioctl_extend_memory_region_dirty_bitmap(kvm, &kvm_userspace_mem, 1);
+		if (r)
+			goto out;
+
+		r = -EFAULT;
+		if (copy_to_user(argp, &kvm_userspace_mem,
+							sizeof kvm_userspace_mem))
+			goto out;
+
+		r = 0;
+	// Cuju End
+
 		break;
 	}
 	case KVM_GET_DIRTY_LOG: {
@@ -3021,9 +3336,244 @@ static long kvm_vm_ioctl(struct file *filp,
 		r = -EFAULT;
 		if (copy_from_user(&log, argp, sizeof(log)))
 			goto out;
-		r = kvm_vm_ioctl_get_dirty_log(kvm, &log);
+		// Cuju Begin
+		if (kvm_shm_is_enabled(kvm)) {
+			r = -EINVAL;
+		} else {
+		// Cuju End
+			r = kvm_vm_ioctl_get_dirty_log(kvm, &log);
+		}
 		break;
 	}
+
+// Cuju Begin
+    case KVM_GET_DIRTY_LOG_BATCH: {
+        __u32 cur_off;
+        r = -EFAULT;
+        if (copy_from_user(&cur_off, argp, sizeof(cur_off)))
+            goto out;
+
+        r = kvm_vm_ioctl_get_dirty_log_batch(kvm, cur_off);
+        if (r)
+            goto out;
+        break;
+    }
+    case KVM_FT_PROTECT_SPECULATIVE_PREPARE_NEXT_SPECULATIVE: {
+        __u32 cur_off;
+        r = -EFAULT;
+        if (copy_from_user(&cur_off, argp, sizeof(cur_off)))
+            goto out;
+
+        r = kvm_vm_ioctl_ft_protect_speculative_and_prepare_next_speculative(kvm, cur_off);
+        if (r)
+            goto out;
+        break;
+    }
+    case KVM_FT_WRITE_PROTECT_DIRTY: {
+        __u32 cur_off;
+        r = -EFAULT;
+        if (copy_from_user(&cur_off, argp, sizeof(cur_off)))
+            goto out;
+
+        r = kvm_vm_ioctl_ft_write_protect_dirty(kvm, cur_off);
+        if (r)
+            goto out;
+        break;
+    }
+    case KVM_SHM_MARK_PAGE_DIRTY: {
+        struct kvm_shmem_mark_page_dirty param;
+        r = -EFAULT;
+        if (copy_from_user(&param, argp, sizeof(param)))
+            goto out;
+        r = kvmft_page_dirty(kvm, (gfn_t)param.gfn, param.hptr, 1, NULL);
+        break;
+    }
+    case KVM_CLEAR_DIRTY_BITMAP: {
+        __u32 cur_off;
+        r = -EFAULT;
+        if (copy_from_user(&cur_off, argp, sizeof(cur_off)))
+            goto out;
+
+        r = kvm_vm_ioctl_clear_dirty_bitmap(kvm, cur_off);
+        if (r)
+            goto out;
+        break;
+    }
+    case KVM_SHM_ADJUST_DIRTY_TRACKING: {
+        __u32 diff;
+        r = -EFAULT;
+        if (copy_from_user(&diff, argp, sizeof(diff)))
+            goto out;
+        r = kvm_vm_ioctl_adjust_dirty_tracking(kvm, (int)diff);
+        if (r)
+            goto out;
+        break;
+    }
+    case KVM_SHM_ADJUST_EPOCH: {
+        __u32 newepoch;
+        r = -EFAULT;
+        if (copy_from_user(&newepoch, argp, sizeof(newepoch)))
+            goto out;
+        r = kvm_vm_ioctl_adjust_epoch(kvm, (unsigned long)newepoch);
+        if (r)
+            goto out;
+        break;
+    }
+    case KVM_GET_PUT_OFF:
+        if (copy_from_user(&__cur_index, argp, sizeof(__cur_index)))
+            goto out;
+        r = kvm_get_put_off(kvm, __cur_index);
+        break;
+    case KVM_RESET_PUT_OFF:
+        if (copy_from_user(&__cur_index, argp, sizeof(__cur_index)))
+            goto out;
+        r = kvm_reset_put_off(kvm, __cur_index);
+        break;
+    case KVM_SHM_ENABLE: {
+        r = kvm_shm_enable(kvm);
+        if (r)
+            goto out;
+        break;
+    }
+    case KVM_SHM_START_TIMER: {
+		r = 0;
+		kvm_shm_start_timer(kvm->vcpus[0]);
+		break;
+    }
+    case KVM_SHM_SET_CHILD_PID: {
+        struct kvm_shmem_child info;
+        r = -EFAULT;
+        if (copy_from_user(&info, argp, sizeof info))
+            goto out;
+        r = kvm_shm_set_child_pid(&info);
+        printk("%s %d\n", __func__, r);
+        if (r)
+            goto out;
+        break;
+    }
+    case KVM_SHM_SNAPSHOT_DEV: {
+        r = kvm_shm_sync_dev_pages();
+        if (r)
+            goto out;
+        break;
+    }
+	case KVM_SHM_INIT: {
+		struct kvm_shmem_init init;
+
+		r = -EFAULT;
+		if (copy_from_user(&init, argp, sizeof init))
+			goto out;
+		r = kvm_shm_init(kvm, &init);
+		if (r < 0)
+			goto out;
+		r = -EFAULT;
+		if (copy_to_user(argp, &init, sizeof init))
+			goto out;
+		r = 0;
+		break;
+	}
+	case KVM_SHM_EXTEND: {
+		struct kvm_shmem_extend ext;
+
+		r = -EFAULT;
+		if (copy_from_user(&ext, argp, sizeof ext))
+			goto out;
+		r = kvm_shm_extend(kvm, &ext);
+		if (r < 0)
+			goto out;
+		r = -EFAULT;
+		if (copy_to_user(argp, &ext, sizeof ext))
+			goto out;
+		r = 0;
+		break;
+	}
+	case KVM_SHM_ALLOC_PAGES: {
+		struct kvm_shm_alloc_pages param;
+		struct page *page;
+
+		r = -EFAULT;
+		if (copy_from_user(&param, argp, sizeof(param)))
+			goto out;
+
+		if (param.order != 0) {
+		r = -EINVAL;
+			goto out;
+		}
+
+		r = -ENOMEM;
+		page = kvm_shm_alloc_page(kvm, &param);
+		if (!page)
+			goto out;
+
+		param.pfn = page_to_pfn(page);
+		r = -EFAULT;
+		if (copy_to_user(argp, &param, sizeof(param)))
+			goto out;
+
+		r = 0;
+		break;
+	}
+	case KVM_SHM_REPORT_TRACKABLE: {
+		struct kvm_shmem_report_trackable report;
+		r = -EFAULT;
+		if (copy_from_user(&report, argp, sizeof(report)))
+			goto out;
+		r = kvm_shm_report_trackable(kvm, &report);
+		if (r)
+			goto out;
+		break;
+	}
+	case KVM_SHM_COLLECT_TRACKABLE_DIRTY: {
+		r = kvm_shm_collect_trackable_dirty(kvm, argp);
+		break;
+	}
+	case KVM_SHM_FREE_PAGES: {
+		struct kvm_shm_free_pages param;
+		struct page *page;
+
+		r = -EFAULT;
+		if (copy_from_user(&param, argp, sizeof(param)))
+			goto out;
+		page = pfn_to_page(param.pfn);
+		__free_pages(page, param.order);
+		r = 0;
+		break;
+	}
+	case KVM_START_LOG_SHARE_DIRTY_PAGES: {
+		struct kvm_collect_log log;
+		r = -EFAULT;
+		if (copy_from_user(&log, argp, sizeof(log)))
+			goto out;
+		r = kvm_shm_start_log_share_dirty_pages(kvm, &log);
+		if (r)
+			goto out;
+		break;
+	}
+	case KVM_SHM_FLIP_SHARING: {
+		struct kvm_shm_flip_run run;
+		r = -EFAULT;
+		if (copy_from_user(&run, argp, sizeof(run)))
+			goto out;
+		r = kvm_shm_flip_sharing(kvm, run.index, run.serial);
+		if (r)
+			goto out;
+		break;
+	}
+	case KVM_START_KERNEL_TRANSFER: {
+		struct kvm_shmem_start_kernel_transfer req;
+		r = -EFAULT;
+		if (copy_from_user(&req, argp, sizeof(req)))
+			goto out;
+		r = kvm_start_kernel_transfer(kvm,
+									req.trans_index,
+									req.ram_fd,
+									req.interrupted,
+									req.conn_index,
+									req.max_conn);
+		break;
+	}
+// Cuju End
+
 #ifdef CONFIG_KVM_MMIO
 	case KVM_REGISTER_COALESCED_MMIO: {
 		struct kvm_coalesced_mmio_zone zone;
@@ -3152,6 +3702,26 @@ out_free_irq_routing:
 	case KVM_CHECK_EXTENSION:
 		r = kvm_vm_ioctl_check_extension_generic(kvm, arg);
 		break;
+
+	// Cuju Begin
+	case KVMFT_FIRE_TIMER: {
+        __u32 moff;
+        r = -EFAULT;
+        if (copy_from_user(&moff, argp, sizeof moff))
+            goto out;
+        r = kvmft_fire_timer(kvm->vcpus[0], (int)moff);
+        break;
+    }
+    case KVMFT_SET_MASTER_SLAVE_SOCKETS: {
+        struct kvmft_set_master_slave_sockets socks;
+        r = -EFAULT;
+        if (copy_from_user(&socks, argp, sizeof socks))
+            goto out;
+        r = kvmft_ioctl_set_master_slave_sockets(kvm, &socks);
+        break;
+    }
+	// Cuju End
+	
 	default:
 		r = kvm_arch_vm_ioctl(filp, ioctl, arg);
 	}
@@ -3159,6 +3729,7 @@ out:
 	return r;
 }
 
+#if 0	// Cuju
 #ifdef CONFIG_KVM_COMPAT
 struct compat_kvm_dirty_log {
 	__u32 slot;
@@ -3199,13 +3770,16 @@ static long kvm_vm_compat_ioctl(struct file *filp,
 	return r;
 }
 #endif
+#endif	// Cuju
 
 static struct file_operations kvm_vm_fops = {
 	.release        = kvm_vm_release,
 	.unlocked_ioctl = kvm_vm_ioctl,
+#if 0	// Cuju
 #ifdef CONFIG_KVM_COMPAT
 	.compat_ioctl   = kvm_vm_compat_ioctl,
 #endif
+#endif	// Cuju
 	.llseek		= noop_llseek,
 };
 

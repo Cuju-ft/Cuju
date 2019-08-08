@@ -46,6 +46,7 @@
 #include <linux/compiler.h>
 #include <linux/ioctl.h>
 #include <asm/kvm.h>
+#include <linux/kvm_ft.h>	// Cuju
 
 #define KVM_API_VERSION 12
 
@@ -127,6 +128,9 @@ struct kvm_memory_region {
 	__u64 memory_size; /* bytes */
 };
 
+// sync the one in kvm_host.h
+#define KVM_DIRTY_BITMAP_INIT_COUNT    2	// Cuju
+
 /* for KVM_SET_USER_MEMORY_REGION */
 struct kvm_userspace_memory_region {
 	__u32 slot;
@@ -134,6 +138,13 @@ struct kvm_userspace_memory_region {
 	__u64 guest_phys_addr;
 	__u64 memory_size; /* bytes */
 	__u64 userspace_addr; /* start of the userspace allocated memory */
+	// Cuju Begin
+	__u64 dirty_bitmap_pfn[KVM_DIRTY_BITMAP_INIT_COUNT]; /* bitmap start pfn */
+	__u64 dirty_bitmap_plen; /* bitmap length in page */
+	__u64 gfn_to_put_off_pfn[KVM_DIRTY_BITMAP_INIT_COUNT];
+	__u64 gfn_to_put_off_plen;
+	__u64 gfn_to_put_off[KVM_DIRTY_BITMAP_INIT_COUNT];
+	// Cuju End
 };
 
 /*
@@ -269,6 +280,7 @@ struct kvm_hyperv_exit {
 #define KVM_EXIT_S390_STSI        25
 #define KVM_EXIT_IOAPIC_EOI       26
 #define KVM_EXIT_HYPERV           27
+#define KVM_EXIT_HRTIMER          28	// Cuju
 
 /* For KVM_EXIT_INTERNAL_ERROR */
 /* Emulate instruction failed. */
@@ -506,10 +518,16 @@ struct kvm_interrupt {
 	__u32 irq;
 };
 
+// Cuju Begin
+#define KVM_DIRTY_LOG_FLAG_SWAP     (1 << 0)
+#define KVM_DIRTY_LOG_FLAG_NOCLEAN  (1 << 1)
+// Cuju End
+
 /* for KVM_GET_DIRTY_LOG */
 struct kvm_dirty_log {
 	__u32 slot;
 	__u32 padding1;
+	__u32 flags;	// Cuju
 	union {
 		void __user *dirty_bitmap; /* one bit per page */
 		__u64 padding2;
@@ -1397,6 +1415,100 @@ struct kvm_s390_ucas_mapping {
 #define KVM_S390_GET_CMMA_BITS      _IOWR(KVMIO, 0xb8, struct kvm_s390_cmma_log)
 #define KVM_S390_SET_CMMA_BITS      _IOW(KVMIO, 0xb9, struct kvm_s390_cmma_log)
 
+/* Available with Cuju */
+// Cuju Begin
+#define KVM_SHM_SNAPSHOT_DEV      _IO(KVMIO, 0xc1)
+#define KVMFT_FIRE_TIMER          _IOW(KVMIO, 0xc2, __u32)
+#define KVM_SHM_REPORT_TRACKABLE_COUNT  64  // multiple of 8
+struct kvm_shmem_report_trackable {
+    __u32 trackable_count;
+    void *ptrs[KVM_SHM_REPORT_TRACKABLE_COUNT];
+    __u32 sizes[KVM_SHM_REPORT_TRACKABLE_COUNT];
+};
+#define KVM_SHM_REPORT_TRACKABLE  _IOW(KVMIO, 0xc3, struct kvm_shmem_report_trackable)
+#define KVM_SHM_COLLECT_TRACKABLE_DIRTY _IOW(KVMIO, 0xc4, void *)
+#define KVM_GET_DIRTY_LOG_BATCH      _IOW(KVMIO,  0xc5, __u32)
+#define KVM_CLEAR_DIRTY_BITMAP       _IOW(KVMIO,  0xc6, __u32)
+struct kvm_shmem_mark_page_dirty {
+    void *hptr;
+    __u32 gfn;
+};
+#define KVM_SHM_MARK_PAGE_DIRTY      _IOW(KVMIO,  0xc7, struct kvm_shmem_mark_page_dirty)
+#define KVM_SHM_ADJUST_DIRTY_TRACKING       _IOW(KVMIO,  0xc8, __u32)
+#define KVM_FT_WRITE_PROTECT_DIRTY        _IOW(KVMIO,  0xc9, __u32)
+#define KVM_SHM_ADJUST_EPOCH              _IOW(KVMIO,  0xca, __u32)
+struct kvm_shmem_extend {
+  // output from kvm to qemu
+  unsigned long page_nums_size;
+  unsigned long page_nums_pfn_snapshot; // start of struct 
+};
+#define KVM_SHM_EXTEND                    _IOW(KVMIO, 0xcb, struct kvm_shmem_extend)
+struct kvm_shmem_start_kernel_transfer {
+    __u32 trans_index;
+    __u32 ram_fd;
+    __u32 interrupted;
+    __u32 conn_index;
+    __u32 max_conn;
+};
+#define KVM_START_KERNEL_TRANSFER         _IOW(KVMIO,  0xcc, struct kvm_shmem_start_kernel_transfer)
+struct kvm_vcpu_get_shared_all_state {
+    __u32 pfn;
+    __u32 order;                                                                                             
+};
+#define KVM_VCPU_GET_SHARED_ALL_STATE     _IOW(KVMIO,  0xcd, struct kvm_vcpu_get_shared_all_state)
+#define KVM_FT_PROTECT_SPECULATIVE_PREPARE_NEXT_SPECULATIVE        _IOW(KVMIO,  0xce, __u32)
+struct kvmft_set_master_slave_sockets {
+    __u32 trans_index;
+    __u32 nsocks;
+    __u32 socks[10];
+};
+#define KVMFT_SET_MASTER_SLAVE_SOCKETS    _IOW(KVMIO, 0xcf, struct kvmft_set_master_slave_sockets)
+
+#define KVM_GET_PUT_OFF                   _IOW(KVMIO,  0xd1, int)
+#define KVM_RESET_PUT_OFF                 _IOW(KVMIO,  0xd2, int)
+#define KVM_EXTEND_MEMORY_REGION_DIRTY_BITMAP _IOW(KVMIO, 0xd3,  struct kvm_userspace_memory_region)
+#define KVM_START_LOG_SHARE_DIRTY_PAGES _IOW(KVMIO,  0xd4, struct kvm_collect_log)
+struct kvm_shm_flip_run {
+    __u32 index;
+    __u32 serial;
+};
+#define KVM_SHM_FLIP_SHARING      _IOW(KVMIO,  0xd5, struct kvm_shm_flip_run)
+struct kvm_shm_alloc_pages {
+    unsigned long pfn;      // out;
+    unsigned int order;     // to alloc (1 << order) pages
+    unsigned int index1;    // index for the page array
+    unsigned int index2;    // index inside the page array
+};
+#define KVM_SHM_ALLOC_PAGES       _IOW(KVMIO,  0xd6, struct kvm_shm_alloc_pages)
+struct kvm_shm_free_pages {
+  unsigned int pfn;
+  unsigned int order;
+};
+#define KVM_SHM_FREE_PAGES       _IOW(KVMIO,  0xd7, struct kvm_shm_free_pages)
+struct kvm_shmem_init {
+  unsigned long ram_page_num;     // total num of ram pages
+  unsigned long shared_page_num;
+  unsigned long shared_watermark;
+  unsigned long page_nums_size;
+  unsigned long page_nums_pfn_dirty[2]; // start of struct 
+  unsigned long page_nums_pfn_snapshot[2]; // start of struct 
+  unsigned long epoch_time_in_ms;
+  unsigned long pages_per_ms;
+};
+#define KVM_SHM_INIT              _IOW(KVMIO, 0xd8, struct kvm_shmem_init)
+#define KVM_SHM_ENABLE            _IO(KVMIO, 0xd9)
+#define KVM_SHM_START_TIMER       _IO(KVMIO, 0xda)
+
+struct kvm_shmem_child {
+    __u32 child_pid;
+#define KVM_SHM_MAPS_COUNT  10
+    __u32 maps_len;
+    void *maps_starts[KVM_SHM_MAPS_COUNT];
+    void *maps_ends[KVM_SHM_MAPS_COUNT];
+};
+#define KVM_SHM_SET_CHILD_PID     _IOW(KVMIO, 0xdb, struct kvm_shmem_child)
+// Cuju End
+
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
 #define KVM_DEV_ASSIGN_PCI_2_3		(1 << 1)
 #define KVM_DEV_ASSIGN_MASK_INTX	(1 << 2)
@@ -1456,5 +1568,27 @@ struct kvm_assigned_msix_entry {
 #define KVM_ARM_DEV_EL1_VTIMER		(1 << 0)
 #define KVM_ARM_DEV_EL1_PTIMER		(1 << 1)
 #define KVM_ARM_DEV_PMU			(1 << 2)
+
+// Cuju Begin
+struct kvm_cpu_state {
+    struct kvm_regs regs;
+    struct kvm_xcrs xcrs;
+    struct kvm_sregs sregs;
+    struct {
+        struct kvm_msrs info;
+        struct kvm_msr_entry entries[100];
+    } msr_data;
+    struct kvm_mp_state mp_state;
+    struct kvm_lapic_state kapic;
+    struct kvm_vcpu_events events;
+    struct kvm_debugregs dbgregs;
+    struct kvm_xsave xsave;
+};
+
+#define KVM_SHM_SNAPMODE_OFF		0
+// will check dirty_bitmap of previous epoch
+#define KVM_SHM_SNAPMODE_NORMAL		1	
+#define KVM_SHM_SNAPMODE_TESTING	2
+// Cuju End
 
 #endif /* __LINUX_KVM_H */

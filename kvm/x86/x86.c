@@ -57,6 +57,7 @@
 #include "irq.h"
 #include "mmu.h"
 #include "i8254.h"
+#include "test_dev.h"	// Cuju
 #include "tss.h"
 #include "kvm_cache_regs.h"
 #include "x86.h"
@@ -4161,6 +4162,7 @@ set_identity_unlock:
 			goto create_pit_unlock;
 		r = -ENOMEM;
 		kvm->arch.vpit = kvm_create_pit(kvm, u.pit_config.flags);
+		kvm->arch.test_dev = kvm_create_test_dev(kvm);	// Cuju
 		if (kvm->arch.vpit)
 			r = 0;
 	create_pit_unlock:
@@ -6320,10 +6322,37 @@ void kvm_vcpu_deactivate_apicv(struct kvm_vcpu *vcpu)
 	kvm_x86_ops->refresh_apicv_exec_ctrl(vcpu);
 }
 
+extern uint64_t rdtsc(void);	// Cuju
+
 int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)
 {
 	unsigned long nr, a0, a1, a2, a3, ret;
-	int op_64_bit, r;
+	int op_64_bit = 0, r;
+
+	// Cuju Begin
+	static unsigned long tscs[50];
+	static int tscs_count = 0;
+
+	nr = kvm_register_read(vcpu, VCPU_REGS_RAX);
+	if (nr == KVM_HC_PRINT_TSC) {
+		//vcpu->run->exit_reason = KVM_EXIT_HRTIMER;
+		r = 1;
+
+		tscs[tscs_count++] = rdtsc();
+		if (tscs_count == 50) {
+			int i;
+			unsigned long count = 0;
+			for (i = 0; i < 50; i += 2) {
+				count += tscs[i+1] - tscs[i];
+				printk("%ld\n", tscs[i+1] - tscs[i]);
+			}
+			printk("%ld\n", count / 25);
+			tscs_count = 0;
+		}
+		ret = 0;
+		goto out;
+	}
+	// Cuju End
 
 	r = kvm_skip_emulated_instruction(vcpu);
 
@@ -6356,6 +6385,12 @@ int kvm_emulate_hypercall(struct kvm_vcpu *vcpu)
 	case KVM_HC_VAPIC_POLL_IRQ:
 		ret = 0;
 		break;
+	// Cuju Begin
+	case KVM_HC_PRINT_TSC:
+		printk("%s rdtsc %llu\n", __func__, rdtsc());
+		ret = 0;
+		break;
+	// Cuju End
 	case KVM_HC_KICK_CPU:
 		kvm_pv_kick_cpu_op(vcpu->kvm, a0, a1);
 		ret = 0;
@@ -6819,6 +6854,8 @@ void kvm_arch_mmu_notifier_invalidate_range(struct kvm *kvm,
 		kvm_make_all_cpus_request(kvm, KVM_REQ_APIC_PAGE_RELOAD);
 }
 
+extern void kvm_shm_exit_guest(struct kvm_vcpu *);	// Cuju
+
 void kvm_vcpu_reload_apic_access_page(struct kvm_vcpu *vcpu)
 {
 	struct page *page = NULL;
@@ -7209,6 +7246,16 @@ static int vcpu_run(struct kvm_vcpu *vcpu)
 			++vcpu->stat.signal_exits;
 			break;
 		}
+		// Cuju Begin
+		if (r == 1 && vcpu->hrtimer_pending) {
+			kvm_shm_timer_cancel(vcpu);
+			vcpu->hrtimer_pending = false;
+			vcpu->run->exit_reason = KVM_EXIT_HRTIMER;
+			r = 0;
+			break;
+		}
+		else
+		// Cuju End 
 		if (need_resched()) {
 			srcu_read_unlock(&kvm->srcu, vcpu->srcu_idx);
 			cond_resched();
@@ -8268,6 +8315,7 @@ void kvm_arch_sync_events(struct kvm *kvm)
 	cancel_delayed_work_sync(&kvm->arch.kvmclock_sync_work);
 	cancel_delayed_work_sync(&kvm->arch.kvmclock_update_work);
 	kvm_free_pit(kvm);
+	kvm_free_test_dev(kvm);	// Cuju
 }
 
 int __x86_set_memory_region(struct kvm *kvm, int id, gpa_t gpa, u32 size)

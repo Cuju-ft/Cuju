@@ -69,6 +69,7 @@
 #include <linux/hrtimer.h>
 #include <linux/frame.h>
 #include <linux/nospec.h>
+#include <linux/irq.h>	// Cuju
 #include "kvm_cache_regs.h"
 #include "x86.h"
 
@@ -145,7 +146,8 @@ module_param(nested, bool, S_IRUGO);
 
 static u64 __read_mostly host_xss;
 
-static bool __read_mostly enable_pml = 1;
+//static bool __read_mostly enable_pml = 1;	// Cuju
+static bool __read_mostly enable_pml = 0;	// Cuju
 module_param_named(pml, enable_pml, bool, S_IRUGO);
 
 #define MSR_TYPE_R	1
@@ -3947,7 +3949,7 @@ static __init int setup_vmcs_config(struct vmcs_config *vmcs_conf)
 		}
 	}
 
-	if (boot_cpu_has(X86_FEATURE_XSAVES))
+	if (boot_cpu_has(X86_FEATURE_XSAVES))	// #define cpu_has_xsaves		boot_cpu_has(X86_FEATURE_XSAVES) // In Kernel 4.4
 		rdmsrl(MSR_IA32_XSS, host_xss);
 
 	return 0;
@@ -5324,7 +5326,7 @@ static inline bool kvm_vcpu_trigger_posted_interrupt(struct kvm_vcpu *vcpu,
 						     bool nested)
 {
 #ifdef CONFIG_SMP
-	int pi_vec = nested ? POSTED_INTR_NESTED_VECTOR : POSTED_INTR_VECTOR;
+	//int pi_vec = nested ? POSTED_INTR_NESTED_VECTOR : POSTED_INTR_VECTOR;	// Cuju
 
 	if (vcpu->mode == IN_GUEST_MODE) {
 		/*
@@ -5352,7 +5354,8 @@ static inline bool kvm_vcpu_trigger_posted_interrupt(struct kvm_vcpu *vcpu,
 		 * which has no effect is safe here.
 		 */
 
-		apic->send_IPI_mask(get_cpu_mask(vcpu->cpu), pi_vec);
+		;	// Cuju
+		//apic->send_IPI_mask(get_cpu_mask(vcpu->cpu), pi_vec);	// Cuju
 		return true;
 	}
 #endif

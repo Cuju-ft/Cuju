@@ -14,7 +14,7 @@
 #include <linux/kvm_para.h>
 #include <linux/kconfig.h>
 #include <linux/cpu.h>
-#include <linux/pci.h>
+//#include <linux/pci.h>    // Cuju
 #include <linux/time.h>
 #include <linux/ktime.h>
 #include <linux/kernel.h>

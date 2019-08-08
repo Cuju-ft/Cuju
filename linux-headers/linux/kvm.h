@@ -1228,8 +1228,7 @@ struct kvm_s390_ucas_mapping {
 /* Available with KVM_CAP_PPC_RTAS */
 #define KVM_PPC_RTAS_DEFINE_TOKEN _IOW(KVMIO,  0xac, struct kvm_rtas_token_args)
 
-#define KVM_EXTEND_MEMORY_REGION_DIRTY_BITMAP _IOW(KVMIO, 0xad, \
-                       struct kvm_userspace_memory_region)
+#define KVM_EXTEND_MEMORY_REGION_DIRTY_BITMAP _IOW(KVMIO, 0xd3,  struct kvm_userspace_memory_region)	// Cuju
 
 /* ioctl for vm fd */
 #define KVM_CREATE_DEVICE	  _IOWR(KVMIO,  0xe0, struct kvm_create_device)
@@ -1325,24 +1324,24 @@ struct kvm_s390_ucas_mapping {
 /* Available with KVM_CAP_X86_SMM */
 #define KVM_SMI                   _IO(KVMIO,   0xb7)
 
-#define KVM_START_LOG_SHARE_DIRTY_PAGES _IOW(KVMIO,  0xb8, struct kvm_collect_log)
+#define KVM_START_LOG_SHARE_DIRTY_PAGES _IOW(KVMIO,  0xd4, struct kvm_collect_log)	// Cuju
 struct kvm_shm_flip_run {
     __u32 index;
     __u32 serial;
 };
-#define KVM_SHM_FLIP_SHARING      _IOW(KVMIO,  0xb9, struct kvm_shm_flip_run)
+#define KVM_SHM_FLIP_SHARING      _IOW(KVMIO,  0xd5, struct kvm_shm_flip_run)	// Cuju
 struct kvm_shm_alloc_pages {
     unsigned long pfn;      // out;
     unsigned int order;     // to alloc (1 << order) pages
     unsigned int index1;    // index for the page array
     unsigned int index2;    // index inside the page array
 };
-#define KVM_SHM_ALLOC_PAGES       _IOW(KVMIO,  0xba, struct kvm_shm_alloc_pages)
+#define KVM_SHM_ALLOC_PAGES       _IOW(KVMIO,  0xd6, struct kvm_shm_alloc_pages)	// Cuju
 struct kvm_shm_free_pages {
   unsigned int pfn;
   unsigned int order;
 };
-#define KVM_SHM_FREE_PAGES       _IOW(KVMIO,  0xbb, struct kvm_shm_free_pages)
+#define KVM_SHM_FREE_PAGES       _IOW(KVMIO,  0xd7, struct kvm_shm_free_pages)	// Cuju
 struct kvm_shmem_init {
   unsigned long ram_page_num;     // total num of ram pages
   unsigned long shared_page_num;
@@ -1353,9 +1352,9 @@ struct kvm_shmem_init {
   unsigned long epoch_time_in_ms;
   unsigned long pages_per_ms;
 };
-#define KVM_SHM_INIT              _IOW(KVMIO, 0xbc, struct kvm_shmem_init)
-#define KVM_SHM_ENABLE            _IO(KVMIO, 0xbd)
-#define KVM_SHM_START_TIMER       _IO(KVMIO, 0xbe)
+#define KVM_SHM_INIT              _IOW(KVMIO, 0xd8, struct kvm_shmem_init)	// Cuju
+#define KVM_SHM_ENABLE            _IO(KVMIO, 0xd9)	// Cuju
+#define KVM_SHM_START_TIMER       _IO(KVMIO, 0xda)	// Cuju
 
 struct kvm_shmem_child {
     __u32 child_pid;
@@ -1364,7 +1363,7 @@ struct kvm_shmem_child {
     void *maps_starts[KVM_SHM_MAPS_COUNT];
     void *maps_ends[KVM_SHM_MAPS_COUNT];
 };
-#define KVM_SHM_SET_CHILD_PID     _IOW(KVMIO, 0xbf, struct kvm_shmem_child)
+#define KVM_SHM_SET_CHILD_PID     _IOW(KVMIO, 0xdb, struct kvm_shmem_child)	// Cuju
 #define KVM_SHM_SNAPSHOT_DEV      _IO(KVMIO, 0xc1)
 #define KVMFT_FIRE_TIMER          _IOW(KVMIO, 0xc2, __u32)
 #define KVM_SHM_REPORT_TRACKABLE_COUNT  64  // multiple of 8
