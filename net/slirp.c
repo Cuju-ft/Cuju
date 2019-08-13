@@ -574,7 +574,7 @@ static void slirp_smb_cleanup(SlirpState *s)
         }
         s->smb_dir[0] = '\0';
 #else
-    if (s->smb_dir) {
+    if (s->smb_dir[0] != '\0') {
         gchar *cmd = g_strdup_printf("rm -rf %s", s->smb_dir);
         ret = system(cmd);
         if (ret == -1 || !WIFEXITED(ret)) {
@@ -584,8 +584,7 @@ static void slirp_smb_cleanup(SlirpState *s)
                          cmd, WEXITSTATUS(ret));
         }
         g_free(cmd);
-        g_free(s->smb_dir);
-        s->smb_dir = NULL;
+        s->smb_dir[0] = '\0';
 #endif
         // Cuju End
     }
@@ -627,10 +626,7 @@ static int slirp_smb(SlirpState* s, const char *exported_dir,
 #if __GNUC__ < 7
     snprintf(smb_conf, sizeof(smb_conf), "%s/%s", s->smb_dir, "smb.conf");
 #else
-    int count = snprintf(smb_conf, sizeof(smb_conf), "%s/%s", s->smb_dir, "smb.conf");
-    if (count >= sizeof(smb_conf)) {
-        smb_conf[0] = 0;
-    }
+    smb_conf = g_strdup_printf("%s/%s", s->smb_dir, "smb.conf");
 #endif
     // Cuju End
 
@@ -682,11 +678,9 @@ static int slirp_smb(SlirpState* s, const char *exported_dir,
     snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -l %s -s %s",
              CONFIG_SMBD_COMMAND, s->smb_dir, smb_conf);
 #else
-    int ret = snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -l %s -s %s",
+    smb_cmdline = g_strdup_printf("%s -l %s -s %s",
              CONFIG_SMBD_COMMAND, s->smb_dir, smb_conf);
-    if (ret >= sizeof(smb_cmdline)) {
-        smb_cmdline[0] = 0;
-    }
+    g_free(smb_conf);
 #endif
     // Cuju End
 
