@@ -558,17 +558,13 @@ int net_slirp_redir(const char *redir_str)
 /* automatic user mode samba server configuration */
 static void slirp_smb_cleanup(SlirpState *s)
 {
-    char cmd[128];
     int ret;
 
-    if (s->smb_dir[0] != '\0') {
         // Cuju Begin
-        //snprintf(cmd, sizeof(cmd), "rm -rf %s", s->smb_dir);
-        int count = snprintf(cmd, sizeof(cmd), "rm -rf %s", s->smb_dir);
-        if (count >= sizeof(cmd)) {
-            cmd[0] = 0;
-        }
-        // Cuju End
+#if __GNUC__ < 7
+    char cmd[128];
+    if (s->smb_dir[0] != '\0') {
+        snprintf(cmd, sizeof(cmd), "rm -rf %s", s->smb_dir);
         ret = system(cmd);
         if (ret == -1 || !WIFEXITED(ret)) {
             error_report("'%s' failed.", cmd);
@@ -577,6 +573,21 @@ static void slirp_smb_cleanup(SlirpState *s)
                          cmd, WEXITSTATUS(ret));
         }
         s->smb_dir[0] = '\0';
+#else
+    if (s->smb_dir) {
+        gchar *cmd = g_strdup_printf("rm -rf %s", s->smb_dir);
+        ret = system(cmd);
+        if (ret == -1 || !WIFEXITED(ret)) {
+            error_report("'%s' failed.", cmd);
+        } else if (WEXITSTATUS(ret)) {
+            error_report("'%s' failed. Error code: %d",
+                         cmd, WEXITSTATUS(ret));
+        }
+        g_free(cmd);
+        g_free(s->smb_dir);
+        s->smb_dir = NULL;
+#endif
+        // Cuju End
     }
 }
 
@@ -613,11 +624,14 @@ static int slirp_smb(SlirpState* s, const char *exported_dir,
         return -1;
     }
     // Cuju Begin
-    //snprintf(smb_conf, sizeof(smb_conf), "%s/%s", s->smb_dir, "smb.conf");
+#if __GNUC__ < 7
+    snprintf(smb_conf, sizeof(smb_conf), "%s/%s", s->smb_dir, "smb.conf");
+#else
     int count = snprintf(smb_conf, sizeof(smb_conf), "%s/%s", s->smb_dir, "smb.conf");
     if (count >= sizeof(smb_conf)) {
         smb_conf[0] = 0;
     }
+#endif
     // Cuju End
 
     f = fopen(smb_conf, "w");
@@ -664,13 +678,16 @@ static int slirp_smb(SlirpState* s, const char *exported_dir,
     fclose(f);
 
     // Cuju Begin
-    // snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -l %s -s %s",
-    //          CONFIG_SMBD_COMMAND, s->smb_dir, smb_conf);
+#if __GNUC__ < 7
+    snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -l %s -s %s",
+             CONFIG_SMBD_COMMAND, s->smb_dir, smb_conf);
+#else
     int ret = snprintf(smb_cmdline, sizeof(smb_cmdline), "%s -l %s -s %s",
              CONFIG_SMBD_COMMAND, s->smb_dir, smb_conf);
     if (ret >= sizeof(smb_cmdline)) {
         smb_cmdline[0] = 0;
     }
+#endif
     // Cuju End
 
     if (slirp_add_exec(s->slirp, 0, smb_cmdline, &vserver_addr, 139) < 0 ||

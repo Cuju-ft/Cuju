@@ -27,14 +27,22 @@ For more information see: https://cuju-ft.github.io/cuju-web/home.html
 ![](https://i.imgur.com/38d0kzJ.png)
 
 - Open the Intel virtualization support (VT-x) in your bios.
-- Install OS in all nodes: [Ubuntu-16.04-desktop-amd64.iso (Ubuntu 16.04.0)](https://drive.google.com/file/d/0B9au9R9FzSWKUjRZclBXbXB0eEk/view)
+- Install OS in all nodes:
+    - [ubuntu-mate-16.04.5-desktop-amd64.iso (Ubuntu 16.04.5)](http://ftp.ubuntu-tw.org/mirror/ubuntu-cdimage/ubuntu-mate/releases/16.04.5/release/ubuntu-mate-16.04.5-desktop-amd64.iso) - **recommend**
+    - [ubuntu-mate-18.04.1-desktop-amd64.iso (Ubuntu 18.04.1)](http://ftp.ubuntu-tw.org/mirror/ubuntu-cdimage/ubuntu-mate/releases/18.04.1/release/ubuntu-mate-18.04.1-desktop-amd64.iso)
 - Install related packages in all nodes
 ```
  $ sudo apt-get update
  $ sudo apt-get install ssh vim gcc make gdb fakeroot build-essential \
 kernel-package libncurses5 libncurses5-dev zlib1g-dev \
-libglib2.0-dev qemu xorg bridge-utils openvpn vncviewer \
+libglib2.0-dev qemu xorg bridge-utils openvpn libelf-dev \
 libssl-dev libpixman-1-dev nfs-common git
+
+ # Ubuntu 16
+ $ sudo apt-get install vncviewer
+
+ # Ubuntu 18
+ $ sudo apt-get install tigervnc-viewer
 ```
 - Set up the bridge and network environment 
     - You can follow our recommended topology to set up the network environment 
@@ -223,8 +231,8 @@ chmod +x ./tmp.sh
 * After VM boot and Receiver ready, you can execute following script to enter FT mode
 * ```ftmode.sh```
 ```
-sudo echo "migrate_set_capability cuju-ft on" | sudo nc -U /home/[your username]/vm1.monitor
-sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -U /home/[your username]/vm1.monitor
+sudo echo "migrate_set_capability cuju-ft on" | sudo nc -w 1 -U /home/[your username]/vm1.monitor
+sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -w 1 -U /home/[your username]/vm1.monitor
 ```
 You need to change the ip address and port (`tcp:192.168.111.2:4441`) for your environment, this is Backup Host's IP
 And change the monitor path (`/home/[your username]/vm1.monitor`) for your environment
