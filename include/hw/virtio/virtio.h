@@ -95,6 +95,8 @@ struct VirtIODevice
     uint8_t device_endian;
     bool use_guest_notifier_mask;
     QLIST_HEAD(, VirtQueue) *vector_queues;
+
+    int size;
 };
 
 typedef struct VirtioDeviceClass {

@@ -128,10 +128,11 @@ typedef struct EventTapLog {
 
 typedef QTAILQ_HEAD(, EventTapLog) QueueEventTapLog;
 
+#define MAX_EventTapLog 10240
 typedef struct EventTapLogList {
 	unsigned int head;
 	unsigned int tail;
-	EventTapLog *logs[10240];
+	EventTapLog *logs[MAX_EventTapLog];
 } EventTapLogList;
 
 static EventTapLogList **event_tap_log_list;
@@ -277,7 +278,7 @@ static int net_event_tap(NetClientState *vc, const struct iovec *iov,
     ret = event_tap_alloc_net_req(&log->net_req, vc, iov, iovcnt, sent_cb,
                                   async);
 
-	assert(net_event_list->tail < 1024);
+	assert(net_event_list->tail < MAX_EventTapLog);
 	net_event_list->logs[net_event_list->tail] = log;
 	++net_event_list->tail;
 

@@ -467,15 +467,24 @@ static int confirm_prev_dirty_bitmap_clear(struct kvm *kvm, int cur_index)
             continue;
 		base = memslot->base_gfn;
         npages = memslot->npages;
+
+        /*
+        the commented for loop below is to check which bit is still set and we can know it from
+        the kernel msg. But using for loop to check is too slow, so we change the checking method.
+        If you want to check if the bitmap is not clear and want to know which bit is still set,
+        you can uncomment the for loop to get these information.
+        */
+
 		/*for (i = 0; i < npages; ++i) {
 			if (test_bit(i, dirty_bitmap)) {
 				printk("%s %x is still set.\n", __func__, (long)base + i);
 //                return -EINVAL;
 			}
 		}*/
+
+
         if(*dirty_bitmap != 0)
             printk("%s is still set.\n", __func__);
-
 	}
     return 0;
 }

@@ -3158,9 +3158,14 @@ static void *migration_thread(void *opaque)
 
     trace_migration_thread_setup_complete();
 
-    migration_completion(s, current_active_state,
-                &old_vm_running, &start_time);
-	FTPRINTF("Start live migration iterate backup\n");
+
+	if(enable_cuju) {
+		printf("Start system memory backup\n");
+		migration_completion(s, current_active_state,
+               &old_vm_running, &start_time);
+	}
+
+
     while (s->state == MIGRATION_STATUS_ACTIVE ||
            s->state == MIGRATION_STATUS_POSTCOPY_ACTIVE) {
         int64_t current_time;

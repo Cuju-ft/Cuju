@@ -3635,6 +3635,7 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 	unsigned long mmu_seq;
 	int write = error_code & PFERR_WRITE_MASK;
 	bool map_writable;
+	unsigned long hva;
 
 	unsigned long hva;
 
@@ -3691,13 +3692,16 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 
 	if (handle_abnormal_pfn(vcpu, 0, gfn, pfn, ACC_ALL, &r))
 		return r;
-	if(kvm_shm_is_enabled(vcpu->kvm)){
-		hva = gfn_to_hva(vcpu->kvm, gfn);
-		if (!kvm_is_error_hva(hva)) {
-			//If this hva is valid, this case is write protect page fault, we can backup page and mark dirty
-			kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
-		}
+
+
+	if (kvm_shm_is_enabled(vcpu->kvm)){
+            hva = gfn_to_hva(vcpu->kvm, gfn);
+            if (!kvm_is_error_hva(hva)) {
+	        //If this hva is valid, this case is write protect page fault, we can backup page and mark dirty
+	        kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
+            }
 	}
+
 	spin_lock(&vcpu->kvm->mmu_lock);
 	if (mmu_notifier_retry(vcpu->kvm, mmu_seq))
 		goto out_unlock;
