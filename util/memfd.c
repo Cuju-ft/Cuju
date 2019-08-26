@@ -37,7 +37,11 @@
 #include <sys/syscall.h>
 #include <asm/unistd.h>
 
+#if __GNUC__ < 7
 static int memfd_create(const char *name, unsigned int flags)
+#else
+int memfd_create(const char *name, unsigned int flags)
+#endif
 {
 #ifdef __NR_memfd_create
     return syscall(__NR_memfd_create, name, flags);

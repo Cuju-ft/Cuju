@@ -1,3 +1,4 @@
+// Cuju Add file
 #ifndef _LINUX_KVM_FT_H
 #define _LINUX_KVM_FT_H
 
@@ -153,4 +154,3 @@ int kvmft_ioctl_set_master_slave_sockets(struct kvm *kvm,
     struct kvmft_set_master_slave_sockets *socks);
 
 #endif
-

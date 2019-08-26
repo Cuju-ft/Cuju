@@ -32,6 +32,7 @@
 #endif
 
 #endif
+// SPDX-License-Identifier: GPL-2.0
 /*
  * KVM coalesced MMIO
  *

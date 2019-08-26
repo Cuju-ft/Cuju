@@ -1,6 +1,8 @@
-
+// Cuju Add file
 #include <linux/shared_pages_array.h>
 #include <linux/slab.h>
+
+#include <asm/pgtable.h>    // Cuju
 
 static int shared_pages_array_alloc_single(struct shared_pages_array *spa,
                                     int index)
@@ -110,5 +112,3 @@ void shared_pages_array_free(struct shared_pages_array *spa)
         spa->pfn = NULL;
     }
 }
-
-

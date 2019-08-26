@@ -24,6 +24,8 @@
 #include "qemu/base64.h"
 #include "qemu/cutils.h"
 
+#include <sys/sysmacros.h>	// Ubuntu 18.04
+
 #ifndef CONFIG_HAS_ENVIRON
 #ifdef __APPLE__
 #include <crt_externs.h>

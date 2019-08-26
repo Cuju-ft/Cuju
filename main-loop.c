@@ -36,6 +36,8 @@
 
 #include "qemu/compatfd.h"
 
+#include  <signal.h>    // Cuju
+
 //int io_thread_fd = -1;  TODO find io thread fd
 
 /* If we have signalfd, we mask out the signals we want to handle and then
@@ -222,6 +224,7 @@ static void glib_pollfds_poll(void)
 }
 
 #define MAX_MAIN_LOOP_SPIN (1000)
+void INTClose(int); // Cuju
 
 static int os_host_main_loop_wait(int64_t timeout)
 {
@@ -243,6 +246,7 @@ static int os_host_main_loop_wait(int64_t timeout)
             fprintf(stderr,
                     "main-loop: WARNING: I/O thread spun for %d iterations\n",
                     MAX_MAIN_LOOP_SPIN);
+            signal(SIGINT, INTClose); // Cuju
             notified = true;
         }
 
@@ -529,3 +533,11 @@ QEMUBH *qemu_bh_new(QEMUBHFunc *cb, void *opaque)
 {
     return aio_bh_new(qemu_aio_context, cb, opaque);
 }
+
+// Cuju Begin
+void  INTClose(int sig)
+{
+     signal(sig, SIG_IGN);
+     exit(0);
+}
+// Cuju End

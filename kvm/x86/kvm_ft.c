@@ -1,3 +1,4 @@
+// Cuju Add file
 #include <linux/kvm_ft.h>
 #include <linux/kvm.h>
 #include <linux/kvm_host.h>
@@ -12,6 +13,9 @@
 #include <linux/ktime.h>
 #include <linux/module.h>
 #include <linux/mmu_context.h>
+
+#include <asm/fpu/api.h>    // Cuju
+#include <linux/sched/types.h>    // Cuju
 
 #define SHOW_AVERAGE_FRAG   1
 #undef SHOW_AVERAGE_FRAG
@@ -457,7 +461,7 @@ static int confirm_prev_dirty_bitmap_clear(struct kvm *kvm, int cur_index)
 		gfn_t base;
 		unsigned long npages;
 		unsigned long *dirty_bitmap;
-		int i;
+		//int i;    // Cuju
 		dirty_bitmap = memslot->lock_dirty_bitmap;
         if (!dirty_bitmap)
             continue;
@@ -523,11 +527,14 @@ static void kvmft_protect_all_gva_spcl_pages(struct kvm *kvm, int cur_index)
     spin_unlock(&kvm->mmu_lock);
 }
 
+extern void kvm_mmu_remove_write_protect_single(struct kvm *kvm, gfn_t gfn);
 static int spcl_backup_dirty_list_all_mark_dirty(struct kvm *kvm)
 {
     struct kvmft_context *ctx = &kvm->ft_context;
     struct kvmft_dirty_list *dlist;
     int i, r = 0, count = ctx->spcl_backup_dirty_num;
+    s64 start_time, end_time;
+    static s64 max_time = 0;
 
     if (count == 0) {
         dlist = ctx->page_nums_snapshot_k[ctx->cur_index];
@@ -535,8 +542,6 @@ static int spcl_backup_dirty_list_all_mark_dirty(struct kvm *kvm)
         return r;
     }
 
-    s64 start_time, end_time;
-    static s64 max_time = 0;
     start_time = time_in_us();
 
     for (i = count - 1; i >= 0; --i) {
@@ -547,7 +552,6 @@ static int spcl_backup_dirty_list_all_mark_dirty(struct kvm *kvm)
         r = kvmft_page_dirty(kvm, gfn, hva, true, NULL);
         if (r)
             goto out;
-        extern void kvm_mmu_remove_write_protect_single(struct kvm *kvm, gfn_t gfn);
         spin_lock(&kvm->mmu_lock);
         kvm_mmu_remove_write_protect_single(kvm, gfn);
         spin_unlock(&kvm->mmu_lock);
@@ -558,7 +562,7 @@ out:
     end_time = time_in_us();
     if (end_time - start_time > max_time) {
         max_time = end_time - start_time;
-        printk("%s %ld\n", __func__, max_time);
+        printk("%s %lld\n", __func__, max_time);
     }
 
     dlist = ctx->page_nums_snapshot_k[ctx->cur_index];
@@ -652,6 +656,7 @@ static int kvmft_xmit_func(void *opaque)
 {
     struct kvm *kvm = opaque;
     int serial = -1, off = 0;
+    int ret = 0;
 
     use_mm(kvm->qemu_mm);
 
@@ -668,7 +673,7 @@ static int kvmft_xmit_func(void *opaque)
             struct xmit_req *req = &xmit_reqs[serial][off];
             smp_mb();
             //printk("%s %lx @%d-%d\n", __func__, req->gfn, serial, off);
-            int ret = transfer_16x8_page_with_offs(req->psock,
+            ret = transfer_16x8_page_with_offs(req->psock,
                                         req->gfn,
                                         req->page1,
                                         req->page2,
@@ -951,7 +956,7 @@ int kvmft_page_dirty(struct kvm *kvm, unsigned long gfn,
     }
     if (!memslot->lock_dirty_bitmap) {
         printk("%s no lock_dirty_bitmap for %lx\n", __func__, gfn);
-        printk("%s base_gfn %lx npages %lx\n", __func__, memslot->base_gfn, memslot->npages);
+        printk("%s base_gfn %llx npages %lx\n", __func__, memslot->base_gfn, memslot->npages);
         memslots_dump(kvm);
         return -ENOENT;
     }
@@ -1121,6 +1126,7 @@ int kvm_shm_report_trackable(struct kvm *kvm,
 	unsigned long addr;
 	int ret = -ENOMEM;
 	pgd_t *pgd;
+    p4d_t *p4d; // Cuju
 	pud_t *pud;
 	pmd_t *pmd;
 	pte_t *pte;
@@ -1182,7 +1188,15 @@ int kvm_shm_report_trackable(struct kvm *kvm,
 				if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd))) {
 					goto err_out;
 				}
-				pud = pud_offset(pgd, addr);
+                // Cuju Begin
+				p4d = p4d_offset(pgd, addr);
+                ret = -ENOENT;
+                if (p4d_none(*p4d) || unlikely(p4d_bad(*p4d))) {
+                    goto err_out;
+                }
+                // Cuju End
+                pud = pud_offset(p4d, addr);    // Cuju
+                //pud = pud_offset(pgd, addr);  // Cuju
 				if (pud_none(*pud) || unlikely(pud_bad(*pud))) {
 					goto err_out;
 				}
@@ -1214,7 +1228,8 @@ int kvm_shm_report_trackable(struct kvm *kvm,
 			if (pte_dirty(*pte)) {
                 set_page_dirty(kt->page[j]);
 				set_pte(pte, pte_mkclean(*pte));
-				__flush_tlb_single(addr);
+				//__flush_tlb_single(addr);   // Cuju
+                __flush_tlb_one_user(addr); // Cuju
 				// update_mmu_cache
 			}
 			addr += 4096;
@@ -1241,7 +1256,8 @@ int kvm_shm_collect_trackable_dirty(struct kvm *kvm,
 			if (pte_dirty(*kt->ppte[j])) {
                 set_page_dirty(kt->page[j]);
 				set_pte(kt->ppte[j], pte_mkclean(*kt->ppte[j]));
-				__flush_tlb_single(addr);
+				//__flush_tlb_single(addr); // Cuju
+                __flush_tlb_one_user(addr); //Cuju
 				dirty = 1;
 			}
             addr += 4096;
@@ -1385,6 +1401,7 @@ static void kvmft_test_copy_all_dirty_pages(struct kvm *kvm, int *gfns, int coun
     static void *backup_pages[4096];
     static bool backup_pages_ok = false;
     int i;
+    s64 start, end;
 
     if (count == 0)
         return;
@@ -1397,7 +1414,7 @@ static void kvmft_test_copy_all_dirty_pages(struct kvm *kvm, int *gfns, int coun
         backup_pages_ok = true;
     }
 
-    s64 start = time_in_us();
+    start = time_in_us();
 
     for (i = 0; i < count; i++) {
         unsigned int gfn = gfns[i];
@@ -1405,9 +1422,9 @@ static void kvmft_test_copy_all_dirty_pages(struct kvm *kvm, int *gfns, int coun
         memcpy_page_ermsb(backup_pages[i], hva);
     }
 
-    s64 end = time_in_us();
+    end = time_in_us();
     if (count > 1000)
-        printk("%s %4d %ldus\n", __func__, count, end-start);
+        printk("%s %4d %lldus\n", __func__, count, end-start);
 }
 
 extern bool kvm_mmu_clear_spte_dirty_bit(struct kvm *kvm, gfn_t gfn);
@@ -1417,7 +1434,8 @@ static void spcl_sort_real_dirty_via_spte(struct kvm *kvm,
 {
     struct kvmft_context *ctx = &kvm->ft_context;
     int i, off = 0, count = dlist->spcl_put_off;
-    volatile unsigned long *bitmap = dlist->spcl_bitmap;
+    //volatile unsigned long *bitmap = dlist->spcl_bitmap;    // Cuju
+    volatile unsigned long *bitmap = (unsigned long *)dlist->spcl_bitmap;    // Cuju
 
     for (i = 0; i < count; ++i) {
         gfn_t gfn = dlist->pages[i];
@@ -1665,7 +1683,7 @@ static inline int transfer_16x8_page_diff(unsigned long gfn,
 
     kernel_fpu_end();
 
-mock_out:
+//mock_out: // Cuju
     header->size = sizeof(header->h) + offsets_off * 32;
 
     kunmap_atomic(backup);
@@ -1824,7 +1842,8 @@ static inline int transfer_16x8_page_with_offs(struct socket *psock,
     int flags = MSG_DONTWAIT | MSG_NOSIGNAL | (MSG_MORE * more);
     int err;
 
-    err = ktcp_send(psock, header, sizeof(*header));
+    //err = ktcp_send(psock, header, sizeof(*header));  // Cuju
+    err = ktcp_send(psock, (char *)header, sizeof(*header));    // Cuju
     if (err < 0)
         return err;
 
@@ -1872,7 +1891,7 @@ static inline int transfer_16x8_page(struct socket *psock,
                                      bool check_modify,
                                      bool more)
 {
-    struct xmit_req *req = &xmit_reqs[trans_index][xmit_off[trans_index]];
+    //struct xmit_req *req = &xmit_reqs[trans_index][xmit_off[trans_index]];    // Cuju
     c16x8_header_t header;
     int offsets_off;
     int offsets[128];
@@ -2462,7 +2481,8 @@ static int kvmft_diff_to_buf(struct kvm *kvm, unsigned long gfn,
 static int spcl_transfer_check(struct kvmft_dirty_list *dlist, int index)
 {
     return index < dlist->spcl_put_off &&
-        !test_and_clear_bit(index, dlist->spcl_bitmap);
+        //!test_and_clear_bit(index, dlist->spcl_bitmap); // Cuju
+        !test_and_clear_bit(index, (void *)dlist->spcl_bitmap); // Cuju
 }
 
 static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
@@ -2588,7 +2608,8 @@ static int diff_and_tran_kthread_func(void *opaque)
     struct sched_param param = {.sched_priority = MAX_RT_PRIO - 1};
     int run_serial = 0;
     int start, end;
-    int i, ret = 0, len;
+    //int i;    //Cuju
+    int ret = 0, len;
 
     use_mm(kvm->qemu_mm);
 
@@ -2649,7 +2670,7 @@ static int diff_and_tran_kthread_func(void *opaque)
         __decrement_pending_tran_num(kvm, ctx);
         //printk("%s trans_index %d len %d\n", __func__, desc->trans_index, len);
     }
-out:
+//out:  // Cuju
     unuse_mm(kvm->qemu_mm);
     return ret;
 }
@@ -2687,6 +2708,8 @@ static int diff_and_transfer_all(struct kvm *kvm, int trans_index, int max_conn)
     struct kvmft_dirty_list *dlist = ctx->page_nums_snapshot_k[trans_index];
     int count, i, ret = 0, len = 0;
     int run_serial = info->run_serial;
+    
+    ret = 1;ret = 0;    // Cuju
 
 #ifdef ENABLE_PRE_DIFF
     int skipped = 0;
@@ -2891,8 +2914,10 @@ int kvm_start_kernel_transfer(struct kvm *kvm,
     struct kvmft_master_slave_conn_info *info =
         &ctx->master_slave_info[trans_index];
     struct socket *sock;
-    int err;
-    int ram_len, ret;
+    //int err;  // Cuju
+    int ram_len = 0, ret;
+
+    ret = 1;    // Cuju
 
     if (max_conn <= 0 || max_conn > 8) {
         return -EINVAL;

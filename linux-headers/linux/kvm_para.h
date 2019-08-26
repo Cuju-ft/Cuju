@@ -23,6 +23,8 @@
 #define KVM_HC_MIPS_GET_CLOCK_FREQ	6
 #define KVM_HC_MIPS_EXIT_VM		7
 #define KVM_HC_MIPS_CONSOLE_OUTPUT	8
+#define KVM_HC_CLOCK_PAIRING		9
+#define KVM_HC_PRINT_TSC        	10  // Cuju
 
 /*
  * hypercalls use architecture specific

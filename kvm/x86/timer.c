@@ -1,3 +1,4 @@
+// Cuju Add file
 #ifndef KVM_UNIFDEF_H
 #define KVM_UNIFDEF_H
 
@@ -56,7 +57,8 @@ enum hrtimer_restart kvm_timer_fn(struct hrtimer *data)
 {
 	struct kvm_timer *ktimer = container_of(data, struct kvm_timer, timer);
 	struct kvm_vcpu *vcpu = ktimer->vcpu;
-	wait_queue_head_t *q = &vcpu->wq;
+	//wait_queue_head_t *q = &vcpu->wq;	// Cuju
+	struct swait_queue_head *q = &vcpu->wq;	// Cuju
 
 	/*
 	 * There is a race window between reading and incrementing, but we do
@@ -70,11 +72,20 @@ enum hrtimer_restart kvm_timer_fn(struct hrtimer *data)
 		kvm_make_request(KVM_REQ_PENDING_TIMER, vcpu);
 	}
 
-	if (waitqueue_active(q))
-		wake_up_interruptible(q);
+	// Cuju Begin
+	//if (waitqueue_active(q))
+	//	wake_up_interruptible(q);
+	/*
+	 * For x86, the atomic_inc() is serialized, thus
+	 * using swait_active() is safe.
+	 */
+	if (swait_active(q))
+		swake_up(q);
+	// Cuju End
 
 	if (ktimer->t_ops->is_periodic(ktimer)) {
-		kvm_hrtimer_add_expires_ns(&ktimer->timer, ktimer->period);
+		//kvm_hrtimer_add_expires_ns(&ktimer->timer, ktimer->period);	// Cuju
+		hrtimer_add_expires_ns(&ktimer->timer, ktimer->period);	// Cuju
 		return HRTIMER_RESTART;
 	} else
 		return HRTIMER_NORESTART;

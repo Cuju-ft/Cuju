@@ -1,4 +1,4 @@
-
+// Cuju Add file
 #include <linux/kvm_host.h>
 
 #include "irq.h"
@@ -22,8 +22,10 @@ static int test_dev_ioport_write(struct kvm_io_device *this,
 }
 
 static const struct kvm_io_device_ops test_dev_ops = {
-    .read       = test_dev_ioport_read,
-    .write      = test_dev_ioport_write,
+    //.read       = test_dev_ioport_read,   // Cuju
+    //.write      = test_dev_ioport_write,  // Cuju
+    .read       = 0,
+    .write      = 0,
 };
 
 extern void kvmft_prepare_upcall(struct kvm_vcpu *vcpu);
