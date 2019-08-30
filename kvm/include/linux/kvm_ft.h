@@ -137,6 +137,9 @@ int kvm_start_kernel_transfer(struct kvm *kvm,
                               int conn_index,
                               int max_conn);
 
+void kvmft_init_ram_hash(struct kvm *kvm);  // Tommy Zheng
+int kvmft_get_dirty(struct kvm *kvm, __u32 no, __u32 last_size, unsigned long long *dirty_bitmap, bool *is_dirty);    // Tommy Zheng
+
 int kvm_vm_ioctl_get_dirty_log_batch(struct kvm *kvm, __u32 cur_index);
 int kvm_vm_ioctl_ft_protect_speculative_and_prepare_next_speculative(struct kvm *kvm, __u32 cur_index);
 int kvm_vm_ioctl_ft_backup_speculative(struct kvm *kvm, __u32 cur_index);

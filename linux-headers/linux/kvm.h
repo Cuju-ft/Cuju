@@ -1414,6 +1414,16 @@ struct kvmft_set_master_slave_sockets {
 };
 #define KVMFT_SET_MASTER_SLAVE_SOCKETS    _IOW(KVMIO, 0xcf, struct kvmft_set_master_slave_sockets)
 
+// Tommy Zheng Begin
+struct kvmft_dirty_content
+{
+	__u32 package_no;
+	__u32 size;
+	bool is_dirty;
+	unsigned long long dirty_bitmap[1024];
+};
+#define KVMFT_GET_DIRTY              _IOWR(KVMIO,  0xf0, struct kvmft_dirty_content)
+// Tommy Zheng End
 
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
 #define KVM_DEV_ASSIGN_PCI_2_3		(1 << 1)

@@ -3572,6 +3572,19 @@ static long kvm_vm_ioctl(struct file *filp,
 									req.max_conn);
 		break;
 	}
+	// Tommy Zheng Begin
+	case KVMFT_GET_DIRTY: {
+		struct kvmft_dirty_content content;
+		r = -EFAULT;
+		if (copy_from_user(&content, argp, sizeof(content)))
+			goto out;
+		r = kvmft_get_dirty(kvm, content.package_no, content.size, content.dirty_bitmap, &content.is_dirty);
+		if (copy_to_user(argp, &content, sizeof(content)))
+			goto out;
+		r = 0;
+		break;
+	}
+	// Tommy Zheng End
 // Cuju End
 
 #ifdef CONFIG_KVM_MMIO

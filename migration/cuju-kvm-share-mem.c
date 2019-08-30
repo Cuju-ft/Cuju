@@ -2,13 +2,14 @@
  * Cuju
  * (a.k.a. Fault Tolerance, Continuous Replication, or Checkpointing)
  *
- * Copyright (c) 2017 ITRI
+ * Copyright (c) 2019 ITRI
  *
  * Authors:
  *  Yi-feng Sun         <pkusunyifeng@gmail.com>
  *  Wei-Chen Liao       <ms0472904@gmail.com>
  *  Po-Jui Tsao         <pjtsao@itri.org.tw>
  *  Yu-Shiang Lin       <YuShiangLin@itri.org.tw>
+ *  Chun-Zhang Zheng    <towwy321@gmail.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2 or
  * later.  See the COPYING file in the top-level directory.
@@ -1173,6 +1174,10 @@ void kvm_shmem_send_dirty_kernel(MigrationState *s)
 	put_off = kvm_vm_ioctl(kvm_state, KVM_GET_PUT_OFF, &cur_off);
 	//TODO kvmft_assert_ram_hash_and_dlist function should be moved to kernel space
     //kvmft_assert_ram_hash_and_dlist(dlist->pages, dlist->put_off);
+#ifdef ft_debug_mode_enable
+    // Moved to kernel space finish, but not with dlist cmpare
+    kvmft_get_ram_dirty_bitmap();   // Tommy Zheng
+#endif
     s->dirty_pfns_len = put_off;
 
 #ifdef CONFIG_KVMFT_USERSPACE_TRANSFER

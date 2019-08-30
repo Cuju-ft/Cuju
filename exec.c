@@ -3874,3 +3874,57 @@ void kvmft_assert_ram_hash_and_dlist(unsigned int *gfns, int size)
 #endif
 }
 #endif
+
+// Get all ram dirty bitmap from kvm kmod
+void kvmft_get_ram_dirty_bitmap(void)   // Tommy Zheng
+{
+    struct kvmft_dirty_content content;
+    RAMBlock *block;
+    unsigned long i, j, k;
+    qemu_mutex_lock_ramlist();
+    printf("------------------------\n");
+    printf("Start Dump\n");
+    QLIST_FOREACH_RCU(block, &ram_list.blocks, next) {
+        if (!memcmp(block->idstr, "vga.vram", 8))
+            continue;
+
+        if ((block->used_length - 1) >> 12 > 64) {
+            for (i = 0; i < block->used_length >> 28; i++) {  // if 368 >> 28 = 1 ... 128
+                content.package_no = i;
+                content.size = 256;
+                printf("Package_%lu\n", i + 1);
+                kvm_vm_ioctl(kvm_state, KVMFT_GET_DIRTY, &content);
+                if (content.is_dirty) {
+                    for (j = 0; j < 128; j++) {
+                        for (k = 0; k < 8; k++) {
+                            printf("%016llx ", content.dirty_bitmap[j * 8 + k]);
+                        }
+                        printf("\n");
+                    }
+                } else {
+                    printf("This Package not has dirty page.\n");
+                }
+            }
+            if (block->used_length - (i << 28)) {    // all - i * 256M > 0
+                content.package_no = i;
+                content.size = block->used_length - (i << 28);
+                printf("Package_%lu\n", i + 1);
+                kvm_vm_ioctl(kvm_state, KVMFT_GET_DIRTY, &content);
+                if (content.is_dirty) {
+                    for (j = 0; j < 128; j++) {
+                        for (k = 0; k < 8; k++) {
+                            if (j * 8 + k >= content.size) break;
+                            printf("%016llx ", content.dirty_bitmap[j * 8 + k]);
+                        }
+                        if (j * 8 + k >= content.size) break;
+                        printf("\n");
+                    }
+                } else {
+                    printf("This Package not has dirty page.\n");
+                }
+            }
+        }
+    }
+    printf("Finish Dump\n");
+    qemu_mutex_unlock_ramlist();
+}

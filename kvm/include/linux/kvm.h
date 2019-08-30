@@ -1507,6 +1507,17 @@ struct kvm_shmem_child {
     void *maps_ends[KVM_SHM_MAPS_COUNT];
 };
 #define KVM_SHM_SET_CHILD_PID     _IOW(KVMIO, 0xdb, struct kvm_shmem_child)
+
+// Tommy Zheng Begin
+struct kvmft_dirty_content
+{
+	__u32 package_no;
+	__u32 size;
+	bool is_dirty;
+	unsigned long long dirty_bitmap[1024];
+};
+#define KVMFT_GET_DIRTY              _IOWR(KVMIO,  0xf0, struct kvmft_dirty_content)
+// Tommy Zheng End
 // Cuju End
 
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)

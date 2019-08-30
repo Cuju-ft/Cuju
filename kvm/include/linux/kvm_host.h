@@ -366,7 +366,7 @@ struct kvm_memory_slot {
 	unsigned long *backup_transfer_bitmap;
 	// Cuju End
 	struct kvm_arch_memory_slot arch;
-	unsigned long userspace_addr;
+	unsigned long userspace_addr;	// HVA
 	u32 flags;
 	short id;
 	int bitmap_count;	// Cuju

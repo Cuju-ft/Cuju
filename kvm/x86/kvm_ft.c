@@ -2903,6 +2903,76 @@ static int diff_thread_func(void *data)
     return 0;
 }
 
+// Tommy Zheng Begin
+struct kvmft_hash
+{
+    uint64_t *hash;
+    unsigned long long size;
+};
+
+struct kvmft_hash hash_list = {.size = 0};
+
+void kvmft_init_ram_hash(struct kvm *kvm)
+{
+    struct kvm_memory_slot *memslot;
+    memslot = gfn_to_memslot(kvm, 256);   // Get base memslot
+    hash_list.size = memslot->npages + 256;
+    hash_list.hash = kmalloc(hash_list.size * sizeof(uint64_t), GFP_KERNEL | __GFP_ZERO);
+    printk("Run %s", __func__);
+}
+
+static uint64_t __hash_page(uint64_t *ptr)
+{
+    uint64_t hash = 0;
+    int i;
+    for (i = 0; i < 512; i++)
+        hash += (ptr[i] + 29) * (i + 111);
+    return hash;
+}
+
+int kvmft_get_dirty(struct kvm *kvm, __u32 no, __u32 last_size, unsigned long long *dirty_bitmap, bool *is_dirty)
+{
+    struct kvm_memory_slot *memslot;
+    unsigned long long tmp_bitmap, hash_index;
+    int i, j;
+
+    printk("Run %s", __func__);
+
+    if (hash_list.size == 0) {
+        kvmft_init_ram_hash(kvm);
+    }
+
+    memslot = gfn_to_memslot(kvm, 0);   // Get base memslot
+    uint8_t *addr = memslot->userspace_addr;
+    hash_index = (no * 256) << 12;
+    *is_dirty = false;
+    
+    for (i = 0; i < last_size * 4; i++) {
+        tmp_bitmap = 0;
+        for (j = 0; j < 64; j++) {
+            uint64_t new_hash = __hash_page((uint64_t *)(addr + (hash_index << 12)));
+            tmp_bitmap <<= 1;
+            if (hash_list.hash[hash_index] != new_hash) {
+                hash_list.hash[hash_index] = new_hash;
+                tmp_bitmap |= 0x00000001;
+                *is_dirty = true;
+            } else {
+                tmp_bitmap &= 0xfffffffe;
+            }
+            hash_index++;
+        }
+        dirty_bitmap[i] = tmp_bitmap;
+    }
+    // printk("GFN: %lu, Base GFN: %lu, nPages: %lu, HVA: %lx, Hash: %016lx",
+    //         0,
+    //         memslot->base_gfn,
+    //         memslot->npages,
+    //         memslot->userspace_addr,
+    //         __hash_page((uint64_t *)(memslot->userspace_addr)));
+    return 0;
+}
+// Tommy Zheng End
+
 int kvm_start_kernel_transfer(struct kvm *kvm,
                               int trans_index,
                               int ram_fd,
