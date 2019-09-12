@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "main-loop.h": "c",
+        "block.h": "c"
+    }
+}

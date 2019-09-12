@@ -1,0 +1,90 @@
+/*{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "enter program name, for example ${workspaceFolder}/a.out",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}*/
+
+
+{
+    // 使用 IntelliSense 以得知可用的屬性。
+    // 暫留以檢視現有屬性的描述。
+    // 如需詳細資訊，請瀏覽: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/x86_64-softmmu/qemu-system-x86_64",
+            "args": ["-drive", "if=none,id=drive0,cache=none,format=raw,file=/home/howard/Downloads/Ubuntu20G-1604.img",
+                     "-device", "virtio-blk,drive=drive0,scsi=off",
+                     "-m", "512M", "-enable-kvm",
+                     "-net", "tap,ifname=tap0", "-net", "nic,model=virtio,vlan=0,macaddr=ae:ae:01:00:00:25",
+                     "-nographic", 
+                     "-chardev", "socket,id=mon,path=/home/howard/vm1.monitor,server,nowait",
+                     "-mon", "chardev=mon,id=monitor,mode=readline",
+                     "-vnc", "127.0.0.1:2"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        { 
+            "name": "(gdb) Launch Slave",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/x86_64-softmmu/qemu-system-x86_64",
+            "args": ["-drive", "if=none,id=drive0,cache=none,format=raw,file=/home/howard/Downloads/Ubuntu20G-1604.img",
+                     "-device", "virtio-blk,drive=drive0,scsi=off",
+                     "-m", "512M", "-enable-kvm",
+                     "-net", "tap,ifname=tap1", "-net", "nic,model=virtio,vlan=0,macaddr=ae:ae:01:00:00:25",
+                     "-nographic", 
+                     "-chardev", "socket,id=mon,path=/home/howard/vm1r.monitor,server,nowait",
+                     "-mon", "chardev=mon,id=monitor,mode=readline",
+                     "-incoming", "tcp:0:4441,ft_mode", 
+                     "-vnc", "127.0.0.1:3" ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

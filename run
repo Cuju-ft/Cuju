@@ -1,0 +1,3804 @@
+VM init finished
+Enter FT mode
+Start system memory backup
+start cuju process
+
+GGGGGGGGGGG
+
+GGGGGGGGGGG
+
+
+kvm_shmem_sortup_trackable trackable_number = 24
+
+migrate_ft_trans_get_ready recv ack, index 0
+In fill buffer len: 24
+
+migrate_timer tick 0
+ram_fd:21  conn_index:0
+ram_len: 29020
+payload_len:32768  s->ft_serial0  state:2   time:5395.684415
+payload_len:32768  s->ft_serial0  state:2   time:5395.684544
+payload_len:3173  s->ft_serial0  state:2   time:5395.693977
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:29020  s->ft_serial1  state:8   time:5395.694041
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial0  state:2   time:5395.695815
+payload_len:32768  s->ft_serial0  state:2   time:5395.695852
+payload_len:1355  s->ft_serial0  state:2   time:5395.695875
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial2  state:8   time:5395.695890
+In fill buffer len: 24
+recv ack
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial1  state:2   time:5395.706149
+payload_len:32768  s->ft_serial1  state:2   time:5395.706176
+payload_len:1355  s->ft_serial1  state:2   time:5395.706201
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial3  state:8   time:5395.706214
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial2  state:2   time:5395.712957
+payload_len:32768  s->ft_serial2  state:2   time:5395.713033
+payload_len:1355  s->ft_serial2  state:2   time:5395.713086
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial4  state:8   time:5395.713126
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial3  state:2   time:5395.720437
+payload_len:32768  s->ft_serial3  state:2   time:5395.720534
+payload_len:1355  s->ft_serial3  state:2   time:5395.724046
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial5  state:8   time:5395.724088
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial4  state:2   time:5395.727239
+payload_len:32768  s->ft_serial4  state:2   time:5395.727295
+payload_len:1355  s->ft_serial4  state:2   time:5395.727320
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial6  state:8   time:5395.727334
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial5  state:2   time:5395.734461
+payload_len:32768  s->ft_serial5  state:2   time:5395.734791
+payload_len:1355  s->ft_serial5  state:2   time:5395.734929
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial7  state:8   time:5395.734997
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial6  state:2   time:5395.741647
+payload_len:32768  s->ft_serial6  state:2   time:5395.741687
+payload_len:1355  s->ft_serial6  state:2   time:5395.741718
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial8  state:8   time:5395.741732
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial7  state:2   time:5395.748479
+payload_len:32768  s->ft_serial7  state:2   time:5395.748563
+payload_len:1355  s->ft_serial7  state:2   time:5395.748615
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial9  state:8   time:5395.748662
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial8  state:2   time:5395.755530
+payload_len:32768  s->ft_serial8  state:2   time:5395.755602
+payload_len:1355  s->ft_serial8  state:2   time:5395.755650
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial10  state:8   time:5395.755688
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial9  state:2   time:5395.762629
+payload_len:32768  s->ft_serial9  state:2   time:5395.762748
+payload_len:1355  s->ft_serial9  state:2   time:5395.762807
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial11  state:8   time:5395.762857
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial10  state:2   time:5395.770000
+payload_len:32768  s->ft_serial10  state:2   time:5395.770084
+payload_len:1355  s->ft_serial10  state:2   time:5395.770145
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial12  state:8   time:5395.770168
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial11  state:2   time:5395.776788
+payload_len:32768  s->ft_serial11  state:2   time:5395.776860
+payload_len:1355  s->ft_serial11  state:2   time:5395.776909
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial13  state:8   time:5395.776949
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 4184
+payload_len:32768  s->ft_serial12  state:2   time:5395.784225
+payload_len:32768  s->ft_serial12  state:2   time:5395.784333
+payload_len:1355  s->ft_serial12  state:2   time:5395.784417
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4184  s->ft_serial14  state:8   time:5395.784445
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 4244
+payload_len:32768  s->ft_serial13  state:2   time:5395.791075
+payload_len:32768  s->ft_serial13  state:2   time:5395.791152
+payload_len:1355  s->ft_serial13  state:2   time:5395.791202
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4244  s->ft_serial15  state:8   time:5395.791241
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial14  state:2   time:5395.797953
+payload_len:32768  s->ft_serial14  state:2   time:5395.798029
+payload_len:1355  s->ft_serial14  state:2   time:5395.798082
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial16  state:8   time:5395.798120
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial15  state:2   time:5395.805164
+payload_len:32768  s->ft_serial15  state:2   time:5395.805233
+payload_len:1355  s->ft_serial15  state:2   time:5395.805281
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial17  state:8   time:5395.805319
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial16  state:2   time:5395.812037
+payload_len:32768  s->ft_serial16  state:2   time:5395.812108
+payload_len:1355  s->ft_serial16  state:2   time:5395.812159
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial18  state:8   time:5395.812196
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial17  state:2   time:5395.819358
+payload_len:32768  s->ft_serial17  state:2   time:5395.819435
+payload_len:1355  s->ft_serial17  state:2   time:5395.819499
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial19  state:8   time:5395.819526
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial18  state:2   time:5395.826139
+payload_len:32768  s->ft_serial18  state:2   time:5395.826205
+payload_len:1355  s->ft_serial18  state:2   time:5395.826279
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial20  state:8   time:5395.826304
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial19  state:2   time:5395.833057
+payload_len:32768  s->ft_serial19  state:2   time:5395.833169
+payload_len:1355  s->ft_serial19  state:2   time:5395.833225
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial21  state:8   time:5395.833264
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial20  state:2   time:5395.839859
+payload_len:32768  s->ft_serial20  state:2   time:5395.839885
+payload_len:1355  s->ft_serial20  state:2   time:5395.839934
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial22  state:8   time:5395.839953
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial21  state:2   time:5395.846837
+payload_len:32768  s->ft_serial21  state:2   time:5395.846866
+payload_len:1355  s->ft_serial21  state:2   time:5395.846915
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial23  state:8   time:5395.846940
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial22  state:2   time:5395.854118
+payload_len:32768  s->ft_serial22  state:2   time:5395.854146
+payload_len:1355  s->ft_serial22  state:2   time:5395.854192
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial24  state:8   time:5395.854211
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial23  state:2   time:5395.860868
+payload_len:32768  s->ft_serial23  state:2   time:5395.860896
+payload_len:1355  s->ft_serial23  state:2   time:5395.860971
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial25  state:8   time:5395.860991
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial24  state:2   time:5395.867907
+payload_len:32768  s->ft_serial24  state:2   time:5395.868236
+payload_len:1355  s->ft_serial24  state:2   time:5395.868661
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial26  state:8   time:5395.868749
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial25  state:2   time:5395.875314
+payload_len:32768  s->ft_serial25  state:2   time:5395.875341
+payload_len:1355  s->ft_serial25  state:2   time:5395.875428
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial27  state:8   time:5395.875446
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial26  state:2   time:5395.883214
+payload_len:32768  s->ft_serial26  state:2   time:5395.883247
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial27  state:2   time:5395.890410
+payload_len:32768  s->ft_serial27  state:2   time:5395.890438
+payload_len:1355  s->ft_serial26  state:2   time:5395.890609
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial28  state:8   time:5395.890631
+payload_len:1355  s->ft_serial27  state:2   time:5395.890640
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial29  state:8   time:5395.890649
+In fill buffer len: 24
+recv ack
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial28  state:2   time:5395.897559
+payload_len:32768  s->ft_serial28  state:2   time:5395.897587
+payload_len:1355  s->ft_serial28  state:2   time:5395.897671
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial30  state:8   time:5395.897711
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial29  state:2   time:5395.905762
+payload_len:32768  s->ft_serial29  state:2   time:5395.905792
+payload_len:1355  s->ft_serial29  state:2   time:5395.905982
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial31  state:8   time:5395.906019
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial30  state:2   time:5395.912711
+payload_len:32768  s->ft_serial30  state:2   time:5395.912737
+payload_len:1355  s->ft_serial30  state:2   time:5395.912795
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial32  state:8   time:5395.912828
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial31  state:2   time:5395.919903
+payload_len:32768  s->ft_serial31  state:2   time:5395.919976
+payload_len:1355  s->ft_serial31  state:2   time:5395.920097
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial33  state:8   time:5395.920241
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial32  state:2   time:5395.926713
+payload_len:32768  s->ft_serial32  state:2   time:5395.926744
+payload_len:1355  s->ft_serial32  state:2   time:5395.926908
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial34  state:8   time:5395.926930
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial33  state:2   time:5395.933571
+payload_len:32768  s->ft_serial33  state:2   time:5395.933608
+payload_len:1355  s->ft_serial33  state:2   time:5395.933675
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial35  state:8   time:5395.933712
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial34  state:2   time:5395.940319
+payload_len:32768  s->ft_serial34  state:2   time:5395.940350
+payload_len:1355  s->ft_serial34  state:2   time:5395.940378
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial36  state:8   time:5395.940391
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial35  state:2   time:5395.947119
+payload_len:32768  s->ft_serial35  state:2   time:5395.947184
+payload_len:1355  s->ft_serial35  state:2   time:5395.947234
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial37  state:8   time:5395.947273
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial36  state:2   time:5395.954617
+payload_len:32768  s->ft_serial36  state:2   time:5395.954681
+payload_len:1355  s->ft_serial36  state:2   time:5395.954730
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial38  state:8   time:5395.954767
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial37  state:2   time:5395.961404
+payload_len:32768  s->ft_serial37  state:2   time:5395.961432
+payload_len:1355  s->ft_serial37  state:2   time:5395.961517
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial39  state:8   time:5395.961537
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial38  state:2   time:5395.968580
+payload_len:32768  s->ft_serial38  state:2   time:5395.968794
+payload_len:1355  s->ft_serial38  state:2   time:5395.968905
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial40  state:8   time:5395.968973
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial39  state:2   time:5395.975553
+payload_len:32768  s->ft_serial39  state:2   time:5395.975579
+payload_len:1355  s->ft_serial39  state:2   time:5395.975609
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial41  state:8   time:5395.975639
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial40  state:2   time:5395.982288
+payload_len:32768  s->ft_serial40  state:2   time:5395.982324
+payload_len:1355  s->ft_serial40  state:2   time:5395.982760
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial42  state:8   time:5395.982794
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial41  state:2   time:5395.989010
+payload_len:32768  s->ft_serial41  state:2   time:5395.989034
+payload_len:1355  s->ft_serial41  state:2   time:5395.989078
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial43  state:8   time:5395.989097
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial42  state:2   time:5395.995768
+payload_len:32768  s->ft_serial42  state:2   time:5395.995795
+payload_len:1355  s->ft_serial42  state:2   time:5395.995821
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial44  state:8   time:5395.995834
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial43  state:2   time:5396.003026
+payload_len:32768  s->ft_serial43  state:2   time:5396.003078
+payload_len:1355  s->ft_serial43  state:2   time:5396.003165
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial45  state:8   time:5396.003203
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial44  state:2   time:5396.009762
+payload_len:32768  s->ft_serial44  state:2   time:5396.009787
+payload_len:1355  s->ft_serial44  state:2   time:5396.009830
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial46  state:8   time:5396.009849
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial45  state:2   time:5396.016873
+payload_len:32768  s->ft_serial45  state:2   time:5396.016992
+payload_len:1355  s->ft_serial45  state:2   time:5396.017051
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial47  state:8   time:5396.017090
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial46  state:2   time:5396.023710
+payload_len:32768  s->ft_serial46  state:2   time:5396.023736
+payload_len:1355  s->ft_serial46  state:2   time:5396.023767
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial48  state:8   time:5396.023794
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial47  state:2   time:5396.030393
+payload_len:32768  s->ft_serial47  state:2   time:5396.030422
+payload_len:1355  s->ft_serial47  state:2   time:5396.030472
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial49  state:8   time:5396.030494
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial48  state:2   time:5396.037615
+payload_len:32768  s->ft_serial48  state:2   time:5396.037642
+payload_len:1355  s->ft_serial48  state:2   time:5396.037692
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial50  state:8   time:5396.037711
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial49  state:2   time:5396.044327
+payload_len:32768  s->ft_serial49  state:2   time:5396.044351
+payload_len:1355  s->ft_serial49  state:2   time:5396.044393
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial51  state:8   time:5396.044412
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial50  state:2   time:5396.051241
+payload_len:32768  s->ft_serial50  state:2   time:5396.051433
+payload_len:1355  s->ft_serial50  state:2   time:5396.051669
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial52  state:8   time:5396.051723
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial51  state:2   time:5396.058261
+payload_len:32768  s->ft_serial51  state:2   time:5396.058285
+payload_len:1355  s->ft_serial51  state:2   time:5396.058339
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial53  state:8   time:5396.058358
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial52  state:2   time:5396.065216
+payload_len:32768  s->ft_serial52  state:2   time:5396.065358
+payload_len:1355  s->ft_serial52  state:2   time:5396.066335
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial54  state:8   time:5396.066402
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial53  state:2   time:5396.072118
+payload_len:32768  s->ft_serial53  state:2   time:5396.072147
+payload_len:1355  s->ft_serial53  state:2   time:5396.076036
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial55  state:8   time:5396.076084
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial54  state:2   time:5396.078808
+payload_len:32768  s->ft_serial54  state:2   time:5396.078831
+payload_len:1355  s->ft_serial54  state:2   time:5396.078871
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial56  state:8   time:5396.078891
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial55  state:2   time:5396.087834
+payload_len:32768  s->ft_serial55  state:2   time:5396.087938
+payload_len:1355  s->ft_serial55  state:2   time:5396.087993
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial57  state:8   time:5396.088044
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial56  state:2   time:5396.094636
+payload_len:32768  s->ft_serial56  state:2   time:5396.094662
+payload_len:1355  s->ft_serial56  state:2   time:5396.094709
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial58  state:8   time:5396.094733
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial57  state:2   time:5396.101652
+payload_len:32768  s->ft_serial57  state:2   time:5396.101744
+payload_len:1355  s->ft_serial57  state:2   time:5396.101834
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial59  state:8   time:5396.101883
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial58  state:2   time:5396.108465
+payload_len:32768  s->ft_serial58  state:2   time:5396.108490
+payload_len:1355  s->ft_serial58  state:2   time:5396.108536
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial60  state:8   time:5396.108555
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial59  state:2   time:5396.115167
+payload_len:32768  s->ft_serial59  state:2   time:5396.115191
+payload_len:1355  s->ft_serial59  state:2   time:5396.115235
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial61  state:8   time:5396.115255
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial60  state:2   time:5396.122513
+payload_len:32768  s->ft_serial60  state:2   time:5396.122583
+payload_len:1355  s->ft_serial60  state:2   time:5396.122632
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial62  state:8   time:5396.122670
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial61  state:2   time:5396.129469
+payload_len:32768  s->ft_serial61  state:2   time:5396.129501
+payload_len:1355  s->ft_serial61  state:2   time:5396.129528
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial63  state:8   time:5396.129542
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial62  state:2   time:5396.136888
+payload_len:32768  s->ft_serial62  state:2   time:5396.137311
+payload_len:1355  s->ft_serial62  state:2   time:5396.137404
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial64  state:8   time:5396.137434
+In fill buffer len: 24
+recv ack
+
+migrate_timer tick 64
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial63  state:2   time:5396.144065
+payload_len:32768  s->ft_serial63  state:2   time:5396.144092
+payload_len:1355  s->ft_serial63  state:2   time:5396.144116
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial65  state:8   time:5396.144128
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial64  state:2   time:5396.150853
+payload_len:32768  s->ft_serial64  state:2   time:5396.150887
+payload_len:1355  s->ft_serial64  state:2   time:5396.150913
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial66  state:8   time:5396.150926
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial65  state:2   time:5396.158098
+payload_len:32768  s->ft_serial65  state:2   time:5396.158151
+payload_len:1355  s->ft_serial65  state:2   time:5396.158199
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial67  state:8   time:5396.158215
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial66  state:2   time:5396.165641
+payload_len:32768  s->ft_serial66  state:2   time:5396.165767
+payload_len:1355  s->ft_serial66  state:2   time:5396.165818
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial68  state:8   time:5396.165833
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial67  state:2   time:5396.172496
+payload_len:32768  s->ft_serial67  state:2   time:5396.172524
+payload_len:1355  s->ft_serial67  state:2   time:5396.172569
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial69  state:8   time:5396.172589
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial68  state:2   time:5396.182597
+payload_len:32768  s->ft_serial68  state:2   time:5396.182777
+payload_len:1355  s->ft_serial68  state:2   time:5396.182975
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial70  state:8   time:5396.183022
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial69  state:2   time:5396.189538
+payload_len:32768  s->ft_serial69  state:2   time:5396.189566
+payload_len:1355  s->ft_serial69  state:2   time:5396.189590
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial71  state:8   time:5396.189604
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial70  state:2   time:5396.196385
+payload_len:32768  s->ft_serial70  state:2   time:5396.196409
+payload_len:1355  s->ft_serial70  state:2   time:5396.196468
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial72  state:8   time:5396.196487
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial71  state:2   time:5396.203342
+payload_len:32768  s->ft_serial71  state:2   time:5396.203378
+payload_len:1355  s->ft_serial71  state:2   time:5396.203439
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial73  state:8   time:5396.203461
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial72  state:2   time:5396.210093
+payload_len:32768  s->ft_serial72  state:2   time:5396.210150
+payload_len:1355  s->ft_serial72  state:2   time:5396.210198
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial74  state:8   time:5396.210217
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial73  state:2   time:5396.217112
+payload_len:32768  s->ft_serial73  state:2   time:5396.217266
+payload_len:1355  s->ft_serial73  state:2   time:5396.217352
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial75  state:8   time:5396.217385
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial74  state:2   time:5396.223966
+payload_len:32768  s->ft_serial74  state:2   time:5396.223991
+payload_len:1355  s->ft_serial74  state:2   time:5396.224048
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial76  state:8   time:5396.224066
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial75  state:2   time:5396.230658
+payload_len:32768  s->ft_serial75  state:2   time:5396.230682
+payload_len:1355  s->ft_serial75  state:2   time:5396.230727
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial77  state:8   time:5396.230744
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial76  state:2   time:5396.237821
+payload_len:32768  s->ft_serial76  state:2   time:5396.237929
+payload_len:1355  s->ft_serial76  state:2   time:5396.238145
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial78  state:8   time:5396.238181
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial77  state:2   time:5396.244631
+payload_len:32768  s->ft_serial77  state:2   time:5396.244655
+payload_len:1355  s->ft_serial77  state:2   time:5396.244728
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial79  state:8   time:5396.244748
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial78  state:2   time:5396.251959
+payload_len:32768  s->ft_serial78  state:2   time:5396.252053
+payload_len:1355  s->ft_serial78  state:2   time:5396.252090
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial80  state:8   time:5396.252119
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial79  state:2   time:5396.258719
+payload_len:32768  s->ft_serial79  state:2   time:5396.258742
+payload_len:1355  s->ft_serial79  state:2   time:5396.258781
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial81  state:8   time:5396.258802
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial80  state:2   time:5396.265447
+payload_len:32768  s->ft_serial80  state:2   time:5396.265477
+payload_len:1355  s->ft_serial80  state:2   time:5396.265533
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial82  state:8   time:5396.265554
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial81  state:2   time:5396.272590
+payload_len:32768  s->ft_serial81  state:2   time:5396.272616
+payload_len:1355  s->ft_serial81  state:2   time:5396.272670
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial83  state:8   time:5396.272690
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial82  state:2   time:5396.279392
+payload_len:32768  s->ft_serial82  state:2   time:5396.279414
+payload_len:1355  s->ft_serial82  state:2   time:5396.279464
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial84  state:8   time:5396.279482
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial83  state:2   time:5396.286557
+payload_len:32768  s->ft_serial83  state:2   time:5396.286714
+payload_len:1355  s->ft_serial83  state:2   time:5396.286832
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial85  state:8   time:5396.286888
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial84  state:2   time:5396.293456
+payload_len:32768  s->ft_serial84  state:2   time:5396.293479
+payload_len:1355  s->ft_serial84  state:2   time:5396.293524
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial86  state:8   time:5396.293543
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial85  state:2   time:5396.300802
+payload_len:32768  s->ft_serial85  state:2   time:5396.301039
+payload_len:1355  s->ft_serial85  state:2   time:5396.301149
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial87  state:8   time:5396.301185
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial86  state:2   time:5396.307737
+payload_len:32768  s->ft_serial86  state:2   time:5396.307761
+payload_len:1355  s->ft_serial86  state:2   time:5396.307809
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial88  state:8   time:5396.307829
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial87  state:2   time:5396.314427
+payload_len:32768  s->ft_serial87  state:2   time:5396.314452
+payload_len:1355  s->ft_serial87  state:2   time:5396.314502
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial89  state:8   time:5396.314522
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial88  state:2   time:5396.321675
+payload_len:32768  s->ft_serial88  state:2   time:5396.321723
+payload_len:1355  s->ft_serial88  state:2   time:5396.321751
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial90  state:8   time:5396.321764
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial89  state:2   time:5396.328417
+payload_len:32768  s->ft_serial89  state:2   time:5396.328440
+payload_len:1355  s->ft_serial89  state:2   time:5396.328487
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial91  state:8   time:5396.328507
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 4248
+payload_len:32768  s->ft_serial90  state:2   time:5396.335461
+payload_len:32768  s->ft_serial90  state:2   time:5396.335632
+payload_len:1355  s->ft_serial90  state:2   time:5396.335910
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4248  s->ft_serial92  state:8   time:5396.335949
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 4308
+payload_len:32768  s->ft_serial91  state:2   time:5396.342404
+payload_len:32768  s->ft_serial91  state:2   time:5396.342428
+payload_len:1355  s->ft_serial91  state:2   time:5396.342463
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4308  s->ft_serial93  state:8   time:5396.342490
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial92  state:2   time:5396.349197
+payload_len:32768  s->ft_serial92  state:2   time:5396.349238
+payload_len:1355  s->ft_serial92  state:2   time:5396.349626
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial94  state:8   time:5396.349684
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial93  state:2   time:5396.355913
+payload_len:32768  s->ft_serial93  state:2   time:5396.355938
+payload_len:1355  s->ft_serial93  state:2   time:5396.355986
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial95  state:8   time:5396.356033
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial94  state:2   time:5396.362733
+payload_len:32768  s->ft_serial94  state:2   time:5396.362775
+payload_len:1355  s->ft_serial94  state:2   time:5396.362848
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial96  state:8   time:5396.362869
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial95  state:2   time:5396.370136
+payload_len:32768  s->ft_serial95  state:2   time:5396.370252
+payload_len:1355  s->ft_serial95  state:2   time:5396.370397
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial97  state:8   time:5396.370436
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial96  state:2   time:5396.376975
+payload_len:32768  s->ft_serial96  state:2   time:5396.376999
+payload_len:1355  s->ft_serial96  state:2   time:5396.377029
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial98  state:8   time:5396.377050
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial97  state:2   time:5396.383916
+payload_len:32768  s->ft_serial97  state:2   time:5396.383960
+payload_len:1355  s->ft_serial97  state:2   time:5396.384035
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial99  state:8   time:5396.384064
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial98  state:2   time:5396.390625
+payload_len:32768  s->ft_serial98  state:2   time:5396.390651
+payload_len:1355  s->ft_serial98  state:2   time:5396.392087
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial100  state:8   time:5396.392110
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial99  state:2   time:5396.397344
+payload_len:32768  s->ft_serial99  state:2   time:5396.397371
+payload_len:1355  s->ft_serial99  state:2   time:5396.397401
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial101  state:8   time:5396.397421
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial100  state:2   time:5396.404721
+payload_len:32768  s->ft_serial100  state:2   time:5396.404750
+payload_len:1355  s->ft_serial100  state:2   time:5396.407149
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial102  state:8   time:5396.407201
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial101  state:2   time:5396.411417
+payload_len:32768  s->ft_serial101  state:2   time:5396.411445
+payload_len:1355  s->ft_serial101  state:2   time:5396.411499
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial103  state:8   time:5396.411520
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial102  state:2   time:5396.418454
+payload_len:32768  s->ft_serial102  state:2   time:5396.418563
+payload_len:1355  s->ft_serial102  state:2   time:5396.418650
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial104  state:8   time:5396.418716
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial103  state:2   time:5396.425297
+payload_len:32768  s->ft_serial103  state:2   time:5396.425329
+payload_len:1355  s->ft_serial103  state:2   time:5396.425381
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial105  state:8   time:5396.425401
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial104  state:2   time:5396.432103
+payload_len:32768  s->ft_serial104  state:2   time:5396.432146
+payload_len:1355  s->ft_serial104  state:2   time:5396.433057
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial106  state:8   time:5396.433138
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial105  state:2   time:5396.438885
+payload_len:32768  s->ft_serial105  state:2   time:5396.438912
+payload_len:1355  s->ft_serial105  state:2   time:5396.438963
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial107  state:8   time:5396.438983
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial106  state:2   time:5396.445660
+payload_len:32768  s->ft_serial106  state:2   time:5396.445690
+payload_len:1355  s->ft_serial106  state:2   time:5396.445741
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial108  state:8   time:5396.445759
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial107  state:2   time:5396.454455
+payload_len:32768  s->ft_serial107  state:2   time:5396.454541
+payload_len:1355  s->ft_serial107  state:2   time:5396.454597
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial109  state:8   time:5396.454637
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial108  state:2   time:5396.461327
+payload_len:32768  s->ft_serial108  state:2   time:5396.461386
+payload_len:1355  s->ft_serial108  state:2   time:5396.461441
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial110  state:8   time:5396.461480
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial109  state:2   time:5396.468613
+payload_len:32768  s->ft_serial109  state:2   time:5396.468843
+payload_len:1355  s->ft_serial109  state:2   time:5396.468934
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial111  state:8   time:5396.468986
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial110  state:2   time:5396.475648
+payload_len:32768  s->ft_serial110  state:2   time:5396.475710
+payload_len:1355  s->ft_serial110  state:2   time:5396.475768
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial112  state:8   time:5396.475806
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial111  state:2   time:5396.484932
+payload_len:32768  s->ft_serial111  state:2   time:5396.485201
+payload_len:1355  s->ft_serial111  state:2   time:5396.485345
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial113  state:8   time:5396.485399
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial112  state:2   time:5396.492339
+payload_len:32768  s->ft_serial112  state:2   time:5396.492642
+payload_len:1355  s->ft_serial112  state:2   time:5396.492754
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial114  state:8   time:5396.492793
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial113  state:2   time:5396.499482
+payload_len:32768  s->ft_serial113  state:2   time:5396.499546
+payload_len:1355  s->ft_serial113  state:2   time:5396.499604
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial115  state:8   time:5396.499625
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial114  state:2   time:5396.506373
+payload_len:32768  s->ft_serial114  state:2   time:5396.506412
+payload_len:1355  s->ft_serial114  state:2   time:5396.506468
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial116  state:8   time:5396.506489
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial115  state:2   time:5396.513967
+payload_len:32768  s->ft_serial115  state:2   time:5396.513998
+payload_len:1355  s->ft_serial115  state:2   time:5396.514054
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial117  state:8   time:5396.514074
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial116  state:2   time:5396.520763
+payload_len:32768  s->ft_serial116  state:2   time:5396.520793
+payload_len:1355  s->ft_serial116  state:2   time:5396.520819
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial118  state:8   time:5396.520835
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial117  state:2   time:5396.530992
+payload_len:32768  s->ft_serial117  state:2   time:5396.531169
+payload_len:1355  s->ft_serial117  state:2   time:5396.531309
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial119  state:8   time:5396.531460
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial118  state:2   time:5396.539099
+payload_len:32768  s->ft_serial118  state:2   time:5396.539142
+payload_len:1355  s->ft_serial118  state:2   time:5396.539203
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial120  state:8   time:5396.539222
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial119  state:2   time:5396.545843
+payload_len:32768  s->ft_serial119  state:2   time:5396.545874
+payload_len:1355  s->ft_serial119  state:2   time:5396.545926
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial121  state:8   time:5396.545948
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial120  state:2   time:5396.553197
+payload_len:32768  s->ft_serial120  state:2   time:5396.553268
+payload_len:1355  s->ft_serial120  state:2   time:5396.553364
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial122  state:8   time:5396.553402
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial121  state:2   time:5396.559954
+payload_len:32768  s->ft_serial121  state:2   time:5396.559981
+payload_len:1355  s->ft_serial121  state:2   time:5396.560051
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial123  state:8   time:5396.560075
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial122  state:2   time:5396.566912
+payload_len:32768  s->ft_serial122  state:2   time:5396.566954
+payload_len:1355  s->ft_serial122  state:2   time:5396.567017
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial124  state:8   time:5396.567043
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial123  state:2   time:5396.573804
+payload_len:32768  s->ft_serial123  state:2   time:5396.573840
+payload_len:1355  s->ft_serial123  state:2   time:5396.573896
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial125  state:8   time:5396.573917
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial124  state:2   time:5396.580547
+payload_len:32768  s->ft_serial124  state:2   time:5396.580573
+payload_len:1355  s->ft_serial124  state:2   time:5396.580626
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial126  state:8   time:5396.580656
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial125  state:2   time:5396.588747
+payload_len:32768  s->ft_serial125  state:2   time:5396.588771
+payload_len:1355  s->ft_serial125  state:2   time:5396.588816
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial127  state:8   time:5396.588834
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial126  state:2   time:5396.595463
+payload_len:32768  s->ft_serial126  state:2   time:5396.595488
+payload_len:1355  s->ft_serial126  state:2   time:5396.595534
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial128  state:8   time:5396.595552
+In fill buffer len: 24
+recv ack
+
+migrate_timer tick 128
+ram_fd:21  conn_index:0
+ram_len: 4184
+payload_len:32768  s->ft_serial127  state:2   time:5396.604374
+payload_len:32768  s->ft_serial127  state:2   time:5396.604408
+payload_len:1355  s->ft_serial127  state:2   time:5396.604466
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4184  s->ft_serial129  state:8   time:5396.604486
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 4184
+payload_len:32768  s->ft_serial128  state:2   time:5396.611523
+payload_len:32768  s->ft_serial128  state:2   time:5396.611551
+payload_len:1355  s->ft_serial128  state:2   time:5396.611603
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4184  s->ft_serial130  state:8   time:5396.611621
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial129  state:2   time:5396.618850
+payload_len:32768  s->ft_serial129  state:2   time:5396.618944
+payload_len:1355  s->ft_serial129  state:2   time:5396.619157
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial131  state:8   time:5396.619198
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial130  state:2   time:5396.625661
+payload_len:32768  s->ft_serial130  state:2   time:5396.625696
+payload_len:1355  s->ft_serial130  state:2   time:5396.625743
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial132  state:8   time:5396.625761
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial131  state:2   time:5396.632493
+payload_len:32768  s->ft_serial131  state:2   time:5396.632532
+payload_len:1355  s->ft_serial131  state:2   time:5396.632594
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial133  state:8   time:5396.632615
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial132  state:2   time:5396.639207
+payload_len:32768  s->ft_serial132  state:2   time:5396.639233
+payload_len:1355  s->ft_serial132  state:2   time:5396.639282
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial134  state:8   time:5396.639301
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial133  state:2   time:5396.645925
+payload_len:32768  s->ft_serial133  state:2   time:5396.645949
+payload_len:1355  s->ft_serial133  state:2   time:5396.645998
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial135  state:8   time:5396.646017
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial134  state:2   time:5396.653293
+payload_len:32768  s->ft_serial134  state:2   time:5396.653364
+payload_len:1355  s->ft_serial134  state:2   time:5396.653490
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial136  state:8   time:5396.653525
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial135  state:2   time:5396.660109
+payload_len:32768  s->ft_serial135  state:2   time:5396.660144
+payload_len:1355  s->ft_serial135  state:2   time:5396.660885
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial137  state:8   time:5396.660911
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial136  state:2   time:5396.666946
+payload_len:32768  s->ft_serial136  state:2   time:5396.666983
+payload_len:1355  s->ft_serial136  state:2   time:5396.667022
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial138  state:8   time:5396.667049
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial137  state:2   time:5396.673695
+payload_len:32768  s->ft_serial137  state:2   time:5396.673720
+payload_len:1355  s->ft_serial137  state:2   time:5396.673768
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial139  state:8   time:5396.673790
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial138  state:2   time:5396.680411
+payload_len:32768  s->ft_serial138  state:2   time:5396.680482
+payload_len:1355  s->ft_serial138  state:2   time:5396.680543
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial140  state:8   time:5396.680564
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial139  state:2   time:5396.687757
+payload_len:32768  s->ft_serial139  state:2   time:5396.687832
+payload_len:1355  s->ft_serial139  state:2   time:5396.687936
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial141  state:8   time:5396.687959
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial140  state:2   time:5396.694616
+payload_len:32768  s->ft_serial140  state:2   time:5396.694681
+payload_len:1355  s->ft_serial140  state:2   time:5396.694741
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial142  state:8   time:5396.694763
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial141  state:2   time:5396.701668
+payload_len:32768  s->ft_serial141  state:2   time:5396.701886
+payload_len:1355  s->ft_serial141  state:2   time:5396.702021
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial143  state:8   time:5396.702069
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial142  state:2   time:5396.708654
+payload_len:32768  s->ft_serial142  state:2   time:5396.708731
+payload_len:1355  s->ft_serial142  state:2   time:5396.708789
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial144  state:8   time:5396.708812
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial143  state:2   time:5396.715549
+payload_len:32768  s->ft_serial143  state:2   time:5396.715663
+payload_len:1355  s->ft_serial143  state:2   time:5396.716414
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial145  state:8   time:5396.716509
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial144  state:2   time:5396.722447
+payload_len:32768  s->ft_serial144  state:2   time:5396.722513
+payload_len:1355  s->ft_serial144  state:2   time:5396.722563
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial146  state:8   time:5396.722600
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial145  state:2   time:5396.729357
+payload_len:32768  s->ft_serial145  state:2   time:5396.729422
+payload_len:1355  s->ft_serial145  state:2   time:5396.729479
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial147  state:8   time:5396.729500
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial146  state:2   time:5396.736669
+payload_len:32768  s->ft_serial146  state:2   time:5396.736825
+payload_len:1355  s->ft_serial146  state:2   time:5396.736931
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial148  state:8   time:5396.736989
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial147  state:2   time:5396.743626
+payload_len:32768  s->ft_serial147  state:2   time:5396.743688
+payload_len:1355  s->ft_serial147  state:2   time:5396.743746
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial149  state:8   time:5396.743774
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial148  state:2   time:5396.750522
+payload_len:32768  s->ft_serial148  state:2   time:5396.750631
+payload_len:1355  s->ft_serial148  state:2   time:5396.750733
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial150  state:8   time:5396.750785
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial149  state:2   time:5396.757377
+payload_len:32768  s->ft_serial149  state:2   time:5396.757443
+payload_len:1355  s->ft_serial149  state:2   time:5396.757502
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial151  state:8   time:5396.757525
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial150  state:2   time:5396.764177
+payload_len:32768  s->ft_serial150  state:2   time:5396.764246
+payload_len:1355  s->ft_serial150  state:2   time:5396.764302
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial152  state:8   time:5396.764326
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial151  state:2   time:5396.771485
+payload_len:32768  s->ft_serial151  state:2   time:5396.771557
+payload_len:1355  s->ft_serial151  state:2   time:5396.771618
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial153  state:8   time:5396.771644
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial152  state:2   time:5396.778266
+payload_len:32768  s->ft_serial152  state:2   time:5396.778338
+payload_len:1355  s->ft_serial152  state:2   time:5396.778395
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial154  state:8   time:5396.778420
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial153  state:2   time:5396.785364
+payload_len:32768  s->ft_serial153  state:2   time:5396.785526
+payload_len:1355  s->ft_serial153  state:2   time:5396.785640
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial155  state:8   time:5396.785682
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial154  state:2   time:5396.792284
+payload_len:32768  s->ft_serial154  state:2   time:5396.792357
+payload_len:1355  s->ft_serial154  state:2   time:5396.792413
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial156  state:8   time:5396.792436
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial155  state:2   time:5396.799167
+payload_len:32768  s->ft_serial155  state:2   time:5396.799258
+payload_len:1355  s->ft_serial155  state:2   time:5396.799320
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial157  state:8   time:5396.799348
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial156  state:2   time:5396.806021
+payload_len:32768  s->ft_serial156  state:2   time:5396.806075
+payload_len:1355  s->ft_serial156  state:2   time:5396.806122
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial158  state:8   time:5396.806142
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial157  state:2   time:5396.812915
+payload_len:32768  s->ft_serial157  state:2   time:5396.812984
+payload_len:1355  s->ft_serial157  state:2   time:5396.813035
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial159  state:8   time:5396.813073
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial158  state:2   time:5396.820485
+payload_len:32768  s->ft_serial158  state:2   time:5396.820618
+payload_len:1355  s->ft_serial158  state:2   time:5396.820682
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial160  state:8   time:5396.820747
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial159  state:2   time:5396.827441
+payload_len:32768  s->ft_serial159  state:2   time:5396.827477
+payload_len:1355  s->ft_serial159  state:2   time:5396.827531
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial161  state:8   time:5396.827550
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial160  state:2   time:5396.834181
+payload_len:32768  s->ft_serial160  state:2   time:5396.834255
+payload_len:1355  s->ft_serial160  state:2   time:5396.834286
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial162  state:8   time:5396.834321
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial161  state:2   time:5396.840933
+payload_len:32768  s->ft_serial161  state:2   time:5396.840999
+payload_len:1355  s->ft_serial161  state:2   time:5396.841052
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial163  state:8   time:5396.841074
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial162  state:2   time:5396.847701
+payload_len:32768  s->ft_serial162  state:2   time:5396.847769
+payload_len:1355  s->ft_serial162  state:2   time:5396.847903
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial164  state:8   time:5396.847926
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial163  state:2   time:5396.854847
+payload_len:32768  s->ft_serial163  state:2   time:5396.854918
+payload_len:1355  s->ft_serial163  state:2   time:5396.854963
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial165  state:8   time:5396.854982
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial164  state:2   time:5396.861582
+payload_len:32768  s->ft_serial164  state:2   time:5396.861608
+payload_len:1355  s->ft_serial164  state:2   time:5396.861648
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial166  state:8   time:5396.861668
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial165  state:2   time:5396.869125
+payload_len:32768  s->ft_serial165  state:2   time:5396.869213
+payload_len:1355  s->ft_serial165  state:2   time:5396.869297
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial167  state:8   time:5396.869343
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial166  state:2   time:5396.876033
+payload_len:32768  s->ft_serial166  state:2   time:5396.876108
+payload_len:1355  s->ft_serial166  state:2   time:5396.876188
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial168  state:8   time:5396.876212
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial167  state:2   time:5396.882892
+payload_len:32768  s->ft_serial167  state:2   time:5396.882989
+payload_len:1355  s->ft_serial167  state:2   time:5396.883053
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial169  state:8   time:5396.883082
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial168  state:2   time:5396.889721
+payload_len:32768  s->ft_serial168  state:2   time:5396.889789
+payload_len:1355  s->ft_serial168  state:2   time:5396.889844
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial170  state:8   time:5396.889866
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial169  state:2   time:5396.896630
+payload_len:32768  s->ft_serial169  state:2   time:5396.896658
+payload_len:1355  s->ft_serial169  state:2   time:5396.896704
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial171  state:8   time:5396.896723
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial170  state:2   time:5396.903967
+payload_len:32768  s->ft_serial170  state:2   time:5396.904086
+payload_len:1355  s->ft_serial170  state:2   time:5396.904155
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial172  state:8   time:5396.904177
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial171  state:2   time:5396.910792
+payload_len:32768  s->ft_serial171  state:2   time:5396.910819
+payload_len:1355  s->ft_serial171  state:2   time:5396.910869
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial173  state:8   time:5396.910888
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial172  state:2   time:5396.917815
+payload_len:32768  s->ft_serial172  state:2   time:5396.918021
+payload_len:1355  s->ft_serial172  state:2   time:5396.918119
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial174  state:8   time:5396.918158
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial173  state:2   time:5396.924742
+payload_len:32768  s->ft_serial173  state:2   time:5396.924807
+payload_len:1355  s->ft_serial173  state:2   time:5396.924861
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial175  state:8   time:5396.924883
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial174  state:2   time:5396.931495
+payload_len:32768  s->ft_serial174  state:2   time:5396.931559
+payload_len:1355  s->ft_serial174  state:2   time:5396.933621
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial176  state:8   time:5396.933648
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial175  state:2   time:5396.938894
+payload_len:32768  s->ft_serial175  state:2   time:5396.939509
+payload_len:1355  s->ft_serial175  state:2   time:5396.940025
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial177  state:8   time:5396.940075
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial176  state:2   time:5396.946373
+payload_len:32768  s->ft_serial176  state:2   time:5396.946398
+payload_len:1355  s->ft_serial176  state:2   time:5396.946426
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial178  state:8   time:5396.946450
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial177  state:2   time:5396.953610
+payload_len:32768  s->ft_serial177  state:2   time:5396.953745
+payload_len:1355  s->ft_serial177  state:2   time:5396.955028
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial179  state:8   time:5396.955053
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial178  state:2   time:5396.960451
+payload_len:32768  s->ft_serial178  state:2   time:5396.960519
+payload_len:1355  s->ft_serial178  state:2   time:5396.960573
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial180  state:8   time:5396.960597
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial179  state:2   time:5396.967487
+payload_len:32768  s->ft_serial179  state:2   time:5396.967885
+payload_len:1355  s->ft_serial179  state:2   time:5396.968878
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial181  state:8   time:5396.968924
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial180  state:2   time:5396.975379
+payload_len:32768  s->ft_serial180  state:2   time:5396.975614
+payload_len:1355  s->ft_serial180  state:2   time:5396.975664
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial182  state:8   time:5396.975703
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial181  state:2   time:5396.983135
+payload_len:32768  s->ft_serial181  state:2   time:5396.987574
+payload_len:1355  s->ft_serial181  state:2   time:5396.987733
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial183  state:8   time:5396.987760
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial182  state:2   time:5396.994360
+payload_len:32768  s->ft_serial182  state:2   time:5396.994630
+payload_len:1355  s->ft_serial182  state:2   time:5396.994803
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial184  state:8   time:5396.994825
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial183  state:2   time:5397.004281
+payload_len:32768  s->ft_serial183  state:2   time:5397.004611
+payload_len:1355  s->ft_serial183  state:2   time:5397.004771
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial185  state:8   time:5397.005466
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial184  state:2   time:5397.011390
+payload_len:32768  s->ft_serial184  state:2   time:5397.011416
+payload_len:1355  s->ft_serial184  state:2   time:5397.011467
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial186  state:8   time:5397.011486
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial185  state:2   time:5397.019736
+payload_len:32768  s->ft_serial185  state:2   time:5397.020219
+payload_len:1355  s->ft_serial185  state:2   time:5397.021047
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial187  state:8   time:5397.021072
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial186  state:2   time:5397.027866
+payload_len:32768  s->ft_serial186  state:2   time:5397.027894
+payload_len:1355  s->ft_serial186  state:2   time:5397.027941
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial188  state:8   time:5397.027960
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial187  state:2   time:5397.036500
+payload_len:32768  s->ft_serial187  state:2   time:5397.036581
+payload_len:1355  s->ft_serial187  state:2   time:5397.036750
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial189  state:8   time:5397.036783
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial188  state:2   time:5397.043269
+payload_len:32768  s->ft_serial188  state:2   time:5397.043336
+payload_len:1355  s->ft_serial188  state:2   time:5397.043446
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial190  state:8   time:5397.043790
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial189  state:2   time:5397.054795
+payload_len:32768  s->ft_serial189  state:2   time:5397.054822
+payload_len:1355  s->ft_serial189  state:2   time:5397.054847
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial191  state:8   time:5397.054861
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 4244
+payload_len:32768  s->ft_serial190  state:2   time:5397.063213
+payload_len:32768  s->ft_serial190  state:2   time:5397.063243
+payload_len:1355  s->ft_serial190  state:2   time:5397.063277
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4244  s->ft_serial192  state:8   time:5397.063302
+In fill buffer len: 24
+recv ack
+
+migrate_timer tick 192
+ram_fd:21  conn_index:0
+ram_len: 4184
+payload_len:32768  s->ft_serial191  state:2   time:5397.070458
+payload_len:32768  s->ft_serial191  state:2   time:5397.070544
+payload_len:1355  s->ft_serial191  state:2   time:5397.070805
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4184  s->ft_serial193  state:8   time:5397.071061
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial192  state:2   time:5397.077311
+payload_len:32768  s->ft_serial192  state:2   time:5397.077376
+payload_len:1355  s->ft_serial192  state:2   time:5397.077639
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial194  state:8   time:5397.077680
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial193  state:2   time:5397.085153
+payload_len:32768  s->ft_serial193  state:2   time:5397.085260
+payload_len:1355  s->ft_serial193  state:2   time:5397.088016
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial195  state:8   time:5397.088046
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial194  state:2   time:5397.092022
+payload_len:32768  s->ft_serial194  state:2   time:5397.092082
+payload_len:1355  s->ft_serial194  state:2   time:5397.092117
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial196  state:8   time:5397.092130
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial195  state:2   time:5397.098789
+payload_len:32768  s->ft_serial195  state:2   time:5397.098885
+payload_len:1355  s->ft_serial195  state:2   time:5397.099922
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial197  state:8   time:5397.099961
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial196  state:2   time:5397.105660
+payload_len:32768  s->ft_serial196  state:2   time:5397.105710
+payload_len:1355  s->ft_serial196  state:2   time:5397.106372
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial198  state:8   time:5397.106393
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial197  state:2   time:5397.112968
+payload_len:32768  s->ft_serial197  state:2   time:5397.113033
+payload_len:1355  s->ft_serial197  state:2   time:5397.113090
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial199  state:8   time:5397.113113
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial198  state:2   time:5397.120364
+payload_len:32768  s->ft_serial198  state:2   time:5397.120486
+payload_len:1355  s->ft_serial198  state:2   time:5397.120545
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial200  state:8   time:5397.120579
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial199  state:2   time:5397.127185
+payload_len:32768  s->ft_serial199  state:2   time:5397.127239
+payload_len:1355  s->ft_serial199  state:2   time:5397.127280
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial201  state:8   time:5397.127298
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial200  state:2   time:5397.134042
+payload_len:32768  s->ft_serial200  state:2   time:5397.134341
+payload_len:1355  s->ft_serial200  state:2   time:5397.134459
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial202  state:8   time:5397.134497
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial201  state:2   time:5397.141177
+payload_len:32768  s->ft_serial201  state:2   time:5397.141206
+payload_len:1355  s->ft_serial201  state:2   time:5397.141252
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial203  state:8   time:5397.141270
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial202  state:2   time:5397.147895
+payload_len:32768  s->ft_serial202  state:2   time:5397.147921
+payload_len:1355  s->ft_serial202  state:2   time:5397.147969
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial204  state:8   time:5397.147988
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial203  state:2   time:5397.156215
+payload_len:32768  s->ft_serial203  state:2   time:5397.156247
+payload_len:1355  s->ft_serial203  state:2   time:5397.156301
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial205  state:8   time:5397.156319
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial204  state:2   time:5397.162939
+payload_len:32768  s->ft_serial204  state:2   time:5397.163017
+payload_len:1355  s->ft_serial204  state:2   time:5397.163077
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial206  state:8   time:5397.163103
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial205  state:2   time:5397.169934
+payload_len:32768  s->ft_serial205  state:2   time:5397.170133
+payload_len:1355  s->ft_serial205  state:2   time:5397.170260
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial207  state:8   time:5397.170302
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial206  state:2   time:5397.176897
+payload_len:32768  s->ft_serial206  state:2   time:5397.176971
+payload_len:1355  s->ft_serial206  state:2   time:5397.177034
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial208  state:8   time:5397.177058
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial207  state:2   time:5397.183841
+payload_len:32768  s->ft_serial207  state:2   time:5397.184162
+payload_len:1355  s->ft_serial207  state:2   time:5397.184294
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial209  state:8   time:5397.184342
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial208  state:2   time:5397.191354
+payload_len:32768  s->ft_serial208  state:2   time:5397.191397
+payload_len:1355  s->ft_serial208  state:2   time:5397.191427
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial210  state:8   time:5397.191451
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial209  state:2   time:5397.198097
+payload_len:32768  s->ft_serial209  state:2   time:5397.198121
+payload_len:1355  s->ft_serial209  state:2   time:5397.199888
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial211  state:8   time:5397.199912
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial210  state:2   time:5397.204976
+payload_len:32768  s->ft_serial210  state:2   time:5397.205048
+payload_len:1355  s->ft_serial210  state:2   time:5397.205235
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial212  state:8   time:5397.205256
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial211  state:2   time:5397.211729
+payload_len:32768  s->ft_serial211  state:2   time:5397.211754
+payload_len:1355  s->ft_serial211  state:2   time:5397.211790
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial213  state:8   time:5397.211808
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial212  state:2   time:5397.218713
+payload_len:32768  s->ft_serial212  state:2   time:5397.218793
+payload_len:1355  s->ft_serial212  state:2   time:5397.218935
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial214  state:8   time:5397.218968
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial213  state:2   time:5397.225919
+payload_len:32768  s->ft_serial213  state:2   time:5397.225952
+payload_len:1355  s->ft_serial213  state:2   time:5397.226005
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial215  state:8   time:5397.226025
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial214  state:2   time:5397.232693
+payload_len:32768  s->ft_serial214  state:2   time:5397.232727
+payload_len:1355  s->ft_serial214  state:2   time:5397.232784
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial216  state:8   time:5397.232804
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial215  state:2   time:5397.239448
+payload_len:32768  s->ft_serial215  state:2   time:5397.239473
+payload_len:1355  s->ft_serial215  state:2   time:5397.239517
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial217  state:8   time:5397.239536
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial216  state:2   time:5397.246107
+payload_len:32768  s->ft_serial216  state:2   time:5397.246132
+payload_len:1355  s->ft_serial216  state:2   time:5397.246159
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial218  state:8   time:5397.246182
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial217  state:2   time:5397.253355
+payload_len:32768  s->ft_serial217  state:2   time:5397.253429
+payload_len:1355  s->ft_serial217  state:2   time:5397.253564
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial219  state:8   time:5397.253603
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial218  state:2   time:5397.260099
+payload_len:32768  s->ft_serial218  state:2   time:5397.260124
+payload_len:1355  s->ft_serial218  state:2   time:5397.260165
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial220  state:8   time:5397.260182
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial219  state:2   time:5397.266869
+payload_len:32768  s->ft_serial219  state:2   time:5397.266904
+payload_len:1355  s->ft_serial219  state:2   time:5397.266964
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial221  state:8   time:5397.266984
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial220  state:2   time:5397.273572
+payload_len:32768  s->ft_serial220  state:2   time:5397.273598
+payload_len:1355  s->ft_serial220  state:2   time:5397.273626
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial222  state:8   time:5397.273648
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial221  state:2   time:5397.282725
+payload_len:32768  s->ft_serial221  state:2   time:5397.282778
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial222  state:2   time:5397.289484
+payload_len:32768  s->ft_serial222  state:2   time:5397.289511
+payload_len:1355  s->ft_serial222  state:2   time:5397.289745
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial224  state:8   time:5397.289772
+payload_len:1355  s->ft_serial221  state:2   time:5397.289781
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial223  state:8   time:5397.289791
+In fill buffer len: 24
+recv ack
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial223  state:2   time:5397.298337
+payload_len:32768  s->ft_serial223  state:2   time:5397.298378
+payload_len:1355  s->ft_serial223  state:2   time:5397.298436
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial225  state:8   time:5397.299468
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial224  state:2   time:5397.306744
+payload_len:32768  s->ft_serial224  state:2   time:5397.306781
+payload_len:1355  s->ft_serial224  state:2   time:5397.306841
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial226  state:8   time:5397.306884
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial225  state:2   time:5397.315448
+payload_len:32768  s->ft_serial225  state:2   time:5397.315498
+payload_len:1355  s->ft_serial225  state:2   time:5397.315600
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial227  state:8   time:5397.315621
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial226  state:2   time:5397.323921
+payload_len:32768  s->ft_serial226  state:2   time:5397.323955
+payload_len:1355  s->ft_serial226  state:2   time:5397.324030
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial228  state:8   time:5397.324050
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial227  state:2   time:5397.330630
+payload_len:32768  s->ft_serial227  state:2   time:5397.330655
+payload_len:1355  s->ft_serial227  state:2   time:5397.330692
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial229  state:8   time:5397.330710
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial228  state:2   time:5397.337822
+payload_len:32768  s->ft_serial228  state:2   time:5397.337848
+payload_len:1355  s->ft_serial228  state:2   time:5397.337900
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial230  state:8   time:5397.337917
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 4184
+payload_len:32768  s->ft_serial229  state:2   time:5397.344507
+payload_len:32768  s->ft_serial229  state:2   time:5397.344531
+payload_len:1355  s->ft_serial229  state:2   time:5397.344611
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4184  s->ft_serial231  state:8   time:5397.344634
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 4184
+payload_len:32768  s->ft_serial230  state:2   time:5397.351301
+payload_len:32768  s->ft_serial230  state:2   time:5397.351413
+payload_len:1355  s->ft_serial230  state:2   time:5397.351531
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4184  s->ft_serial232  state:8   time:5397.351588
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial231  state:2   time:5397.358122
+payload_len:32768  s->ft_serial231  state:2   time:5397.358146
+payload_len:1355  s->ft_serial231  state:2   time:5397.358192
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial233  state:8   time:5397.358210
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial232  state:2   time:5397.364825
+payload_len:32768  s->ft_serial232  state:2   time:5397.364860
+payload_len:1355  s->ft_serial232  state:2   time:5397.366337
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial234  state:8   time:5397.366365
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial233  state:2   time:5397.371656
+payload_len:32768  s->ft_serial233  state:2   time:5397.371683
+payload_len:1355  s->ft_serial233  state:2   time:5397.371728
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial235  state:8   time:5397.371747
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial234  state:2   time:5397.378350
+payload_len:32768  s->ft_serial234  state:2   time:5397.378374
+payload_len:1355  s->ft_serial234  state:2   time:5397.378426
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial236  state:8   time:5397.378443
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial235  state:2   time:5397.385308
+payload_len:32768  s->ft_serial235  state:2   time:5397.385371
+payload_len:1355  s->ft_serial235  state:2   time:5397.385531
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial237  state:8   time:5397.385564
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial236  state:2   time:5397.392114
+payload_len:32768  s->ft_serial236  state:2   time:5397.392150
+payload_len:1355  s->ft_serial236  state:2   time:5397.392288
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial238  state:8   time:5397.392312
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial237  state:2   time:5397.398822
+payload_len:32768  s->ft_serial237  state:2   time:5397.398887
+payload_len:1355  s->ft_serial237  state:2   time:5397.399771
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial239  state:8   time:5397.399809
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial238  state:2   time:5397.405608
+payload_len:32768  s->ft_serial238  state:2   time:5397.405632
+payload_len:1355  s->ft_serial238  state:2   time:5397.405693
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial240  state:8   time:5397.405713
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial239  state:2   time:5397.412325
+payload_len:32768  s->ft_serial239  state:2   time:5397.412353
+payload_len:1355  s->ft_serial239  state:2   time:5397.412440
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial241  state:8   time:5397.412460
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial240  state:2   time:5397.419155
+payload_len:32768  s->ft_serial240  state:2   time:5397.419283
+payload_len:1355  s->ft_serial240  state:2   time:5397.419433
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial242  state:8   time:5397.419474
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial241  state:2   time:5397.426021
+payload_len:32768  s->ft_serial241  state:2   time:5397.426045
+payload_len:1355  s->ft_serial241  state:2   time:5397.426094
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial243  state:8   time:5397.426113
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial242  state:2   time:5397.432797
+payload_len:32768  s->ft_serial242  state:2   time:5397.432849
+payload_len:1355  s->ft_serial242  state:2   time:5397.433206
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial244  state:8   time:5397.433236
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial243  state:2   time:5397.439568
+payload_len:32768  s->ft_serial243  state:2   time:5397.439592
+payload_len:1355  s->ft_serial243  state:2   time:5397.439636
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial245  state:8   time:5397.439656
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial244  state:2   time:5397.446274
+payload_len:32768  s->ft_serial244  state:2   time:5397.446300
+payload_len:1355  s->ft_serial244  state:2   time:5397.446342
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial246  state:8   time:5397.446361
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial245  state:2   time:5397.453540
+payload_len:32768  s->ft_serial245  state:2   time:5397.453627
+payload_len:1355  s->ft_serial245  state:2   time:5397.453828
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial247  state:8   time:5397.453851
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial246  state:2   time:5397.460337
+payload_len:32768  s->ft_serial246  state:2   time:5397.460364
+payload_len:1355  s->ft_serial246  state:2   time:5397.460410
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial248  state:8   time:5397.460429
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial247  state:2   time:5397.467132
+payload_len:32768  s->ft_serial247  state:2   time:5397.467168
+payload_len:1355  s->ft_serial247  state:2   time:5397.467228
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial249  state:8   time:5397.467250
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial248  state:2   time:5397.473827
+payload_len:32768  s->ft_serial248  state:2   time:5397.473853
+payload_len:1355  s->ft_serial248  state:2   time:5397.473900
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial250  state:8   time:5397.473919
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial249  state:2   time:5397.480529
+payload_len:32768  s->ft_serial249  state:2   time:5397.480556
+payload_len:1355  s->ft_serial249  state:2   time:5397.480604
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial251  state:8   time:5397.480623
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial250  state:2   time:5397.487624
+payload_len:32768  s->ft_serial250  state:2   time:5397.487648
+payload_len:1355  s->ft_serial250  state:2   time:5397.487719
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial252  state:8   time:5397.487739
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial251  state:2   time:5397.494337
+payload_len:32768  s->ft_serial251  state:2   time:5397.494362
+payload_len:1355  s->ft_serial251  state:2   time:5397.494407
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial253  state:8   time:5397.494426
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial252  state:2   time:5397.501305
+payload_len:32768  s->ft_serial252  state:2   time:5397.501409
+payload_len:1355  s->ft_serial252  state:2   time:5397.501509
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial254  state:8   time:5397.501574
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial253  state:2   time:5397.508124
+payload_len:32768  s->ft_serial253  state:2   time:5397.508150
+payload_len:1355  s->ft_serial253  state:2   time:5397.508202
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial255  state:8   time:5397.508225
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial254  state:2   time:5397.514842
+payload_len:32768  s->ft_serial254  state:2   time:5397.514871
+payload_len:1355  s->ft_serial254  state:2   time:5397.516285
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial256  state:8   time:5397.516347
+In fill buffer len: 24
+recv ack
+
+migrate_timer tick 256
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial255  state:2   time:5397.521820
+payload_len:32768  s->ft_serial255  state:2   time:5397.521846
+payload_len:1355  s->ft_serial255  state:2   time:5397.521975
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial257  state:8   time:5397.521994
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial256  state:2   time:5397.528530
+payload_len:32768  s->ft_serial256  state:2   time:5397.528559
+payload_len:1355  s->ft_serial256  state:2   time:5397.528609
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial258  state:8   time:5397.528629
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial257  state:2   time:5397.535580
+payload_len:32768  s->ft_serial257  state:2   time:5397.535672
+payload_len:1355  s->ft_serial257  state:2   time:5397.535825
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial259  state:8   time:5397.535862
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial258  state:2   time:5397.542359
+payload_len:32768  s->ft_serial258  state:2   time:5397.542390
+payload_len:1355  s->ft_serial258  state:2   time:5397.542446
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial260  state:8   time:5397.542465
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial259  state:2   time:5397.549138
+payload_len:32768  s->ft_serial259  state:2   time:5397.549179
+payload_len:1355  s->ft_serial259  state:2   time:5397.549244
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial261  state:8   time:5397.549265
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial260  state:2   time:5397.555841
+payload_len:32768  s->ft_serial260  state:2   time:5397.555870
+payload_len:1355  s->ft_serial260  state:2   time:5397.555923
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial262  state:8   time:5397.555944
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial261  state:2   time:5397.562531
+payload_len:32768  s->ft_serial261  state:2   time:5397.562557
+payload_len:1355  s->ft_serial261  state:2   time:5397.562585
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial263  state:8   time:5397.562611
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial262  state:2   time:5397.569779
+payload_len:32768  s->ft_serial262  state:2   time:5397.569850
+payload_len:1355  s->ft_serial262  state:2   time:5397.569975
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial264  state:8   time:5397.570011
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial263  state:2   time:5397.576543
+payload_len:32768  s->ft_serial263  state:2   time:5397.576569
+payload_len:1355  s->ft_serial263  state:2   time:5397.576615
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial265  state:8   time:5397.576634
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial264  state:2   time:5397.583332
+payload_len:32768  s->ft_serial264  state:2   time:5397.583370
+payload_len:1355  s->ft_serial264  state:2   time:5397.583449
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial266  state:8   time:5397.583470
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial265  state:2   time:5397.590095
+payload_len:32768  s->ft_serial265  state:2   time:5397.590125
+payload_len:1355  s->ft_serial265  state:2   time:5397.590179
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial267  state:8   time:5397.590198
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial266  state:2   time:5397.596829
+payload_len:32768  s->ft_serial266  state:2   time:5397.596861
+payload_len:1355  s->ft_serial266  state:2   time:5397.596911
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial268  state:8   time:5397.596932
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial267  state:2   time:5397.604068
+payload_len:32768  s->ft_serial267  state:2   time:5397.604097
+payload_len:1355  s->ft_serial267  state:2   time:5397.604143
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial269  state:8   time:5397.604161
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial268  state:2   time:5397.610799
+payload_len:32768  s->ft_serial268  state:2   time:5397.610825
+payload_len:1355  s->ft_serial268  state:2   time:5397.610858
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial270  state:8   time:5397.610887
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial269  state:2   time:5397.617742
+payload_len:32768  s->ft_serial269  state:2   time:5397.617819
+payload_len:1355  s->ft_serial269  state:2   time:5397.617864
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial271  state:8   time:5397.617892
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial270  state:2   time:5397.624487
+payload_len:32768  s->ft_serial270  state:2   time:5397.624514
+payload_len:1355  s->ft_serial270  state:2   time:5397.624542
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial272  state:8   time:5397.624565
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial271  state:2   time:5397.631188
+payload_len:32768  s->ft_serial271  state:2   time:5397.631213
+payload_len:1355  s->ft_serial271  state:2   time:5397.633010
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial273  state:8   time:5397.633076
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial272  state:2   time:5397.638295
+payload_len:32768  s->ft_serial272  state:2   time:5397.638324
+payload_len:1355  s->ft_serial272  state:2   time:5397.638371
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial274  state:8   time:5397.638390
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial273  state:2   time:5397.645547
+payload_len:32768  s->ft_serial273  state:2   time:5397.645578
+payload_len:1355  s->ft_serial273  state:2   time:5397.645602
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial275  state:8   time:5397.645616
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial274  state:2   time:5397.652913
+payload_len:32768  s->ft_serial274  state:2   time:5397.653003
+payload_len:1355  s->ft_serial274  state:2   time:5397.653107
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial276  state:8   time:5397.653139
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial275  state:2   time:5397.660674
+payload_len:32768  s->ft_serial275  state:2   time:5397.660766
+payload_len:1355  s->ft_serial275  state:2   time:5397.660831
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial277  state:8   time:5397.660854
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial276  state:2   time:5397.667959
+payload_len:32768  s->ft_serial276  state:2   time:5397.668207
+payload_len:1355  s->ft_serial276  state:2   time:5397.668317
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial278  state:8   time:5397.668357
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial277  state:2   time:5397.674967
+payload_len:32768  s->ft_serial277  state:2   time:5397.675048
+payload_len:1355  s->ft_serial277  state:2   time:5397.675173
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial279  state:8   time:5397.675192
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial278  state:2   time:5397.681918
+payload_len:32768  s->ft_serial278  state:2   time:5397.682084
+payload_len:1355  s->ft_serial278  state:2   time:5397.683142
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial280  state:8   time:5397.683186
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial279  state:2   time:5397.688817
+payload_len:32768  s->ft_serial279  state:2   time:5397.688843
+payload_len:1355  s->ft_serial279  state:2   time:5397.688880
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial281  state:8   time:5397.688904
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial280  state:2   time:5397.695548
+payload_len:32768  s->ft_serial280  state:2   time:5397.695574
+payload_len:1355  s->ft_serial280  state:2   time:5397.695615
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial282  state:8   time:5397.695637
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial281  state:2   time:5397.702820
+payload_len:32768  s->ft_serial281  state:2   time:5397.702993
+payload_len:1355  s->ft_serial281  state:2   time:5397.705884
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial283  state:8   time:5397.705910
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial282  state:2   time:5397.709775
+payload_len:32768  s->ft_serial282  state:2   time:5397.709799
+payload_len:1355  s->ft_serial282  state:2   time:5397.709825
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial284  state:8   time:5397.709846
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial283  state:2   time:5397.716510
+payload_len:32768  s->ft_serial283  state:2   time:5397.716588
+payload_len:1355  s->ft_serial283  state:2   time:5397.716638
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial285  state:8   time:5397.716659
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial284  state:2   time:5397.723273
+payload_len:32768  s->ft_serial284  state:2   time:5397.723305
+payload_len:1355  s->ft_serial284  state:2   time:5397.723336
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial286  state:8   time:5397.723369
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial285  state:2   time:5397.730099
+payload_len:32768  s->ft_serial285  state:2   time:5397.730127
+payload_len:1355  s->ft_serial285  state:2   time:5397.730579
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial287  state:8   time:5397.730597
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial286  state:2   time:5397.737456
+payload_len:32768  s->ft_serial286  state:2   time:5397.737535
+payload_len:1355  s->ft_serial286  state:2   time:5397.738521
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial288  state:8   time:5397.738545
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial287  state:2   time:5397.744255
+payload_len:32768  s->ft_serial287  state:2   time:5397.744325
+payload_len:1355  s->ft_serial287  state:2   time:5397.744383
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial289  state:8   time:5397.744412
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial288  state:2   time:5397.751282
+payload_len:32768  s->ft_serial288  state:2   time:5397.751383
+payload_len:1355  s->ft_serial288  state:2   time:5397.751517
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial290  state:8   time:5397.751583
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial289  state:2   time:5397.758127
+payload_len:32768  s->ft_serial289  state:2   time:5397.758152
+payload_len:1355  s->ft_serial289  state:2   time:5397.758327
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial291  state:8   time:5397.758347
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial290  state:2   time:5397.765040
+payload_len:32768  s->ft_serial290  state:2   time:5397.765465
+payload_len:1355  s->ft_serial290  state:2   time:5397.766223
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial292  state:8   time:5397.766304
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial291  state:2   time:5397.772442
+payload_len:32768  s->ft_serial291  state:2   time:5397.772468
+payload_len:1355  s->ft_serial291  state:2   time:5397.772515
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial293  state:8   time:5397.772547
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial292  state:2   time:5397.788558
+payload_len:32768  s->ft_serial292  state:2   time:5397.788625
+payload_len:1355  s->ft_serial292  state:2   time:5397.788703
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial294  state:8   time:5397.788750
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial293  state:2   time:5397.795459
+payload_len:32768  s->ft_serial293  state:2   time:5397.795518
+payload_len:1355  s->ft_serial293  state:2   time:5397.795541
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial295  state:8   time:5397.795554
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial294  state:2   time:5397.802603
+payload_len:32768  s->ft_serial294  state:2   time:5397.802662
+payload_len:1355  s->ft_serial294  state:2   time:5397.802752
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial296  state:8   time:5397.802787
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 4216
+payload_len:32768  s->ft_serial295  state:2   time:5397.809394
+payload_len:32768  s->ft_serial295  state:2   time:5397.809416
+payload_len:1355  s->ft_serial295  state:2   time:5397.809458
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4216  s->ft_serial297  state:8   time:5397.809476
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 4216
+payload_len:32768  s->ft_serial296  state:2   time:5397.816491
+payload_len:32768  s->ft_serial296  state:2   time:5397.816539
+payload_len:1355  s->ft_serial296  state:2   time:5397.816614
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4216  s->ft_serial298  state:8   time:5397.816672
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial297  state:2   time:5397.823487
+payload_len:32768  s->ft_serial297  state:2   time:5397.823566
+payload_len:1355  s->ft_serial297  state:2   time:5397.823617
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial299  state:8   time:5397.823656
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial298  state:2   time:5397.830376
+payload_len:32768  s->ft_serial298  state:2   time:5397.830445
+payload_len:1355  s->ft_serial298  state:2   time:5397.830606
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial300  state:8   time:5397.830668
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial299  state:2   time:5397.837839
+payload_len:32768  s->ft_serial299  state:2   time:5397.838119
+payload_len:1355  s->ft_serial299  state:2   time:5397.838239
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial301  state:8   time:5397.838327
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 4184
+payload_len:32768  s->ft_serial300  state:2   time:5397.845552
+payload_len:32768  s->ft_serial300  state:2   time:5397.845583
+payload_len:1355  s->ft_serial300  state:2   time:5397.845619
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4184  s->ft_serial302  state:8   time:5397.845644
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 4184
+payload_len:32768  s->ft_serial301  state:2   time:5397.853294
+payload_len:32768  s->ft_serial301  state:2   time:5397.853335
+payload_len:1355  s->ft_serial301  state:2   time:5397.853363
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:4184  s->ft_serial303  state:8   time:5397.853379
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial302  state:2   time:5397.860048
+payload_len:32768  s->ft_serial302  state:2   time:5397.860111
+payload_len:1355  s->ft_serial302  state:2   time:5397.860180
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial304  state:8   time:5397.860222
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial303  state:2   time:5397.867005
+payload_len:32768  s->ft_serial303  state:2   time:5397.867074
+payload_len:1355  s->ft_serial303  state:2   time:5397.869073
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial305  state:8   time:5397.869181
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial304  state:2   time:5397.874964
+payload_len:32768  s->ft_serial304  state:2   time:5397.874990
+payload_len:1355  s->ft_serial304  state:2   time:5397.875071
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial306  state:8   time:5397.875104
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial305  state:2   time:5397.881672
+payload_len:32768  s->ft_serial305  state:2   time:5397.881702
+payload_len:1355  s->ft_serial305  state:2   time:5397.881748
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial307  state:8   time:5397.881767
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial306  state:2   time:5397.888729
+payload_len:32768  s->ft_serial306  state:2   time:5397.888757
+payload_len:1355  s->ft_serial306  state:2   time:5397.889796
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial308  state:8   time:5397.889821
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial307  state:2   time:5397.895473
+payload_len:32768  s->ft_serial307  state:2   time:5397.895507
+payload_len:1355  s->ft_serial307  state:2   time:5397.895531
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial309  state:8   time:5397.895544
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial308  state:2   time:5397.902739
+payload_len:32768  s->ft_serial308  state:2   time:5397.902819
+payload_len:1355  s->ft_serial308  state:2   time:5397.903076
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial310  state:8   time:5397.903116
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial309  state:2   time:5397.909532
+payload_len:32768  s->ft_serial309  state:2   time:5397.909601
+payload_len:1355  s->ft_serial309  state:2   time:5397.909655
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial311  state:8   time:5397.909832
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial310  state:2   time:5397.916373
+payload_len:32768  s->ft_serial310  state:2   time:5397.916511
+payload_len:1355  s->ft_serial310  state:2   time:5397.916768
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial312  state:8   time:5397.916831
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial311  state:2   time:5397.923303
+payload_len:32768  s->ft_serial311  state:2   time:5397.923353
+payload_len:1355  s->ft_serial311  state:2   time:5397.923399
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial313  state:8   time:5397.923418
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial312  state:2   time:5397.930171
+payload_len:32768  s->ft_serial312  state:2   time:5397.930223
+payload_len:1355  s->ft_serial312  state:2   time:5397.930268
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial314  state:8   time:5397.930287
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial313  state:2   time:5397.938335
+payload_len:32768  s->ft_serial313  state:2   time:5397.938366
+payload_len:1355  s->ft_serial313  state:2   time:5397.938420
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial315  state:8   time:5397.938441
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial314  state:2   time:5397.946228
+payload_len:32768  s->ft_serial314  state:2   time:5397.946268
+payload_len:1355  s->ft_serial314  state:2   time:5397.946331
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial316  state:8   time:5397.946351
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial315  state:2   time:5397.953615
+payload_len:32768  s->ft_serial315  state:2   time:5397.953691
+payload_len:1355  s->ft_serial315  state:2   time:5397.953809
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial317  state:8   time:5397.953834
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial316  state:2   time:5397.960383
+payload_len:32768  s->ft_serial316  state:2   time:5397.960409
+payload_len:1355  s->ft_serial316  state:2   time:5397.960451
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial318  state:8   time:5397.960468
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial317  state:2   time:5397.967211
+payload_len:32768  s->ft_serial317  state:2   time:5397.967271
+payload_len:1355  s->ft_serial317  state:2   time:5397.967426
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial319  state:8   time:5397.967475
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial318  state:2   time:5397.973975
+payload_len:32768  s->ft_serial318  state:2   time:5397.974001
+payload_len:1355  s->ft_serial318  state:2   time:5397.974046
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial320  state:8   time:5397.974064
+In fill buffer len: 24
+recv ack
+
+migrate_timer tick 320
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial319  state:2   time:5397.980681
+payload_len:32768  s->ft_serial319  state:2   time:5397.980706
+payload_len:1355  s->ft_serial319  state:2   time:5397.980751
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial321  state:8   time:5397.980768
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial320  state:2   time:5397.987725
+payload_len:32768  s->ft_serial320  state:2   time:5397.987753
+payload_len:1355  s->ft_serial320  state:2   time:5397.987802
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial322  state:8   time:5397.987822
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial321  state:2   time:5397.994420
+payload_len:32768  s->ft_serial321  state:2   time:5397.994485
+payload_len:1355  s->ft_serial321  state:2   time:5397.994544
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial323  state:8   time:5397.994565
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial322  state:2   time:5398.002276
+payload_len:32768  s->ft_serial322  state:2   time:5398.002380
+payload_len:1355  s->ft_serial322  state:2   time:5398.002540
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial324  state:8   time:5398.002591
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial323  state:2   time:5398.009325
+payload_len:32768  s->ft_serial323  state:2   time:5398.009349
+payload_len:1355  s->ft_serial323  state:2   time:5398.009392
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial325  state:8   time:5398.009411
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial324  state:2   time:5398.016268
+payload_len:32768  s->ft_serial324  state:2   time:5398.016417
+payload_len:1355  s->ft_serial324  state:2   time:5398.016578
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial326  state:8   time:5398.016603
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial325  state:2   time:5398.023161
+payload_len:32768  s->ft_serial325  state:2   time:5398.023184
+payload_len:1355  s->ft_serial325  state:2   time:5398.023224
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial327  state:8   time:5398.023242
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial326  state:2   time:5398.029900
+payload_len:32768  s->ft_serial326  state:2   time:5398.029964
+payload_len:1355  s->ft_serial326  state:2   time:5398.030035
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial328  state:8   time:5398.030058
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial327  state:2   time:5398.037431
+payload_len:32768  s->ft_serial327  state:2   time:5398.037460
+payload_len:1355  s->ft_serial327  state:2   time:5398.037492
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial329  state:8   time:5398.037512
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial328  state:2   time:5398.044137
+payload_len:32768  s->ft_serial328  state:2   time:5398.044210
+payload_len:1355  s->ft_serial328  state:2   time:5398.044492
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial330  state:8   time:5398.044517
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial329  state:2   time:5398.051123
+payload_len:32768  s->ft_serial329  state:2   time:5398.051208
+payload_len:1355  s->ft_serial329  state:2   time:5398.051341
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial331  state:8   time:5398.051398
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial330  state:2   time:5398.057889
+payload_len:32768  s->ft_serial330  state:2   time:5398.057951
+payload_len:1355  s->ft_serial330  state:2   time:5398.058005
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial332  state:8   time:5398.058024
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial331  state:2   time:5398.064676
+payload_len:32768  s->ft_serial331  state:2   time:5398.064706
+payload_len:1355  s->ft_serial331  state:2   time:5398.064762
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial333  state:8   time:5398.064783
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial332  state:2   time:5398.071582
+payload_len:32768  s->ft_serial332  state:2   time:5398.071608
+payload_len:1355  s->ft_serial332  state:2   time:5398.071654
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial334  state:8   time:5398.071671
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial333  state:2   time:5398.078294
+payload_len:32768  s->ft_serial333  state:2   time:5398.078321
+payload_len:1355  s->ft_serial333  state:2   time:5398.078367
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial335  state:8   time:5398.078386
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial334  state:2   time:5398.085231
+payload_len:32768  s->ft_serial334  state:2   time:5398.085387
+payload_len:1355  s->ft_serial334  state:2   time:5398.085472
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial336  state:8   time:5398.085509
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial335  state:2   time:5398.092067
+payload_len:32768  s->ft_serial335  state:2   time:5398.092092
+payload_len:1355  s->ft_serial335  state:2   time:5398.092140
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial337  state:8   time:5398.092157
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial336  state:2   time:5398.098767
+payload_len:32768  s->ft_serial336  state:2   time:5398.098792
+payload_len:1355  s->ft_serial336  state:2   time:5398.098845
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial338  state:8   time:5398.098864
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial337  state:2   time:5398.106095
+payload_len:32768  s->ft_serial337  state:2   time:5398.106216
+payload_len:1355  s->ft_serial337  state:2   time:5398.106276
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial339  state:8   time:5398.106301
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial338  state:2   time:5398.112987
+payload_len:32768  s->ft_serial338  state:2   time:5398.113060
+payload_len:1355  s->ft_serial338  state:2   time:5398.113198
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial340  state:8   time:5398.113223
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial339  state:2   time:5398.120338
+payload_len:32768  s->ft_serial339  state:2   time:5398.120424
+payload_len:1355  s->ft_serial339  state:2   time:5398.120491
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial341  state:8   time:5398.120513
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial340  state:2   time:5398.127110
+payload_len:32768  s->ft_serial340  state:2   time:5398.127172
+payload_len:1355  s->ft_serial340  state:2   time:5398.127225
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial342  state:8   time:5398.127246
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial341  state:2   time:5398.134059
+payload_len:32768  s->ft_serial341  state:2   time:5398.134169
+payload_len:1355  s->ft_serial341  state:2   time:5398.134260
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial343  state:8   time:5398.134299
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial342  state:2   time:5398.140883
+payload_len:32768  s->ft_serial342  state:2   time:5398.140956
+payload_len:1355  s->ft_serial342  state:2   time:5398.141016
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial344  state:8   time:5398.141041
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial343  state:2   time:5398.147945
+payload_len:32768  s->ft_serial343  state:2   time:5398.148026
+payload_len:1355  s->ft_serial343  state:2   time:5398.149513
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial345  state:8   time:5398.149638
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial344  state:2   time:5398.155158
+payload_len:32768  s->ft_serial344  state:2   time:5398.155231
+payload_len:1355  s->ft_serial344  state:2   time:5398.155295
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial346  state:8   time:5398.155320
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial345  state:2   time:5398.161969
+payload_len:32768  s->ft_serial345  state:2   time:5398.162043
+payload_len:1355  s->ft_serial345  state:2   time:5398.162101
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial347  state:8   time:5398.162125
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial346  state:2   time:5398.169383
+payload_len:32768  s->ft_serial346  state:2   time:5398.169437
+payload_len:1355  s->ft_serial346  state:2   time:5398.169538
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial348  state:8   time:5398.169588
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial347  state:2   time:5398.176146
+payload_len:32768  s->ft_serial347  state:2   time:5398.176238
+payload_len:1355  s->ft_serial347  state:2   time:5398.176300
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial349  state:8   time:5398.176325
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial348  state:2   time:5398.183008
+payload_len:32768  s->ft_serial348  state:2   time:5398.183132
+payload_len:1355  s->ft_serial348  state:2   time:5398.183197
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial350  state:8   time:5398.183223
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial349  state:2   time:5398.189840
+payload_len:32768  s->ft_serial349  state:2   time:5398.189910
+payload_len:1355  s->ft_serial349  state:2   time:5398.189966
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial351  state:8   time:5398.189990
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial350  state:2   time:5398.196654
+payload_len:32768  s->ft_serial350  state:2   time:5398.196685
+payload_len:1355  s->ft_serial350  state:2   time:5398.196739
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial352  state:8   time:5398.196759
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial351  state:2   time:5398.203905
+payload_len:32768  s->ft_serial351  state:2   time:5398.203932
+payload_len:1355  s->ft_serial351  state:2   time:5398.203973
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial353  state:8   time:5398.203992
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial352  state:2   time:5398.210596
+payload_len:32768  s->ft_serial352  state:2   time:5398.210664
+payload_len:1355  s->ft_serial352  state:2   time:5398.210721
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial354  state:8   time:5398.210743
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial353  state:2   time:5398.217584
+payload_len:32768  s->ft_serial353  state:2   time:5398.217847
+payload_len:1355  s->ft_serial353  state:2   time:5398.217996
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial355  state:8   time:5398.218049
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial354  state:2   time:5398.224627
+payload_len:32768  s->ft_serial354  state:2   time:5398.224695
+payload_len:1355  s->ft_serial354  state:2   time:5398.225260
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial356  state:8   time:5398.225284
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial355  state:2   time:5398.231481
+payload_len:32768  s->ft_serial355  state:2   time:5398.231509
+payload_len:1355  s->ft_serial355  state:2   time:5398.231539
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial357  state:8   time:5398.231563
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial356  state:2   time:5398.238335
+payload_len:32768  s->ft_serial356  state:2   time:5398.238365
+payload_len:1355  s->ft_serial356  state:2   time:5398.238397
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial358  state:8   time:5398.238423
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial357  state:2   time:5398.245200
+payload_len:32768  s->ft_serial357  state:2   time:5398.245232
+payload_len:1355  s->ft_serial357  state:2   time:5398.245288
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial359  state:8   time:5398.245308
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial358  state:2   time:5398.252286
+payload_len:32768  s->ft_serial358  state:2   time:5398.252321
+payload_len:1355  s->ft_serial358  state:2   time:5398.252464
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial360  state:8   time:5398.252500
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial359  state:2   time:5398.259049
+payload_len:32768  s->ft_serial359  state:2   time:5398.259073
+payload_len:1355  s->ft_serial359  state:2   time:5398.259112
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial361  state:8   time:5398.259130
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial360  state:2   time:5398.265791
+payload_len:32768  s->ft_serial360  state:2   time:5398.265833
+payload_len:1355  s->ft_serial360  state:2   time:5398.265898
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial362  state:8   time:5398.265924
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial361  state:2   time:5398.272530
+payload_len:32768  s->ft_serial361  state:2   time:5398.272555
+payload_len:1355  s->ft_serial361  state:2   time:5398.272603
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial363  state:8   time:5398.272623
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial362  state:2   time:5398.279240
+payload_len:32768  s->ft_serial362  state:2   time:5398.279265
+payload_len:1355  s->ft_serial362  state:2   time:5398.279311
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial364  state:8   time:5398.279329
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial363  state:2   time:5398.286527
+payload_len:32768  s->ft_serial363  state:2   time:5398.286608
+payload_len:1355  s->ft_serial363  state:2   time:5398.286722
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial365  state:8   time:5398.286754
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial364  state:2   time:5398.293738
+payload_len:32768  s->ft_serial364  state:2   time:5398.293772
+payload_len:1355  s->ft_serial364  state:2   time:5398.293824
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial366  state:8   time:5398.293848
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial365  state:2   time:5398.300582
+payload_len:32768  s->ft_serial365  state:2   time:5398.300676
+payload_len:1355  s->ft_serial365  state:2   time:5398.300853
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial367  state:8   time:5398.300897
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial366  state:2   time:5398.307418
+payload_len:32768  s->ft_serial366  state:2   time:5398.307443
+payload_len:1355  s->ft_serial366  state:2   time:5398.307488
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial368  state:8   time:5398.307505
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial367  state:2   time:5398.314138
+payload_len:32768  s->ft_serial367  state:2   time:5398.314164
+payload_len:1355  s->ft_serial367  state:2   time:5398.314212
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial369  state:8   time:5398.314230
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial368  state:2   time:5398.321245
+payload_len:32768  s->ft_serial368  state:2   time:5398.321271
+payload_len:1355  s->ft_serial368  state:2   time:5398.321316
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial370  state:8   time:5398.321334
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial369  state:2   time:5398.327941
+payload_len:32768  s->ft_serial369  state:2   time:5398.327966
+payload_len:1355  s->ft_serial369  state:2   time:5398.328031
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial371  state:8   time:5398.328051
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial370  state:2   time:5398.334885
+payload_len:32768  s->ft_serial370  state:2   time:5398.334957
+payload_len:1355  s->ft_serial370  state:2   time:5398.335074
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial372  state:8   time:5398.335121
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial371  state:2   time:5398.341651
+payload_len:32768  s->ft_serial371  state:2   time:5398.341675
+payload_len:1355  s->ft_serial371  state:2   time:5398.341718
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial373  state:8   time:5398.341737
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial372  state:2   time:5398.348457
+payload_len:32768  s->ft_serial372  state:2   time:5398.348489
+payload_len:1355  s->ft_serial372  state:2   time:5398.348547
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial374  state:8   time:5398.348575
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial373  state:2   time:5398.355235
+payload_len:32768  s->ft_serial373  state:2   time:5398.355260
+payload_len:1355  s->ft_serial373  state:2   time:5398.355298
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial375  state:8   time:5398.355317
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial374  state:2   time:5398.361919
+payload_len:32768  s->ft_serial374  state:2   time:5398.361946
+payload_len:1355  s->ft_serial374  state:2   time:5398.361996
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial376  state:8   time:5398.362015
+In fill buffer len: 24
+recv ack
+ram_fd:21  conn_index:0
+ram_len: 8248
+payload_len:32768  s->ft_serial375  state:2   time:5398.369218
+payload_len:32768  s->ft_serial375  state:2   time:5398.369295
+payload_len:1355  s->ft_serial375  state:2   time:5398.369412
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8248  s->ft_serial377  state:8   time:5398.369450
+In fill buffer len: 24
+recv ack
+ram_fd:22  conn_index:0
+ram_len: 8308
+payload_len:32768  s->ft_serial376  state:2   time:5398.376031
+payload_len:32768  s->ft_serial376  state:2   time:5398.376064
+payload_len:1355  s->ft_serial376  state:2   time:5398.376118
+kvm_shmem_trans_ram_bh
+send commit1
+payload_len:8308  s->ft_serial378  state:8   time:5398.376142

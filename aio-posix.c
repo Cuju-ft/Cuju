@@ -347,10 +347,10 @@ bool aio_dispatch(AioContext *ctx)
         int revents;
 
         ctx->walking_handlers++;
-
+        
         revents = node->pfd.revents & node->pfd.events;
+        //printf("pfd.revents: %d  pfd.events: %d revent:%d \n",node->pfd.revents,node->pfd.events,revents);
         node->pfd.revents = 0;
-
         if (!node->deleted &&
             (revents & (G_IO_IN | G_IO_HUP | G_IO_ERR)) &&
             aio_node_check(ctx, node->is_external) &&

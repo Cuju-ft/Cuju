@@ -612,9 +612,9 @@ int event_tap_flush(void* cb, void *opaque)
         ret = event_tap_flush_one();
     } while (ret == 0);
 
-    if (pending_bdrv_request == 0) {
+/*     if (pending_bdrv_request == 0) {
         bdrv_request_flush_cb(opaque);
-	}
+	}*/
     return ret;
 }
 

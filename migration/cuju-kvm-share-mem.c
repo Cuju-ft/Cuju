@@ -283,7 +283,20 @@ void kvm_shmem_start_ft(void)
 
     ft_started = 1;
 }
+void kvm_shmem_stop_ft(void)
+{
+    int ret;
 
+    //kvm_start_log_share_dirty_pages();
+
+    ret = kvm_vm_ioctl(kvm_state, KVM_SHM_ENABLE);
+    if (ret) {
+        fprintf(stderr, "%s failed: %d\n", __func__, ret);
+        exit(ret);
+    }
+ 
+    ft_started = 0;
+}
 int kvmft_started(void)
 {
     return ft_started;
@@ -864,15 +877,15 @@ void kvm_shmem_sortup_trackable(void)
 	struct trackable_ptr *tptr, tmp;
 
 	j = 0;
-
-	for (i = 0; i < TRACKABLE_ARRAY_LEN; ++i) {
-		tptr = &trackable_ptrs[i];
-		if (tptr->registered) {
-			memcpy(&trackable_ptrs[j], tptr, sizeof(*tptr));
-			++j;
-		}
-	}
-
+    if(trackable_number == 0){
+        for (i = 0; i < TRACKABLE_ARRAY_LEN; ++i) {
+            tptr = &trackable_ptrs[i];
+            if (tptr->registered) {
+                memcpy(&trackable_ptrs[j], tptr, sizeof(*tptr));
+                ++j;
+            }
+        }
+    
 	trackable_number = j;
 	printf("\n\n%s trackable_number = %d\n\n", __func__, trackable_number);
 
@@ -891,6 +904,8 @@ void kvm_shmem_sortup_trackable(void)
 					__func__);
 		exit(-1);
 	}
+    assert(!kvm_shmem_report_trackable());
+    }
 }
 
 int kvm_shmem_report_trackable(void)
@@ -1009,7 +1024,7 @@ static int kvm_start_kernel_transfer(int trans_index, int ram_fd, int conn_index
     int ret;
     int64_t start, end, tmp = 0;
     MigrationState *s = migrate_by_index(trans_index);
-
+    printf("ram_fd:%d  conn_index:%d\n",ram_fd,conn_index);
     start = time_in_us();
     s->transfer_real_start_time = time_in_double();
 
@@ -1077,7 +1092,7 @@ static void* trans_ram_conn_thread_func(void *opaque)
 {
     struct trans_ram_conn_descriptor *d = opaque;
     MigrationState *s;
-    int ret;
+    int ret=0;
 
     thread_set_realtime();
 
@@ -1105,6 +1120,7 @@ static void* trans_ram_conn_thread_func(void *opaque)
         s->ram_len += ret;
 
         if (d->index == 0) {
+            printf("ram_len: %d\n",ret);
 #ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
             g_free(s->dirty_pfns);
             s->dirty_pfns = NULL;
