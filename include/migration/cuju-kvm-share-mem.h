@@ -36,6 +36,8 @@ void trans_ram_add(MigrationState *s);
 void kvm_shmem_trans_ram_bh(void *opaque);
 
 void kvm_shmem_start_ft(void);
+void kvm_shmem_stop_ft(void);  
+
 int kvmft_started(void);
 int kvmft_write_protect_dirty_pages(int cur_index);
 int kvm_shm_clear_dirty_bitmap(int cur_index);

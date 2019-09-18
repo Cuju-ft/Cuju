@@ -760,6 +760,13 @@ int kvm_shm_enable(struct kvm *kvm)
     printk("%s shm_enabled %d\n", __func__, ctx->shm_enabled);
     return 0;
 }
+int kvm_shm_disable(struct kvm *kvm)
+{
+    struct kvmft_context *ctx = &kvm->ft_context;
+    ctx->shm_enabled = 0;
+    printk("%s shm_disabled %d\n", __func__, ctx->shm_enabled);
+    return 0;
+}
 
 static int wait_for_other_mark(struct kvm_memory_slot *memslot,
                            int cur_index,

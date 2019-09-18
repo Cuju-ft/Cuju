@@ -283,6 +283,20 @@ void kvm_shmem_start_ft(void)
 
     ft_started = 1;
 }
+void kvm_shmem_stop_ft(void)
+{
+    int ret;
+
+    //kvm_start_log_share_dirty_pages();
+ 
+    ret = kvm_vm_ioctl(kvm_state, KVM_SHM_DISABLE);
+    if (ret) {
+        fprintf(stderr, "%s failed: %d\n", __func__, ret);
+        exit(ret);
+    }
+ 
+    ft_started = 0;
+}
 
 int kvmft_started(void)
 {
@@ -864,33 +878,35 @@ void kvm_shmem_sortup_trackable(void)
 	struct trackable_ptr *tptr, tmp;
 
 	j = 0;
-
-	for (i = 0; i < TRACKABLE_ARRAY_LEN; ++i) {
-		tptr = &trackable_ptrs[i];
-		if (tptr->registered) {
-			memcpy(&trackable_ptrs[j], tptr, sizeof(*tptr));
-			++j;
-		}
-	}
-
-	trackable_number = j;
-	printf("\n\n%s trackable_number = %d\n\n", __func__, trackable_number);
-
-    for (i = 0; i < trackable_number; i++) {
-        for (j = i + 1; j < trackable_number; j++) {
-            if (trackable_ptrs[i].ptr > trackable_ptrs[j].ptr) {
-                tmp = trackable_ptrs[i];
-                trackable_ptrs[i] = trackable_ptrs[j];
-                trackable_ptrs[j] = tmp;
+    if(trackable_number == 0){
+        for (i = 0; i < TRACKABLE_ARRAY_LEN; ++i) {
+            tptr = &trackable_ptrs[i];
+            if (tptr->registered) {
+                memcpy(&trackable_ptrs[j], tptr, sizeof(*tptr));
+                ++j;
             }
         }
-    }
 
-	if (trackable_number > 32) {
-		printf("%s trackable_number exceed 32 bit, create a larger bitmap.\n",
-					__func__);
-		exit(-1);
-	}
+        trackable_number = j;
+        printf("\n\n%s trackable_number = %d\n\n", __func__, trackable_number);
+
+        for (i = 0; i < trackable_number; i++) {
+            for (j = i + 1; j < trackable_number; j++) {
+                if (trackable_ptrs[i].ptr > trackable_ptrs[j].ptr) {
+                    tmp = trackable_ptrs[i];
+                    trackable_ptrs[i] = trackable_ptrs[j];
+                    trackable_ptrs[j] = tmp;
+                }
+            }
+        }
+
+        if (trackable_number > 32) {
+            printf("%s trackable_number exceed 32 bit, create a larger bitmap.\n",
+                        __func__);
+            exit(-1);
+        }
+        assert(!kvm_shmem_report_trackable());
+    }
 }
 
 int kvm_shmem_report_trackable(void)

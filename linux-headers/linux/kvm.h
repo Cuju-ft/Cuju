@@ -1355,6 +1355,7 @@ struct kvm_shmem_init {
 };
 #define KVM_SHM_INIT              _IOW(KVMIO, 0xbc, struct kvm_shmem_init)
 #define KVM_SHM_ENABLE            _IO(KVMIO, 0xbd)
+#define KVM_SHM_DISABLE            _IO(KVMIO, 0xdd)
 #define KVM_SHM_START_TIMER       _IO(KVMIO, 0xbe)
 
 struct kvm_shmem_child {

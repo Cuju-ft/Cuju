@@ -3205,6 +3205,12 @@ static long kvm_vm_ioctl(struct file *filp,
             goto out;
         break;
     }
+	case KVM_SHM_DISABLE: {
+	r = kvm_shm_disable(kvm);
+		if (r)
+			goto out;
+		break;
+	}
     case KVM_SHM_START_TIMER: {
       r = 0;
       kvm_shm_start_timer(kvm->vcpus[0]);

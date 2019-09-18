@@ -172,6 +172,9 @@ int migrate_get_index(MigrationState *s);
 static void migrate_run(MigrationState *s);
 
 int qio_ft_sock_fd = 0;
+static unsigned long trans_serial = 0; 
+static unsigned long run_serial = 0;   
+static unsigned int Enter;
 
 // At the time setting up FT, current will pointer to 2nd MigrationState.
 static int migration_states_current;
@@ -1404,6 +1407,8 @@ MigrationState *migrate_init(const MigrationParams *params)
     s->total_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
     s2->total_time = qemu_clock_get_ms(QEMU_CLOCK_REALTIME);
 
+    s->ft_state = CUJU_FT_OFF;
+    s2->ft_state = CUJU_FT_OFF;
     migrate_set_ft_state(s, CUJU_FT_INIT);
     migrate_set_ft_state(s2, CUJU_FT_INIT);
 
@@ -2120,16 +2125,30 @@ bool migrate_cuju_enabled(void)
 static void migrate_fd_get_notify(void *opaque)
 {
     MigrationState *s = opaque;
-    Error *local_err = NULL;
 
     qemu_file_get_notify(s->file);
 
     if (qemu_file_get_error(s->file) && qemu_file_get_error(s->file) != -EAGAIN) {
         qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
-        cuju_ft_mode = CUJU_FT_ERROR;
-        qemu_savevm_state_cancel(s->file);
-        migrate_fd_error(s, local_err);
-        event_tap_unregister();
+        //qemu_set_fd_survive_ft_pause(s->fd, true);
+        
+        //migrate_fd_cancel(s);
+        close(s->fd);
+        s->fd = -1;
+        trans_serial = 0;
+        run_serial = 0;
+    /*  
+     * This must happen after all error conditions are dealt with and
+     * we're sure the VM is going to be running on this host.
+     */
+        kvm_shmem_stop_ft();
+
+        qemu_iohandler_ft_pause(false);
+        if(!Enter){
+            vm_start_mig();
+            vm_start();
+        }else
+            Enter = 0;
     }
 }
 
@@ -2265,7 +2284,7 @@ static void kvmft_flush_output(MigrationState *s)
 static int migrate_ft_trans_get_ready(void *opaque)
 {
     MigrationState *s = opaque;
-    static bool kvmft_first_ack = true;
+    static bool kvmft_first_ack;
     int ret = -1;
 
     if (!qemu_ft_trans_is_sender(s->file))
@@ -2277,10 +2296,11 @@ static int migrate_ft_trans_get_ready(void *opaque)
         printf("%s recv ack, index %d\n", __func__, s->cur_off);
         if ((ret = qemu_ft_trans_recv_ack(s->file)) < 0) {
             printf("%s sender receive ACK failed.\n", __func__);
-            goto error_out;
+            goto recv_ack_error;
         }
         migrate_set_ft_state(s, CUJU_FT_TRANSACTION_PRE_RUN);
 
+        kvmft_first_ack = true;
         assert(kvmft_first_ack);
         kvmft_first_ack = false;
 
@@ -2299,7 +2319,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
     case CUJU_FT_TRANSACTION_TRANSFER:
         if ((ret = qemu_ft_trans_recv_ack1(s->file)) < 0) {
             printf("%s sender receive ACK1 failed.\n", __func__);
-            goto error_out;
+            goto recv_ack_error;
         }
 
         FTPRINTF("%s slave ack1 time %lf\n", __func__,
@@ -2308,6 +2328,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
         dirty_page_tracking_logs_start_flush_output(s);
         migrate_set_ft_state(s, CUJU_FT_TRANSACTION_FLUSH_OUTPUT);
 
+        Enter = 1;
         //gft_broadcast_backup_done(s);
 	/*
         if (s->join.bitmaps_commit1 == ~0) {
@@ -2334,7 +2355,9 @@ error_out:
     Error *local_err = NULL;
     migrate_fd_error(s, local_err);
     event_tap_unregister();
-
+recv_ack_error:
+    printf("recv_ack_error ... \n");
+    event_tap_unregister();
 out:
     return ret;
 }
@@ -2551,7 +2574,7 @@ static void *migration_thread(void *opaque)
 
 		kvm_shmem_sortup_trackable();
 
-		assert(!kvm_shmem_report_trackable());
+		//assert(!kvm_shmem_report_trackable());
 
         qemu_mutex_init(&ft_mutex);
         qemu_cond_init(&ft_cond);
@@ -2834,7 +2857,7 @@ out:
 
 static void migrate_run(MigrationState *s)
 {
-    static unsigned long run_serial = 0;
+    //static unsigned long run_serial = 0;
 
     FTPRINTF("%s %d\n", __func__, s->cur_off);
 
@@ -2871,7 +2894,7 @@ static void migrate_run(MigrationState *s)
 
 static void migrate_timer(void *opaque)
 {
-    static unsigned long trans_serial = 0;
+    //static unsigned long trans_serial = 0;
     MigrationState *s = opaque;
 
     assert(s == migrate_get_current());
