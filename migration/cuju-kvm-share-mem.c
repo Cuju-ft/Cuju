@@ -123,7 +123,7 @@ struct dirty_page_tracking_logs dirty_page_tracking_logs;
 static void*** page_array;
 static int bitmap_count;
 
-static int ft_started = 0;
+int ft_started = 0;
 
 static unsigned int epoch_time_in_us = EPOCH_TIME_IN_MS * 1000;
 
