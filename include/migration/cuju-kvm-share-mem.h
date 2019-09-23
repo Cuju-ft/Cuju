@@ -25,6 +25,8 @@
 #define SHARED_DIRTY_SIZE   10000
 #define SHARED_DIRTY_WATERMARK  9600
 
+extern int ft_started;
+
 bool cuju_supported(void);
 
 void kvmft_pre_init(void);
