@@ -977,6 +977,7 @@ void hmp_info_tpm(Monitor *mon, const QDict *qdict)
 void hmp_quit(Monitor *mon, const QDict *qdict)
 {
     monitor_suspend(mon);
+    aio_ft_pause(0);
     qmp_quit(NULL);
 }
 
