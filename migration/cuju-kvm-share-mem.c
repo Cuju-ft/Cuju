@@ -123,7 +123,7 @@ struct dirty_page_tracking_logs dirty_page_tracking_logs;
 static void*** page_array;
 static int bitmap_count;
 
-int ft_started = 0;
+static int ft_started = 0;
 
 static unsigned int epoch_time_in_us = EPOCH_TIME_IN_MS * 1000;
 
@@ -1474,3 +1474,7 @@ void kvmft_update_epoch_flush_time_linear(double time_s)
     }
 }
 
+int show_ft_started (void) 
+{
+	return ft_started;
+}
