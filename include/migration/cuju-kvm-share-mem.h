@@ -25,8 +25,6 @@
 #define SHARED_DIRTY_SIZE   10000
 #define SHARED_DIRTY_WATERMARK  9600
 
-extern int ft_started;
-
 bool cuju_supported(void);
 
 void kvmft_pre_init(void);
@@ -71,5 +69,6 @@ void kvm_shmem_load_ram(void *buf, int size);
 void* kvm_shmem_map_pfn(unsigned long pfn, unsigned long size);
 void kvm_shmem_unmap_pfn(void *ptr, unsigned long size);
 
+int show_ft_started (void);
 
 #endif
