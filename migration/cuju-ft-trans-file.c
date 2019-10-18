@@ -108,6 +108,13 @@ void cuju_ft_trans_flush_buf_desc(void *opaque)
                 //break;
                 continue;
             } else if (ret <= 0) {
+                if(s->check)
+                {
+                    s->check = false;
+                    //printf("cuju_ft_trans_flush_buf_desc!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                    offset += desc->size - offset;
+                    break;
+                }
                 error_report("error flushing data, %s\n", strerror(errno));
                 printf("%s %p + %lu\n", __func__, desc->buf, offset);
                 s->has_error = CUJU_FT_TRANS_ERR_FLUSH;
@@ -458,7 +465,16 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
 
         if (s->header.cmd == CUJU_QEMU_VM_TRANSACTION_COMMIT1)
             s->ram_buf_expect = s->header.payload_len;
-
+        else if (s->header.cmd == (1<<15|CUJU_QEMU_VM_TRANSACTION_ACK1))
+        {
+            //printf("recv CUJU_QEMU_VM_TRANSACTION_ALIVE\n");
+            s->header.cmd = CUJU_QEMU_VM_TRANSACTION_ACK1;
+            s->state = CUJU_QEMU_VM_TRANSACTION_ACK1;
+            s->header_offset = 0;
+            s->ft_serial = s->header.serial;
+            s->cancel_timer = true;
+            goto out;
+        }
         if (s->header.magic != CUJU_FT_HDR_MAGIC) {
             error_report("recv header magic wrong: %x\n", s->header.magic);
             s->has_error = CUJU_FT_TRANS_ERR_RECV_HDR;
@@ -574,7 +590,13 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
 #endif
 
     while (s->ft_serial == ft_serial && cuju_ft_trans_load_ready(s)) {
-        ret = cuju_ft_trans_send_header(s, CUJU_QEMU_VM_TRANSACTION_ACK1, 0);
+        ret = cuju_ft_trans_send_header(s,s->check<<15|CUJU_QEMU_VM_TRANSACTION_ACK1, 0);
+        if(s->check)
+        {
+            //printf("Ack1 + alive header\n");           
+            if(ret>=0)
+                exit(0);
+        }
         if (ret < 0) {
             printf("%s send ack failed.\n", __func__);
             goto out;
@@ -668,7 +690,10 @@ static int cuju_ft_trans_recv(CujuQEMUFileFtTrans *s)
     case CUJU_QEMU_VM_TRANSACTION_CANCEL:
         ret = -EINVAL;
         break;
-
+    case CUJU_QEMU_VM_TRANSACTION_CHECKALIVE:
+            //printf("recv CHECKALIVE\n");
+            s->check = true;
+        break;
     default:
         error_report("unknown QEMU_VM_TRANSACTION_STATE %d\n", ret);
         s->has_error = CUJU_FT_TRANS_ERR_STATE_INVALID;
@@ -1193,7 +1218,8 @@ QEMUFile *cuju_qemu_fopen_ops_ft_trans(void *opaque,
     s->seq = 0;
     // better to explicitly give a value
     s->state = CUJU_QEMU_VM_TRANSACTION_INIT;
-
+    s->cancel_timer = false;
+    s->check = false;
     s->ram_hdr_fd = ram_hdr_fd;
 
     s->ram_fd = ram_fd;

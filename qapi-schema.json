@@ -4862,3 +4862,14 @@
 ##
 { 'command': 'cuju-adjust-epoch', 'data': {'epoch': 'uint32'}}
 
+
+##
+# @cuju-migrate-cancel:
+#
+# Do migrate cancel
+#
+# Returns: nothing on success
+#
+# Since: 2.8
+##
+{ 'command': 'cuju-migrate-cancel' }

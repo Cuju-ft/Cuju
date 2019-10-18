@@ -929,6 +929,21 @@ STEXI
 Cancel the current VM migration.
 
 ETEXI
+ 
+     {
+        .name       = "cuju-migrate-cancel",
+        .args_type  = "",
+        .params     = "",
+        .help       = "cancel the current VM migration",
+        .cmd        = hmp_cuju_migrate_cancel,
+    },
+
+STEXI
+@item cuju-migrate-cancel
+@findex cuju-migrate-cancel
+Cancel the current VM migration.
+
+ETEXI
 
     {
         .name       = "migrate_incoming",
