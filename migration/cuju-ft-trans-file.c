@@ -474,7 +474,7 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
 
         if (s->header.cmd == CUJU_QEMU_VM_TRANSACTION_COMMIT1)
             s->ram_buf_expect = s->header.payload_len;
-        else if (s->header.cmd == (1<<15|CUJU_QEMU_VM_TRANSACTION_ACK1))
+        else if (s->header.cmd == (1<<CUJU_FT_ALIVE_HEADER|CUJU_QEMU_VM_TRANSACTION_ACK1))
         {
             //printf("recv CUJU_QEMU_VM_TRANSACTION_ALIVE\n");
             uninit_time();
@@ -600,7 +600,7 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
 #endif
 
     while (s->ft_serial == ft_serial && cuju_ft_trans_load_ready(s)) {
-        ret = cuju_ft_trans_send_header(s,s->check<<15|CUJU_QEMU_VM_TRANSACTION_ACK1, 0);
+        ret = cuju_ft_trans_send_header(s,s->check<<CUJU_FT_ALIVE_HEADER|CUJU_QEMU_VM_TRANSACTION_ACK1, 0);
         if(s->check)
         {
             //printf("Ack1 + alive header\n");           

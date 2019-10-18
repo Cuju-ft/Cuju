@@ -222,15 +222,7 @@ static MigrationState *migrate_get_next(MigrationState *s)
     int index = (s->cur_off + 1) % migration_states_count;
     return migration_states[index];
 }
-/*
-static void uninit_time(void)  
-{
-    struct itimerval t;  
-    t.it_value.tv_sec = 0;  
-    t.it_value.tv_usec = 0;  
-    t.it_interval = t.it_value;  
-    setitimer(ITIMER_REAL, &t, NULL);  
-}*/
+
 const struct linger nolinger = { .l_onoff = 0, .l_linger = 0 };
 static void trigger_cuju_migrate_cancel(int a)
 {

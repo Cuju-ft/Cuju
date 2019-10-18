@@ -33,6 +33,13 @@ enum CUJU_QEMU_VM_TRANSACTION_STATE {
     CUJU_QEMU_VM_TRANSACTION_CHECKALIVE
 };
 
+/*
+this variable is for CUJU_QEMU_VM_TRANSACTION_STATE 
+and this command in our TCP transmission is 16 bit
+Only Sending when hmp 'cuju-migrate-cancel'
+*/   
+#define CUJU_FT_ALIVE_HEADER 15     
+
 enum CUJU_FT_MODE {
     CUJU_FT_ERROR = -1,
     CUJU_FT_OFF,
