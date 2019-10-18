@@ -51,6 +51,15 @@ static CujuQEMUFileFtTrans **cuju_ft_trans;
 static int cuju_ft_trans_count;
 static int cuju_ft_trans_current_index;
 
+static void uninit_time(void)  
+{
+    struct itimerval t;  
+    t.it_value.tv_sec = 0;  
+    t.it_value.tv_usec = 0;  
+    t.it_interval = t.it_value;  
+    setitimer(ITIMER_REAL, &t, NULL);  
+}
+
 static CujuQEMUFileFtTrans *cuju_ft_trans_get_next(CujuQEMUFileFtTrans *s)
 {
     int index = s->index;
@@ -468,6 +477,7 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
         else if (s->header.cmd == (1<<15|CUJU_QEMU_VM_TRANSACTION_ACK1))
         {
             //printf("recv CUJU_QEMU_VM_TRANSACTION_ALIVE\n");
+            uninit_time();
             s->header.cmd = CUJU_QEMU_VM_TRANSACTION_ACK1;
             s->state = CUJU_QEMU_VM_TRANSACTION_ACK1;
             s->header_offset = 0;

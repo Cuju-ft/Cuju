@@ -1129,14 +1129,17 @@ static void* trans_ram_conn_thread_func(void *opaque)
         s->ram_len += ret;
 
         ret = kvm_start_kernel_transfer(s->cur_off, s->ram_fds[d->index], d->index, ft_ram_conn_count);
-        if(ret<0 && migrate_cancel)
+        if(ret<0)
         {
             //printf("ret<0    %d!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n",ret);
-            ret = 0;
-            migrate_cancel = 0;
-            continue;
+            if(migrate_cancel)
+            {
+                ret = 0;
+                migrate_cancel = 0;
+                continue;
+            }
+            assert(ret >= 0);
         }
-        assert(ret >= 0);
 
         // TODO need lock
         s->ram_len += ret;

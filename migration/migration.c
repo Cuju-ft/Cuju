@@ -222,7 +222,7 @@ static MigrationState *migrate_get_next(MigrationState *s)
     int index = (s->cur_off + 1) % migration_states_count;
     return migration_states[index];
 }
-
+/*
 static void uninit_time(void)  
 {
     struct itimerval t;  
@@ -230,7 +230,7 @@ static void uninit_time(void)
     t.it_value.tv_usec = 0;  
     t.it_interval = t.it_value;  
     setitimer(ITIMER_REAL, &t, NULL);  
-}
+}*/
 const struct linger nolinger = { .l_onoff = 0, .l_linger = 0 };
 static void trigger_cuju_migrate_cancel(int a)
 {
@@ -1565,7 +1565,7 @@ void qmp_cuju_migrate_cancel(Error **errp)
     cuju_ft_trans_send_header(s1->file->opaque, CUJU_QEMU_VM_TRANSACTION_CHECKALIVE, 0);  
     CujuQEMUFileFtTrans *f = s->file->opaque;
     CujuQEMUFileFtTrans *f1 = s1->file->opaque;
-    
+    kvm_shmem_start_migrate_cancel();
     f->check = true;
     f1->check = true;
     struct itimerval t;
@@ -2422,13 +2422,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
             printf("%s sender receive ACK1 failed.\n", __func__);
             goto backup_close;
         }
-        if(f->cancel_timer)
-        {  
-            uninit_time();
-            //printf("cancel timer...\n");
-            kvm_shmem_start_migrate_cancel();
-            //f->cancel_timer = false;
-        }
+
         FTPRINTF("%s slave ack1 time %lf\n", __func__,
             time_in_double() - s->transfer_finish_time);
 
