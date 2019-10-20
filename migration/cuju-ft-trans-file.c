@@ -120,7 +120,7 @@ void cuju_ft_trans_flush_buf_desc(void *opaque)
                 if(s->check)
                 {
                     s->check = false;
-                    //printf("cuju_ft_trans_flush_buf_desc!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                    printf("primary has sent checkalive header and %s ret <= 0 line:%d\n", __func__, __LINE__);
                     offset += desc->size - offset;
                     break;
                 }
@@ -599,7 +599,11 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
     }
 #endif
 
-    while (s->ft_serial == ft_serial && cuju_ft_trans_load_ready(s)) {
+    while (s->ft_serial == ft_serial && cuju_ft_trans_load_ready(s)) {   
+        /*
+            if backup receive checkalive header then s->check = 1 and the ACK1 header would set leftmost bit to be 1.   
+            so s->check<<CUJU_FT_ALIVE_HEADER equal to 1<<15.
+        */   
         ret = cuju_ft_trans_send_header(s,s->check<<CUJU_FT_ALIVE_HEADER|CUJU_QEMU_VM_TRANSACTION_ACK1, 0);
         if(s->check)
         {

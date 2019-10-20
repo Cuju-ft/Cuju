@@ -179,7 +179,8 @@ int qio_ft_sock_fd = 0;
 // At the time setting up FT, current will pointer to 2nd MigrationState.
 static int migration_states_current;
 
-static void migrate_fd_get_notify(void *opaque);
+//static void migrate_fd_get_notify(void *opaque);
+static void cuju_migrate_fd_get_notify(void *opaque);
 static void cuju_migrate_cancel_discon(void *opaque);
 static void cuju_migrate_cancel_con(void *opaque);
 int cuju_get_fd_from_QIOChannel(QIOChannel *ioc);
@@ -2173,7 +2174,7 @@ bool migrate_cuju_enabled(void)
         event_tap_unregister();
     }
 }*/
-static void migrate_fd_get_notify(void *opaque)
+static void cuju_migrate_fd_get_notify(void *opaque)
 {
     MigrationState *s = opaque;
     
@@ -2292,7 +2293,7 @@ int migrate_fd_get_buffer(void *opaque, uint8_t *data, int64_t pos, size_t size)
         ret = -(s->get_error(s));
 
     if (ret == -EAGAIN)
-        qemu_set_fd_handler(s->fd, migrate_fd_get_notify, CUJU_IO_HANDLER_KEEP, s);
+        qemu_set_fd_handler(s->fd, cuju_migrate_fd_get_notify, CUJU_IO_HANDLER_KEEP, s);
 
     return ret;
 }
@@ -2517,7 +2518,7 @@ static void ft_setup_migrate_state(MigrationState *s, int index)
     s->flush_bh = qemu_bh_new(flush_dev, s);
     qemu_bh_set_mig_survive(s->flush_bh, true);
 
-    qemu_set_fd_handler(s->fd, migrate_fd_get_notify, NULL, s);
+    qemu_set_fd_handler(s->fd, cuju_migrate_fd_get_notify, NULL, s);
     qemu_set_fd_survive_ft_pause(s->fd, true);
 }
 
