@@ -60,7 +60,7 @@ struct CUJUFTDev
 typedef uint64_t ram_addr_t;
 
 extern int qio_ft_sock_fd;
-
+extern bool backup_die;
 struct MigrationParams {
     bool blk;
     bool shared;

@@ -1131,7 +1131,7 @@ static void* trans_ram_conn_thread_func(void *opaque)
         ret = kvm_start_kernel_transfer(s->cur_off, s->ram_fds[d->index], d->index, ft_ram_conn_count);
         if(ret<0)
         {
-            printf("%s ret<0 \n", __func__);
+            //printf("%s ret<0 \n", __func__);
             //if(migrate_cancel)
             //{
                 //printf("migrate_cancel is true\n");

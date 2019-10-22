@@ -119,8 +119,7 @@ void cuju_ft_trans_flush_buf_desc(void *opaque)
             } else if (ret <= 0) {
                 if(s->check)
                 {
-                    s->check = false;
-                    printf("primary has sent checkalive header and %s ret <= 0 line:%d\n", __func__, __LINE__);
+                    //printf("primary has sent checkalive header and %s ret <= 0 line:%d\n", __func__, __LINE__);
                     offset += desc->size - offset;
                     break;
                 }
@@ -482,7 +481,7 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
             s->state = CUJU_QEMU_VM_TRANSACTION_ACK1;
             s->header_offset = 0;
             s->ft_serial = s->header.serial;
-            s->cancel_timer = true;
+            s->cancel = true;
             goto out;
         }
         if (s->header.magic != CUJU_FT_HDR_MAGIC) {
@@ -1232,7 +1231,7 @@ QEMUFile *cuju_qemu_fopen_ops_ft_trans(void *opaque,
     s->seq = 0;
     // better to explicitly give a value
     s->state = CUJU_QEMU_VM_TRANSACTION_INIT;
-    s->cancel_timer = false;
+    s->cancel = false;
     s->check = false;
     s->ram_hdr_fd = ram_hdr_fd;
 

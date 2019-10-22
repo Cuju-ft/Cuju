@@ -50,6 +50,7 @@
 static unsigned long trans_serial = 0;
 static unsigned long run_serial = 0;
 static int last_enter = 0;
+bool backup_die = false;
 #ifdef DEBUG_MIGRATION
 #define DPRINTF(fmt, ...) \
     do { printf("migration: " fmt, ## __VA_ARGS__); } while (0)
@@ -178,9 +179,7 @@ int qio_ft_sock_fd = 0;
 
 // At the time setting up FT, current will pointer to 2nd MigrationState.
 static int migration_states_current;
-
-//static void migrate_fd_get_notify(void *opaque);
-static void cuju_migrate_fd_get_notify(void *opaque);
+static void migrate_fd_get_notify(void *opaque);
 static void cuju_migrate_cancel_discon(void *opaque);
 static void cuju_migrate_cancel_con(void *opaque);
 int cuju_get_fd_from_QIOChannel(QIOChannel *ioc);
@@ -2159,7 +2158,7 @@ bool migrate_cuju_enabled(void)
     return s->enabled_capabilities[MIGRATION_CAPABILITY_CUJU_FT];
 }
 
-/*static void migrate_fd_get_notify(void *opaque)
+static void migrate_fd_get_notify(void *opaque)
 {
     MigrationState *s = opaque;
     Error *local_err = NULL;
@@ -2167,24 +2166,22 @@ bool migrate_cuju_enabled(void)
     qemu_file_get_notify(s->file);
 
     if (qemu_file_get_error(s->file) && qemu_file_get_error(s->file) != -EAGAIN) {
-        qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
-        cuju_ft_mode = CUJU_FT_ERROR;
-        qemu_savevm_state_cancel(s->file);
-        migrate_fd_error(s, local_err);
-        event_tap_unregister();
+        CujuQEMUFileFtTrans *f = s->file->opaque;
+        if(f->check || backup_die)
+        {
+            cuju_migrate_cancel_con(s);            
+        }
+        else
+        {
+            qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
+            cuju_ft_mode = CUJU_FT_ERROR;
+            qemu_savevm_state_cancel(s->file);
+            migrate_fd_error(s, local_err);
+            event_tap_unregister();
+        }
     }
-}*/
-static void cuju_migrate_fd_get_notify(void *opaque)
-{
-    MigrationState *s = opaque;
-    
-    qemu_file_get_notify(s->file);
-
-    if ((qemu_file_get_error(s->file) && qemu_file_get_error(s->file) != -EAGAIN) ) {
-        cuju_migrate_cancel_con(s);
-    }
-
 }
+
 static void cuju_migrate_cancel_discon(void *opaque)
 {
     MigrationState *s = migrate_get_current();
@@ -2293,7 +2290,7 @@ int migrate_fd_get_buffer(void *opaque, uint8_t *data, int64_t pos, size_t size)
         ret = -(s->get_error(s));
 
     if (ret == -EAGAIN)
-        qemu_set_fd_handler(s->fd, cuju_migrate_fd_get_notify, CUJU_IO_HANDLER_KEEP, s);
+        qemu_set_fd_handler(s->fd, migrate_fd_get_notify, CUJU_IO_HANDLER_KEEP, s);
 
     return ret;
 }
@@ -2387,7 +2384,8 @@ static int migrate_ft_trans_get_ready(void *opaque)
     case CUJU_FT_INIT:
         kvm_shmem_stop_migrate_cancel();
         f->check = false;
-        f->cancel_timer = false;
+        f->cancel = false;
+        backup_die = false;
         printf("%s recv ack, index %d\n", __func__, s->cur_off);
         if ((ret = qemu_ft_trans_recv_ack(s->file)) < 0) {
             printf("%s sender receive ACK failed.\n", __func__);
@@ -2449,6 +2447,7 @@ error_out:
     migrate_fd_error(s, local_err);
     event_tap_unregister();
 backup_close:
+    backup_die = true;
     event_tap_unregister();
 out:
     return ret;
@@ -2518,7 +2517,7 @@ static void ft_setup_migrate_state(MigrationState *s, int index)
     s->flush_bh = qemu_bh_new(flush_dev, s);
     qemu_bh_set_mig_survive(s->flush_bh, true);
 
-    qemu_set_fd_handler(s->fd, cuju_migrate_fd_get_notify, NULL, s);
+    qemu_set_fd_handler(s->fd, migrate_fd_get_notify, NULL, s);
     qemu_set_fd_survive_ft_pause(s->fd, true);
 }
 
@@ -2890,7 +2889,7 @@ static void cuju_ft_trans_incoming(void *opaque)
         {    
             exit(0);
         }
-        if(count>10)
+        if(count>5)
         {
             qemu_fclose(f);       
         }         
@@ -2968,7 +2967,7 @@ static void migrate_run(MigrationState *s)
             migrate_token_owner != s, s->ft_state);
         return;
     }
-    if(f->cancel_timer)
+    if(f->cancel)
     {    
         //printf("in migrate_run and start cancel\n");
         migrate_token_owner->file->last_error = -1;

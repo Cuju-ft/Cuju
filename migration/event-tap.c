@@ -604,6 +604,8 @@ int event_tap_flush_one(void)
 int event_tap_flush(void* cb, void *opaque)
 {
     int ret;
+    MigrationState *s = migrate_get_current();
+    CujuQEMUFileFtTrans *f = s->file->opaque;
 
     bdrv_request_flush_cb = cb;
     bdrv_request_flush_opaque = opaque;
@@ -611,10 +613,12 @@ int event_tap_flush(void* cb, void *opaque)
     do {
         ret = event_tap_flush_one();
     } while (ret == 0);
-
-    /*if (pending_bdrv_request == 0) {
-        bdrv_request_flush_cb(opaque);
-	}*/
+    if(!(f->check || backup_die))
+    {
+        if (pending_bdrv_request == 0) {
+            bdrv_request_flush_cb(opaque);
+        }
+    }
     return ret;
 }
 

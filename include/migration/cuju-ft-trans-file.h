@@ -144,7 +144,7 @@ typedef struct CujuQEMUFileFtTrans
     int ram_fd_recved;  // reset to -1
     int ram_fd_expect;  // reset to -1
     int ram_fd_ack;     // should ram_fd handler send back ack?
-    bool cancel_timer;
+    bool cancel;
     bool check;
 } CujuQEMUFileFtTrans;
 
