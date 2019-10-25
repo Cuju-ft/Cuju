@@ -124,7 +124,7 @@ static void*** page_array;
 static int bitmap_count;
 
 static int ft_started = 0;
-
+int migrate_cancel = 0;
 static unsigned int epoch_time_in_us = EPOCH_TIME_IN_MS * 1000;
 
 bool cuju_supported(void)
@@ -282,6 +282,35 @@ void kvm_shmem_start_ft(void)
     }
 
     ft_started = 1;
+}
+
+void kvm_shmem_stop_ft(void)
+{
+    int ret;
+
+    //kvm_start_log_share_dirty_pages();
+
+    ret = kvm_vm_ioctl(kvm_state, KVM_SHM_DISABLE);
+    if (ret) {
+        fprintf(stderr, "%s failed: %d\n", __func__, ret);
+        exit(ret);
+    }
+ 
+    ft_started = 0;
+}
+ 
+void kvm_shmem_start_migrate_cancel(void)
+{
+    migrate_cancel = 1;
+}
+
+void kvm_shmem_stop_migrate_cancel(void)
+{
+    migrate_cancel = 0;
+}
+
+void kvm_shmem_cancel_timer(void){
+    kvm_vm_ioctl(kvm_state, KVM_SHM_CANCEL_TIMER);
 }
 
 int kvmft_started(void)
@@ -864,7 +893,7 @@ void kvm_shmem_sortup_trackable(void)
 	struct trackable_ptr *tptr, tmp;
 
 	j = 0;
-
+    if(trackable_number == 0){
 	for (i = 0; i < TRACKABLE_ARRAY_LEN; ++i) {
 		tptr = &trackable_ptrs[i];
 		if (tptr->registered) {
@@ -891,6 +920,8 @@ void kvm_shmem_sortup_trackable(void)
 					__func__);
 		exit(-1);
 	}
+        assert(!kvm_shmem_report_trackable());
+    }
 }
 
 int kvm_shmem_report_trackable(void)
@@ -1098,8 +1129,18 @@ static void* trans_ram_conn_thread_func(void *opaque)
         s->ram_len += ret;
 
         ret = kvm_start_kernel_transfer(s->cur_off, s->ram_fds[d->index], d->index, ft_ram_conn_count);
-
-        assert(ret >= 0);
+        if(ret<0)
+        {
+            //printf("%s ret<0 \n", __func__);
+            //if(migrate_cancel)
+            //{
+                //printf("migrate_cancel is true\n");
+                //ret = 0;
+                //migrate_cancel = 0;
+                continue;
+            //}
+            //assert(ret >= 0);
+        }
 
         // TODO need lock
         s->ram_len += ret;
