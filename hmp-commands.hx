@@ -1841,4 +1841,19 @@ STEXI
 @item cuju-get-ft-mode
 @findex cuju-get-ft-mode
 Get current ft mode information of Cuju
+
 ETEXI
+
+
+     {
+        .name       = "cuju-migrate-cancel",
+        .args_type  = "",
+        .params     = "",
+        .help       = "cancel the current VM fault tolerance",
+        .cmd        = hmp_cuju_migrate_cancel,
+    },
+
+STEXI
+@item cuju-migrate-cancel
+@findex cuju-migrate-cancel
+cancel the current VM fault tolerance.

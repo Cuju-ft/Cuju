@@ -112,6 +112,7 @@ struct page *kvm_shm_alloc_page(struct kvm *kvm,
                                 struct kvm_shm_alloc_pages *param);
 void kvm_shm_exit(struct kvm *kvm);
 int kvm_shm_enable(struct kvm *kvm);
+int kvm_shm_disable(struct kvm *kvm);
 int kvm_shm_start_log_share_dirty_pages(struct kvm *kvm, struct kvm_collect_log *log);
 int kvm_shm_flip_sharing(struct kvm *kvm, __u32 cur_off, __u32 run_serial);
 void kvm_shm_start_timer(struct kvm_vcpu *vcpu);

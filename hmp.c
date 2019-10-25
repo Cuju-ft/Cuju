@@ -1270,6 +1270,11 @@ void hmp_migrate_cancel(Monitor *mon, const QDict *qdict)
     qmp_migrate_cancel(NULL);
 }
 
+void hmp_cuju_migrate_cancel(Monitor *mon, const QDict *qdict)
+{
+    qmp_cuju_migrate_cancel(NULL);
+}
+
 void hmp_migrate_incoming(Monitor *mon, const QDict *qdict)
 {
     Error *err = NULL;

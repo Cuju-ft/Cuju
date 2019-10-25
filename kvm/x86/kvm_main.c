@@ -3205,6 +3205,12 @@ static long kvm_vm_ioctl(struct file *filp,
             goto out;
         break;
     }
+	case KVM_SHM_DISABLE: {
+        r = kvm_shm_disable(kvm);
+        if (r)
+            goto out;
+        break;
+    }
     case KVM_SHM_START_TIMER: {
       r = 0;
       kvm_shm_start_timer(kvm->vcpus[0]);
@@ -3476,6 +3482,11 @@ out_free_irq_routing:
         if (copy_from_user(&moff, argp, sizeof moff))
             goto out;
         r = kvmft_fire_timer(kvm->vcpus[0], (int)moff);
+        break;
+    }
+	case KVM_SHM_CANCEL_TIMER: {
+        r = 0;
+        kvm_shm_timer_cancel(kvm->vcpus[0]);
         break;
     }
     case KVMFT_SET_MASTER_SLAVE_SOCKETS: {
