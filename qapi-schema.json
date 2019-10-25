@@ -4862,7 +4862,6 @@
 ##
 { 'command': 'cuju-adjust-epoch', 'data': {'epoch': 'uint32'}}
 
-
 ##
 # @cuju-migrate-cancel:
 #

@@ -1135,11 +1135,11 @@ static void* trans_ram_conn_thread_func(void *opaque)
             //if(migrate_cancel)
             //{
                 //printf("migrate_cancel is true\n");
-                ret = 0;
-                migrate_cancel = 0;
+                //ret = 0;
+                //migrate_cancel = 0;
                 continue;
             //}
-            assert(ret >= 0);
+            //assert(ret >= 0);
         }
 
         // TODO need lock

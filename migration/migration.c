@@ -223,7 +223,7 @@ static MigrationState *migrate_get_next(MigrationState *s)
     return migration_states[index];
 }
 
-const struct linger nolinger = { .l_onoff = 0, .l_linger = 0 };
+const struct linger nolinger = { .l_onoff = 1, .l_linger = 1 };
 static void trigger_cuju_migrate_cancel(int a)
 {
 
@@ -1563,8 +1563,8 @@ void qmp_cuju_migrate_cancel(Error **errp)
     struct itimerval t;
     t.it_interval.tv_usec = 0;
     t.it_interval.tv_sec = 0;
-    t.it_value.tv_usec = 100000;
-    t.it_value.tv_sec = 0;
+    t.it_value.tv_usec = 0;
+    t.it_value.tv_sec = 1;
 
     if( setitimer( ITIMER_REAL, &t, NULL) < 0 ){
         printf("settimer error.\n");
@@ -2884,12 +2884,12 @@ static void cuju_ft_trans_incoming(void *opaque)
     if (qemu_file_get_error(f)) {
         count++;
         cuju_ft_mode = CUJU_FT_ERROR;
-        printf("in qemu_file_get_error\n");
+        //printf("in qemu_file_get_error\n");
         if(s->check)
         {    
             exit(0);
         }
-        if(count>5)
+        if(count>2)
         {
             qemu_fclose(f);       
         }         
