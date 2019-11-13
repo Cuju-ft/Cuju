@@ -3111,9 +3111,9 @@ static long kvm_vm_ioctl(struct file *filp,
 		r = -EFAULT;
 		if (copy_from_user(&log, argp, sizeof(log)))
 			goto out;
-		if (kvm_shm_is_enabled(kvm))
+		/*if (kvm_shm_is_enabled(kvm))
 	        	r = -EINVAL;
-		else
+		else*/
 			r = kvm_vm_ioctl_get_dirty_log(kvm, &log);
 		break;
 	}

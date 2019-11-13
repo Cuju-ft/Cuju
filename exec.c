@@ -2021,8 +2021,6 @@ static void notdirty_mem_write(void *opaque, hwaddr ram_addr,
         tb_lock();
         tb_invalidate_phys_page_fast(ram_addr, size);
     }
-    // for CUJU-FT
-	kvm_shmem_mark_page_dirty_range(NULL, ram_addr, size);
 
     switch (size) {
     case 1:
