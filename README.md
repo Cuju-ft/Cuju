@@ -140,6 +140,7 @@ $ git clone https://github.com/Cuju-ft/Cuju.git
 ```
 $ cd Cuju
 $ ./configure --enable-cuju --enable-kvm --disable-pie --target-list=x86_64-softmmu
+$ make clean
 $ make -j8
 ```
 
@@ -148,10 +149,11 @@ $ make -j8
 ```
 $ cd Cuju/kvm
 $ ./configure
+$ make clean
 $ make -j8
 $ ./reinsmodkvm.sh
 ```
-
+P.S.
 >`*1` If you meet `error: incompatible type for argument 5 of '__get_user_pages_unlocked'`, you can use this patch:
 >```
 >$ cd Cuju
