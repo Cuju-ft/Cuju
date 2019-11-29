@@ -3285,7 +3285,9 @@ int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
 
     ctx->max_desc_count = KVM_DIRTY_BITMAP_INIT_COUNT;
 
-    kvm->vcpus[0]->epoch_time_in_us = info->epoch_time_in_ms * 1000;
+    if (kvm->vcpus[0] != NULL) {
+        kvm->vcpus[0]->epoch_time_in_us = info->epoch_time_in_ms * 1000;
+    }
     pages_per_ms = info->pages_per_ms;
 
     ctx->shared_page_num = info->shared_page_num; // + 1024; // 1024 is guard
