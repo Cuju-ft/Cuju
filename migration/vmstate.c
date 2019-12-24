@@ -77,6 +77,88 @@ static void *vmstate_base_addr(void *opaque, VMStateField *field, bool alloc)
     return base_addr;
 }
 
+int virtio_blk_load_index(QEMUFile *f, const VMStateDescription *vmsd,
+                       void *opaque, int version_id)
+{
+    VMStateField *field = vmsd->fields;
+    int ret = 0;
+
+    trace_vmstate_load_state(vmsd->name, version_id);
+    if (version_id > vmsd->version_id) {
+        trace_vmstate_load_state_end(vmsd->name, "too new", -EINVAL);
+        return -EINVAL;
+    }
+    if  (version_id < vmsd->minimum_version_id) {
+        if (vmsd->load_state_old &&
+            version_id >= vmsd->minimum_version_id_old) {
+            ret = vmsd->load_state_old(f, opaque, version_id);
+            trace_vmstate_load_state_end(vmsd->name, "old path", ret);
+            return ret;
+        }
+        trace_vmstate_load_state_end(vmsd->name, "too old", -EINVAL);
+        return -EINVAL;
+    }
+    if (vmsd->pre_load) {
+        int ret = vmsd->pre_load(opaque);
+        if (ret) {
+            return ret;
+        }
+    }
+    while (field->name) {
+        trace_vmstate_load_state_field(vmsd->name, field->name);
+        if ((field->field_exists &&
+             field->field_exists(opaque, version_id)) ||
+            (!field->field_exists &&
+             field->version_id <= version_id)) {
+            void *base_addr = vmstate_base_addr(opaque, field, true);
+            int i, n_elems = vmstate_n_elems(opaque, field);
+            int size = vmstate_size(opaque, field);
+            if(strcmp(field->name,"vq")==0 && kvmft_started()){
+                VirtIODevice *vdev;
+                vdev = opaque;
+                n_elems = vdev->size;
+            }
+            for (i = 0; i < n_elems; i++) {
+                void *addr = base_addr + size * i;
+
+                if (field->flags & VMS_ARRAY_OF_POINTER) {
+                    addr = *(void **)addr;
+                }
+                if (field->flags & VMS_STRUCT) {
+                    ret = virtio_blk_load_index(f, field->vmsd, addr,
+                                             field->vmsd->version_id);
+                } else {
+                    ret = field->info->blk(f, addr, size);
+                }
+                if (ret >= 0) {
+                    ret = qemu_file_get_error(f);
+                }
+                if (ret < 0) {
+                    qemu_file_set_error(f, ret);
+                    error_report("Failed to load %s:%s", vmsd->name,
+                                 field->name);
+                    trace_vmstate_load_field_error(field->name, ret);
+                    return ret;
+                }
+            }
+        } else if (field->flags & VMS_MUST_EXIST) {
+            error_report("Input validation failed: %s/%s",
+                         vmsd->name, field->name);
+            return -1;
+        }
+        field++;
+    }
+    ret = vmstate_subsection_load(f, vmsd, opaque);
+    if (ret != 0) {
+        return ret;
+    }
+    if (vmsd->post_load) {
+        ret = vmsd->post_load(opaque, version_id);
+    }
+    trace_vmstate_load_state_end(vmsd->name, "end", ret);
+    return ret;
+}
+
 int vmstate_load_state(QEMUFile *f, const VMStateDescription *vmsd,
                        void *opaque, int version_id)
 {

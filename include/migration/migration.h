@@ -479,6 +479,7 @@ void qemu_savevm_state_complete_precopy_part1(QEMUFile *f);
 void qemu_savevm_state_complete_precopy_part2(QEMUFile *f);
 void migrate_ft_trans_send_device_state_header(struct CUJUFTDev *ftdev, QEMUFile *f);
 int qemu_loadvm_dev(QEMUFile *f);
+int qemu_loadvm_blk_dev(QEMUFile *f);
 
 MigrationState *migrate_by_index(int index);
 

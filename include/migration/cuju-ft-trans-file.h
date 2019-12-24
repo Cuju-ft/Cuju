@@ -204,7 +204,6 @@ QEMUFile *cuju_qemu_fopen_ops_ft_trans(void *opaque,
 extern int cuju_is_load;
 extern QemuMutex cuju_load_mutex;
 extern QemuCond cuju_load_cond;
-
 void cuju_socket_set_nodelay(int fd);
 void cuju_socket_unset_nodelay(int fd);
 void cuju_socket_set_quickack(int fd);

@@ -85,6 +85,7 @@ typedef struct VMStateDescription VMStateDescription;
 struct VMStateInfo {
     const char *name;
     int (*get)(QEMUFile *f, void *pv, size_t size);
+    int (*blk)(QEMUFile *f, void *pv, size_t size);
     void (*put)(QEMUFile *f, void *pv, size_t size);
 };
 
@@ -943,6 +944,8 @@ extern const VMStateInfo vmstate_info_bitmap;
 void loadvm_free_handlers(MigrationIncomingState *mis);
 
 int vmstate_load_state(QEMUFile *f, const VMStateDescription *vmsd,
+                       void *opaque, int version_id);
+int virtio_blk_load_index(QEMUFile *f, const VMStateDescription *vmsd,
                        void *opaque, int version_id);
 void vmstate_save_state(QEMUFile *f, const VMStateDescription *vmsd,
                         void *opaque, QJSON *vmdesc);

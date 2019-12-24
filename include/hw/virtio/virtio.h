@@ -141,6 +141,7 @@ typedef struct VirtioDeviceClass {
      */
     void (*save)(VirtIODevice *vdev, QEMUFile *f);
     int (*load)(VirtIODevice *vdev, QEMUFile *f, int version_id);
+    int (*load_blk)(VirtIODevice *vdev, QEMUFile *f, int version_id);
     const VMStateDescription *vmsd;
 } VirtioDeviceClass;
 
@@ -208,6 +209,7 @@ extern const VMStateInfo virtio_vmstate_info;
     }
 
 int virtio_load(VirtIODevice *vdev, QEMUFile *f, int version_id);
+int virtio_load_blk(VirtIODevice *vdev, QEMUFile *f, int version_id);
 
 void virtio_notify_config(VirtIODevice *vdev);
 
