@@ -2477,6 +2477,7 @@ static int kvmft_diff_to_buf(struct kvm *kvm, unsigned long gfn,
     ret = __diff_to_buf(gfn, page1, page2, buf);
 
     if (check_modify) {
+        kvm_release_page_clean(page2);
         page2 = find_later_backup(kvm, gfn, trans_index, run_serial);
         if (page2 != NULL)
             ret = __diff_to_buf(gfn, page1, page2, buf);
