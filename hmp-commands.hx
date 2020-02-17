@@ -1777,7 +1777,9 @@ ETEXI
     },
 
 STEXI
-@end table
+@item info
+@findex info
+Info
 ETEXI
 
 
@@ -1841,7 +1843,6 @@ STEXI
 @item cuju-get-ft-mode
 @findex cuju-get-ft-mode
 Get current ft mode information of Cuju
-
 ETEXI
 
 
@@ -1857,3 +1858,8 @@ STEXI
 @item cuju-migrate-cancel
 @findex cuju-migrate-cancel
 cancel the current VM fault tolerance.
+ETEXI
+
+STEXI
+@end table
+ETEXI
