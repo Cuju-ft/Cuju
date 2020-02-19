@@ -313,7 +313,7 @@ static ssize_t cuju_ft_trans_put(void *opaque, void *buf, int size)
         cuju_ft_trans_append(s, buf + offset, size - offset);
         offset = size;
     }
-
+    g_free(buf);
     assert(offset == size);
     return offset;
 }

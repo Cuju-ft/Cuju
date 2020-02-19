@@ -171,6 +171,10 @@ static void virtio_blk_complete_head(VirtIOBlockReq *req)
         assert(i<rec->len);
         if (--rec->left == 0) {
             QTAILQ_REMOVE(&s->record_list, rec, node);
+            g_free(rec->idx);
+            g_free(rec->list);
+            g_free(rec->reqs);
+            g_free(rec->completed);
             g_free(rec);
         }
     }
