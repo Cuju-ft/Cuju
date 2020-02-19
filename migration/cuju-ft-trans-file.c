@@ -603,8 +603,6 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
             if backup receive checkalive header then s->check = 1 and the ACK1 header would set leftmost bit to be 1.   
             so s->check<<CUJU_FT_ALIVE_HEADER equal to 1<<15.
         */   
-        cuju_ft_trans_load(s);
-        qemu_loadvm_blk_dev(s->file);
         ret = cuju_ft_trans_send_header(s,s->check<<CUJU_FT_ALIVE_HEADER|CUJU_QEMU_VM_TRANSACTION_ACK1, 0);
         if(s->check)
         {
@@ -616,6 +614,8 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
             printf("%s send ack failed.\n", __func__);
             goto out;
         }
+        cuju_ft_trans_load(s);
+        qemu_loadvm_blk_dev(s->file);
         s = cuju_ft_trans_get_next(s);
         ft_serial++;
 #ifdef ft_debug_mode_enable
