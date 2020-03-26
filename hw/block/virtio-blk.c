@@ -287,6 +287,7 @@ static void virtio_blk_rw_complete(void *opaque, int ret)
         VirtIOBlockReq *req = next;
         next = req->mr_next;
         if(req->callback && req->remain){
+            QTAILQ_REMOVE(&RCQ_List, req, node);
             virtio_blk_complete_head(req);
             virtio_blk_free_request(req);
             continue;
@@ -1401,24 +1402,23 @@ static int virtio_blk_load_device(VirtIODevice *vdev, QEMUFile *f,
             int len = qemu_get_be32(f);
             if (len > 0) {
                 int* headList = (int*)calloc(len,sizeof(int));
-                int* idxList = (int*)calloc(len,sizeof(int));
                 int64_t* sectorList = (int64_t*)calloc(len,sizeof(int64_t));
                 int* callbackList = (int*)calloc(len,sizeof(int));
                 for (i = 0; i < len; i++) {
                     headList[i] = qemu_get_be32(f);
-                    idxList[i] = qemu_get_be32(f);
+                    qemu_get_be32(f);
                     if(t == 3){
                         sectorList[i] = qemu_get_be64(f);
                         callbackList[i] = qemu_get_be32(f);
                     }
                 }
                 int reqlen = 0;
-                if(t == 3){
-                    QTAILQ_FOREACH(rec, &RCQ_List, node) {
-                        if(rec->remain)
-                            continue;
-                        if(reqlen >= len)
-                            break;
+                QTAILQ_FOREACH(rec, &RCQ_List, node) {
+                    if(rec->remain)
+                        continue;
+                    if(reqlen >= len)
+                        break;
+                    if(t == 3){
                         for (i = 0; i < len; i++) {
                             if(headList[i] == rec->compareHead && sectorList[i] == rec->sector_num){
                                 ++reqlen;
@@ -1430,21 +1430,16 @@ static int virtio_blk_load_device(VirtIODevice *vdev, QEMUFile *f,
                                 break;
                             }
                         }
-                        if(i == len){
-                            QTAILQ_REMOVE(&RCQ_List, rec, node);
-                            virtio_blk_free_request(rec);
-                        }
-                    }
-                }else{
-                    for (i = 0; i < len; i++) {
-                        rec = virtio_blk_get_request_from_head(vdev, headList[i], idxList[i]);
+                    }else{
+                        ++reqlen;
+                        rec->remain = true;
+                        rec->callback = 0;
                         blk_io_plug(s->blk);
                         virtio_blk_handle_write(rec, &mrb);
                         blk_io_unplug(s->blk);
                     }
                 }
                 free(headList);
-                free(idxList);
                 free(sectorList);
                 free(callbackList);
             }
