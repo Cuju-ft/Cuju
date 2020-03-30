@@ -565,11 +565,6 @@ static void cuju_ft_trans_load(CujuQEMUFileFtTrans *s)
 
     cuju_ft_trans_clean_buf(s);
 
-    qemu_mutex_lock(&cuju_load_mutex);
-    cuju_is_load = 0;
-    qemu_cond_broadcast(&cuju_load_cond);
-    qemu_mutex_unlock(&cuju_load_mutex);
-
 #ifdef ft_debug_mode_enable
     qemu_gettimeofday(&etime);
     printf("%s %lf\n", __func__, (TIMEVAL_TO_DOUBLE(etime) - TIMEVAL_TO_DOUBLE(stime))*1000);
@@ -616,6 +611,12 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
         }
         cuju_ft_trans_load(s);
         qemu_loadvm_blk_dev(s->file);
+
+        qemu_mutex_lock(&cuju_load_mutex);
+        cuju_is_load = 0;
+        qemu_cond_broadcast(&cuju_load_cond);
+        qemu_mutex_unlock(&cuju_load_mutex);
+
         s = cuju_ft_trans_get_next(s);
         ft_serial++;
 #ifdef ft_debug_mode_enable

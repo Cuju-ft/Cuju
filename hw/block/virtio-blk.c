@@ -32,7 +32,7 @@
 
 RCQ RCQ_List;
 #define HEAD_LIST_INIT_SIZE  64
-static int quota = 100;
+static int quota = 10;
 // TODO there may be multiple virtual blocks, but for now we only need
 // to prove that retry-method works for one virtual block.
 VirtIOBlock *global_virtio_block;
