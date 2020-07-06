@@ -3336,13 +3336,7 @@ static long kvm_vm_ioctl(struct file *filp,
 		r = -EFAULT;
 		if (copy_from_user(&log, argp, sizeof(log)))
 			goto out;
-		// Cuju Begin
-		if (kvm_shm_is_enabled(kvm)) {
-			r = -EINVAL;
-		} else {
-		// Cuju End
-			r = kvm_vm_ioctl_get_dirty_log(kvm, &log);
-		}
+		r = kvm_vm_ioctl_get_dirty_log(kvm, &log);
 		break;
 	}
 
