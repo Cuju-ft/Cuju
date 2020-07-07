@@ -3716,6 +3716,7 @@ out_free_irq_routing:
 	r = 0;
         kvm_shm_timer_cancel(kvm->vcpus[0]);
         break;
+        }
     case KVMFT_SET_MASTER_SLAVE_SOCKETS: {
         struct kvmft_set_master_slave_sockets socks;
         r = -EFAULT;
