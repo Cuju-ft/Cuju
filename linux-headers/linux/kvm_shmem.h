@@ -25,6 +25,7 @@ struct kvm_collect_log {
 void kvm_shm_mark_page_dirty(struct kvm *kvm, unsigned long gfn);
 /* only used to test bitmap is working in first place */
 int kvm_shm_enabled(struct kvm *kvm);
+int kvm_shm_disabled(struct kvm *kvm);
 int kvm_shm_start_log_share_dirty_pages(struct kvm *kvm);
 int kvm_shm_flip_sharing(void);
 

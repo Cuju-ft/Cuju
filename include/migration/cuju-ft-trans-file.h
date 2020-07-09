@@ -29,7 +29,16 @@ enum CUJU_QEMU_VM_TRANSACTION_STATE {
     CUJU_QEMU_VM_TRANSACTION_NOCOPY,
     CUJU_QEMU_VM_TRANSACTION_DEV_HEADER,
     CUJU_QEMU_VM_TRANSACTION_DEV_STATES,
+    CUJU_QEMU_VM_TRANSACTION_ALIVE,
+    CUJU_QEMU_VM_TRANSACTION_CHECKALIVE
 };
+
+/*
+this variable is for CUJU_QEMU_VM_TRANSACTION_STATE 
+and this command in our TCP transmission is 16 bit
+Only Sending when hmp 'cuju-migrate-cancel'
+*/   
+#define CUJU_FT_ALIVE_HEADER 15     
 
 enum CUJU_FT_MODE {
     CUJU_FT_ERROR = -1,
@@ -135,7 +144,8 @@ typedef struct CujuQEMUFileFtTrans
     int ram_fd_recved;  // reset to -1
     int ram_fd_expect;  // reset to -1
     int ram_fd_ack;     // should ram_fd handler send back ack?
-
+    bool cancel;
+    bool check;
 } CujuQEMUFileFtTrans;
 
 void *cuju_process_incoming_thread(void *opaque);

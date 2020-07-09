@@ -37,6 +37,8 @@
 #include "qemu/cutils.h"
 #include "qemu/error-report.h"
 #include "hw/intc/intc.h"
+#include "migration/cuju-kvm-share-mem.h"
+#include "migration/cuju-ft-trans-file.h"
 
 #ifdef CONFIG_SPICE
 #include <spice/enums.h>
@@ -977,6 +979,7 @@ void hmp_info_tpm(Monitor *mon, const QDict *qdict)
 void hmp_quit(Monitor *mon, const QDict *qdict)
 {
     monitor_suspend(mon);
+    aio_ft_pause(0);
     qmp_quit(NULL);
 }
 
@@ -1265,6 +1268,11 @@ void hmp_snapshot_delete_blkdev_internal(Monitor *mon, const QDict *qdict)
 void hmp_migrate_cancel(Monitor *mon, const QDict *qdict)
 {
     qmp_migrate_cancel(NULL);
+}
+
+void hmp_cuju_migrate_cancel(Monitor *mon, const QDict *qdict)
+{
+    qmp_cuju_migrate_cancel(NULL);
 }
 
 void hmp_migrate_incoming(Monitor *mon, const QDict *qdict)
@@ -2595,3 +2603,18 @@ void hmp_cuju_adjust_epoch(Monitor *mon, const QDict *qdict)
         return;
     }
 }
+
+void hmp_cuju_ft_started(Monitor *mon, const QDict *qdict) 
+{
+    monitor_printf(mon, "ft_started: %d\n", show_ft_started());
+
+    return;
+}
+
+void hmp_cuju_ft_mode(Monitor *mon, const QDict *qdict)
+{
+    monitor_printf(mon, "cuju_ft_mode: %d\n", (unsigned int)cuju_ft_mode);
+    
+    return;
+}
+

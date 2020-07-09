@@ -166,6 +166,10 @@ static void virtio_blk_complete_head(VirtIOBlockReq *req)
         assert(i<rec->len);
         if (--rec->left == 0) {
             QTAILQ_REMOVE(&s->record_list, rec, node);
+            g_free(rec->idx);
+            g_free(rec->list);
+            g_free(rec->reqs);
+            g_free(rec->completed);
             g_free(rec);
         }
     }
@@ -209,8 +213,20 @@ static void virtio_blk_req_complete(VirtIOBlockReq *req, unsigned char status)
 
     trace_virtio_blk_req_complete(req, status);
 
-    if (kvmft_started())
+    if (kvmft_started()){
         confirm_req_read_memory_mapped(req);
+    }else{
+        if (req->in == NULL) {
+            unsigned in_num = req->elem.in_num;
+            struct iovec *in_iov = req->elem.in_sg;
+            virtqueue_map_write(&req->elem);
+
+            req->in = (void *)in_iov[in_num - 1].iov_base
+            + in_iov[in_num - 1].iov_len
+            - sizeof(struct virtio_blk_inhdr);
+            req->in_len = iov_size(in_iov, in_num);
+        }
+    }
 
     if (kvmft_started() && req->elem.in_num > 1) {
         QEMUIOVector qiov;

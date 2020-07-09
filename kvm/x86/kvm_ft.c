@@ -766,6 +766,13 @@ int kvm_shm_enable(struct kvm *kvm)
     return 0;
 }
 
+int kvm_shm_disable(struct kvm *kvm)
+{
+    struct kvmft_context *ctx = &kvm->ft_context;
+    ctx->shm_enabled = 0;
+    return 0;
+}
+
 static int wait_for_other_mark(struct kvm_memory_slot *memslot,
                            int cur_index,
                            unsigned long gfn_off,
@@ -2470,6 +2477,7 @@ static int kvmft_diff_to_buf(struct kvm *kvm, unsigned long gfn,
     ret = __diff_to_buf(gfn, page1, page2, buf);
 
     if (check_modify) {
+        kvm_release_page_clean(page2);
         page2 = find_later_backup(kvm, gfn, trans_index, run_serial);
         if (page2 != NULL)
             ret = __diff_to_buf(gfn, page1, page2, buf);
@@ -3278,7 +3286,9 @@ int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
 
     ctx->max_desc_count = KVM_DIRTY_BITMAP_INIT_COUNT;
 
-    kvm->vcpus[0]->epoch_time_in_us = info->epoch_time_in_ms * 1000;
+    if (kvm->vcpus[0] != NULL) {
+        kvm->vcpus[0]->epoch_time_in_us = info->epoch_time_in_ms * 1000;
+    }
     pages_per_ms = info->pages_per_ms;
 
     ctx->shared_page_num = info->shared_page_num; // + 1024; // 1024 is guard

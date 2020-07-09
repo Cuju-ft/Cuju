@@ -1354,6 +1354,7 @@ struct kvm_shmem_init {
 };
 #define KVM_SHM_INIT              _IOW(KVMIO, 0xd8, struct kvm_shmem_init)	// Cuju
 #define KVM_SHM_ENABLE            _IO(KVMIO, 0xd9)	// Cuju
+#define KVM_SHM_DISABLE            _IO(KVMIO, 0xfd)
 #define KVM_SHM_START_TIMER       _IO(KVMIO, 0xda)	// Cuju
 
 struct kvm_shmem_child {
@@ -1414,6 +1415,7 @@ struct kvmft_set_master_slave_sockets {
 };
 #define KVMFT_SET_MASTER_SLAVE_SOCKETS    _IOW(KVMIO, 0xcf, struct kvmft_set_master_slave_sockets)
 
+#define KVM_SHM_CANCEL_TIMER       _IO(KVMIO, 0xdd)
 
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
 #define KVM_DEV_ASSIGN_PCI_2_3		(1 << 1)

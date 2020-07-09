@@ -24,7 +24,7 @@
 #define PAGES_PER_MS        200
 #define SHARED_DIRTY_SIZE   10000
 #define SHARED_DIRTY_WATERMARK  9600
-
+extern int migrate_cancel;
 bool cuju_supported(void);
 
 void kvmft_pre_init(void);
@@ -36,6 +36,10 @@ void trans_ram_add(MigrationState *s);
 void kvm_shmem_trans_ram_bh(void *opaque);
 
 void kvm_shmem_start_ft(void);
+void kvm_shmem_stop_ft(void);  
+void kvm_shmem_cancel_timer(void);
+void kvm_shmem_start_migrate_cancel(void);
+void kvm_shmem_stop_migrate_cancel(void);
 int kvmft_started(void);
 int kvmft_write_protect_dirty_pages(int cur_index);
 int kvm_shm_clear_dirty_bitmap(int cur_index);
@@ -69,5 +73,6 @@ void kvm_shmem_load_ram(void *buf, int size);
 void* kvm_shmem_map_pfn(unsigned long pfn, unsigned long size);
 void kvm_shmem_unmap_pfn(void *ptr, unsigned long size);
 
+int show_ft_started (void);
 
 #endif

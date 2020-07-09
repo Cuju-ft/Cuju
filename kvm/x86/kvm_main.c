@@ -3336,13 +3336,7 @@ static long kvm_vm_ioctl(struct file *filp,
 		r = -EFAULT;
 		if (copy_from_user(&log, argp, sizeof(log)))
 			goto out;
-		// Cuju Begin
-		if (kvm_shm_is_enabled(kvm)) {
-			r = -EINVAL;
-		} else {
-		// Cuju End
-			r = kvm_vm_ioctl_get_dirty_log(kvm, &log);
-		}
+		r = kvm_vm_ioctl_get_dirty_log(kvm, &log);
 		break;
 	}
 
@@ -3431,6 +3425,12 @@ static long kvm_vm_ioctl(struct file *filp,
         break;
     case KVM_SHM_ENABLE: {
         r = kvm_shm_enable(kvm);
+        if (r)
+            goto out;
+        break;
+    }
+    case KVM_SHM_DISABLE: {
+        r = kvm_shm_disable(kvm);
         if (r)
             goto out;
         break;
@@ -3712,6 +3712,11 @@ out_free_irq_routing:
         r = kvmft_fire_timer(kvm->vcpus[0], (int)moff);
         break;
     }
+        case KVM_SHM_CANCEL_TIMER: {
+	r = 0;
+        kvm_shm_timer_cancel(kvm->vcpus[0]);
+        break;
+        }
     case KVMFT_SET_MASTER_SLAVE_SOCKETS: {
         struct kvmft_set_master_slave_sockets socks;
         r = -EFAULT;

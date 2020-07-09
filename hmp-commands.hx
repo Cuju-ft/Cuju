@@ -1777,7 +1777,9 @@ ETEXI
     },
 
 STEXI
-@end table
+@item info
+@findex info
+Info
 ETEXI
 
 
@@ -1809,4 +1811,55 @@ STEXI
 @item cuju-adjust-epoch
 @findex cuju-adjust-epoch
 Adjust epoch size in cuju-ft
+ETEXI
+
+ 
+    {
+        .name       = "cuju-get-ft-started",
+        .args_type  = "",
+        .params     = "",
+        .help       = "Get started of Cuju-ft",
+        .cmd        = hmp_cuju_ft_started,
+    },
+
+
+STEXI
+@item cuju-get-ft-started
+@findex cuju-get-ft-started
+Get started vale of cuju-ft
+ETEXI
+
+
+    {
+        .name       = "cuju-get-ft-mode",
+        .args_type  = "",
+        .params     = "",
+        .help       = "Get current ft mode information of Cuju",
+        .cmd        = hmp_cuju_ft_mode,
+    },
+
+
+STEXI
+@item cuju-get-ft-mode
+@findex cuju-get-ft-mode
+Get current ft mode information of Cuju
+ETEXI
+
+
+     {
+        .name       = "cuju-migrate-cancel",
+        .args_type  = "",
+        .params     = "",
+        .help       = "cancel the current VM fault tolerance",
+        .cmd        = hmp_cuju_migrate_cancel,
+    },
+
+STEXI
+@item cuju-migrate-cancel
+@findex cuju-migrate-cancel
+cancel the current VM fault tolerance.
+ETEXI
+
+STEXI
+@end table
 ETEXI

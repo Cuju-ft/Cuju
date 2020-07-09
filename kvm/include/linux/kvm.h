@@ -1464,6 +1464,8 @@ struct kvmft_set_master_slave_sockets {
 };
 #define KVMFT_SET_MASTER_SLAVE_SOCKETS    _IOW(KVMIO, 0xcf, struct kvmft_set_master_slave_sockets)
 
+#define KVM_SHM_CANCEL_TIMER       _IO(KVMIO, 0xdd)
+
 #define KVM_GET_PUT_OFF                   _IOW(KVMIO,  0xd1, int)
 #define KVM_RESET_PUT_OFF                 _IOW(KVMIO,  0xd2, int)
 #define KVM_EXTEND_MEMORY_REGION_DIRTY_BITMAP _IOW(KVMIO, 0xd3,  struct kvm_userspace_memory_region)
@@ -1497,6 +1499,7 @@ struct kvm_shmem_init {
 };
 #define KVM_SHM_INIT              _IOW(KVMIO, 0xd8, struct kvm_shmem_init)
 #define KVM_SHM_ENABLE            _IO(KVMIO, 0xd9)
+#define KVM_SHM_DISABLE            _IO(KVMIO, 0xfd)
 #define KVM_SHM_START_TIMER       _IO(KVMIO, 0xda)
 
 struct kvm_shmem_child {
