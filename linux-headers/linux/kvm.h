@@ -1414,6 +1414,7 @@ struct kvmft_set_master_slave_sockets {
     __u32 socks[10];
 };
 #define KVMFT_SET_MASTER_SLAVE_SOCKETS    _IOW(KVMIO, 0xcf, struct kvmft_set_master_slave_sockets)
+#define KVM_GET_ITH_DLIST_ELEMENT         _IOW(KVMIO,  0xdc, struct cur_off_and_i) // Jinbao
 
 #define KVM_SHM_CANCEL_TIMER       _IO(KVMIO, 0xdd)
 

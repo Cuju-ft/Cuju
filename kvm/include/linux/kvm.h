@@ -1510,6 +1510,11 @@ struct kvm_shmem_child {
     void *maps_ends[KVM_SHM_MAPS_COUNT];
 };
 #define KVM_SHM_SET_CHILD_PID     _IOW(KVMIO, 0xdb, struct kvm_shmem_child)
+struct cur_off_and_i {
+  int cur_off;
+  int i;
+};
+#define KVM_GET_ITH_DLIST_ELEMENT         _IOW(KVMIO,  0xdc, struct cur_off_and_i)
 // Cuju End
 
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)

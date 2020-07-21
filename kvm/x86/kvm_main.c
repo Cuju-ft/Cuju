@@ -3283,6 +3283,7 @@ static long kvm_vm_ioctl(struct file *filp,
 	void __user *argp = (void __user *)arg;
 	int r = 0;
 	int __cur_index;	// Cuju
+	int __i; // For KVM_GET_ITH_DLIST_ELEMENT
 
 	if (kvm->mm != current->mm)
 		return -EIO;
@@ -3417,6 +3418,13 @@ static long kvm_vm_ioctl(struct file *filp,
         if (copy_from_user(&__cur_index, argp, sizeof(__cur_index)))
             goto out;
         r = kvm_get_put_off(kvm, __cur_index);
+        break;
+    case KVM_GET_ITH_DLIST_ELEMENT: // For copying dlist to userspace
+        if (copy_from_user(&__cur_index, argp, sizeof(__cur_index)))
+            goto out;
+        if (copy_from_user(&__i, argp+sizeof(__cur_index), sizeof(__i)))
+            goto out;
+        return kvm_get_ith_dlist_element(kvm, __cur_index, __i);
         break;
     case KVM_RESET_PUT_OFF:
         if (copy_from_user(&__cur_index, argp, sizeof(__cur_index)))

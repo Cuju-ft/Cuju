@@ -53,7 +53,7 @@ int kvm_shmem_flip_sharing(int cur_index);
 
 int kvmft_fire_timer(int moff);
 void kvmft_reset_put_off(MigrationState *s);
-void kvmft_assert_ram_hash_and_dlist(unsigned int *gfns, int size);
+void kvmft_assert_ram_hash_and_dlist(unsigned long *gfns, int size);
 void kvmft_update_epoch_flush_time(double time_s);
 void kvmft_update_epoch_flush_time_linear(double time_s);
 
