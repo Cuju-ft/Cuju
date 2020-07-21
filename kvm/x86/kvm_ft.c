@@ -3229,6 +3229,15 @@ unsigned long kvm_get_put_off(struct kvm *kvm, int cur_index){
 	return dlist->put_off;
 }
 
+unsigned long kvm_get_ith_dlist_element(struct kvm *kvm, int cur_index, int i){
+    // Get ith gfn of current dlist.
+    struct kvmft_dirty_list *dlist;
+    struct kvmft_context *ctx = &kvm->ft_context;
+    dlist = ctx->page_nums_snapshot_k[cur_index];
+    // printk("From dlist_element: cur_index = %d, dlist->pages[%d] = %lu", cur_index, i, dlist->pages[i]);
+    return dlist->pages[i];
+}
+
 int kvm_reset_put_off(struct kvm *kvm, int cur_index){
     struct kvmft_dirty_list *dlist;
     struct kvmft_context *ctx = &kvm->ft_context;

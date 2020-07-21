@@ -146,6 +146,8 @@ int kvm_vm_ioctl_clear_dirty_bitmap(struct kvm *kvm, __u32 cur_index);
 int kvm_vm_ioctl_adjust_dirty_tracking(struct kvm* kvm, int diff);
 int kvm_vm_ioctl_adjust_epoch(struct kvm* kvm, unsigned long newepoch);
 unsigned long kvm_get_put_off(struct kvm *kvm, int cur_index);
+unsigned long kvm_get_ith_dlist_element(struct kvm *kvm, int cur_index, int i);
+
 int kvm_reset_put_off(struct kvm *kvm, int cur_index);
 
 int kvmft_vcpu_alloc_shared_all_state(struct kvm_vcpu *vcpu,
