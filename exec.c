@@ -3824,14 +3824,14 @@ void kvmft_calc_ram_hash(void)
         }
 }
 
-static void __assert_gfn_in_dlist(unsigned int gfn, unsigned int *gfns, int size)
+static void __assert_gfn_in_dlist(unsigned long gfn, unsigned long *gfns, int size)
 {
     int i;
     for (i = 0; i < size; i++)
         if (gfn == gfns[i])
             return;
 #ifdef ft_debug_mode_enable
-    printf("%s can't find %u in dlist\n", __func__, gfn);
+    printf("%s can't find %lu in dlist\n", __func__, gfn);
     printf("%s due to a bug, dirty pages are out of control, FT will fail, abort..\n", __func__);
     printf("%s please notify me\n", __func__);
 #endif
@@ -3839,16 +3839,17 @@ static void __assert_gfn_in_dlist(unsigned int gfn, unsigned int *gfns, int size
 }
 
 // assert all dirtied pages are in list
-void kvmft_assert_ram_hash_and_dlist(unsigned int *gfns, int size)
+void kvmft_assert_ram_hash_and_dlist(unsigned long *gfns, int size)
 {
     RAMBlock *block;
     long i;
-    static int count = 0;
-
-    if (count >= 5)
+    /*
+     static int count = 0;
+    
+     if (count >= 5)
         return;
-    ++count;
-
+     ++count;
+    */
     qemu_mutex_lock_ramlist();
 
     QLIST_FOREACH_RCU(block, &ram_list.blocks, next) {
@@ -3860,15 +3861,15 @@ void kvmft_assert_ram_hash_and_dlist(unsigned int *gfns, int size)
             if (block->hash[i >> 12] != hash) {
                 if (gfn >= PC_ROM_MAX)
                     gfn = 0x100000 + (gfn - PC_ROM_MAX);
-                __assert_gfn_in_dlist((unsigned int)gfn, gfns, size);
+                __assert_gfn_in_dlist((unsigned long)gfn, gfns, size);
                 block->hash[i >> 12] = hash;
             }
         }
     }
 
     qemu_mutex_unlock_ramlist();
-#ifdef ft_debug_mode_enable
+//#ifdef ft_debug_mode_enable
     printf("%s good\n", __func__);
-#endif
+//#endif
 }
 #endif

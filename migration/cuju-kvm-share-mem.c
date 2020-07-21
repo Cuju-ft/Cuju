@@ -1212,8 +1212,40 @@ void kvm_shmem_send_dirty_kernel(MigrationState *s)
 	int put_off;
 	cur_off = s->cur_off;
 	put_off = kvm_vm_ioctl(kvm_state, KVM_GET_PUT_OFF, &cur_off);
-	//TODO kvmft_assert_ram_hash_and_dlist function should be moved to kernel space
-    //kvmft_assert_ram_hash_and_dlist(dlist->pages, dlist->put_off);
+
+//#define DLIST_TEST_MODE
+#ifdef DLIST_TEST_MODE
+  /* 
+   * 1. Note that the dlist in kvm is a struct, not an array or list.
+   * 2. dlist_pages declared here is an array of gfn(unsigned long),
+   * which is created by calling KVM_GET_ITH_DLIST_ELEMENT several
+   * (put_off) times.
+   * 3. To call KVM_GET_ITH_DLIST_ELEMENT, we need to pass cur_off and
+   * i as parameters. Hence, cur_off_and_i is borned to gather these
+   * two variables.
+   */ 
+  struct cur_off_and_i {
+    int cur_off;
+    int i;
+  };
+
+  struct cur_off_and_i *coai;
+  unsigned long *dlist_pages;
+
+  coai = malloc(sizeof(struct cur_off_and_i));
+  coai->cur_off = cur_off;
+  dlist_pages = malloc(put_off*sizeof(unsigned long));
+
+  for (int i = 0; i < put_off; i++) {
+    coai->i = i;
+    dlist_pages[i] = kvm_vm_ioctl(kvm_state, KVM_GET_ITH_DLIST_ELEMENT, coai); // get dlist's ith gfn
+  }
+
+  kvmft_assert_ram_hash_and_dlist(dlist_pages, put_off);
+
+  free(coai);
+  free(dlist_pages);
+#endif
     s->dirty_pfns_len = put_off;
 
 #ifdef CONFIG_KVMFT_USERSPACE_TRANSFER
