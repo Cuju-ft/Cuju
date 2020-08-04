@@ -31,6 +31,9 @@ int kvmft_bd_update_latency(MigrationState *s)
 	static unsigned long long totallatency = 0;
 	static unsigned long long totaltrans = 0;
 	static unsigned long long totaldirty = 0;
+	static unsigned long long exceed = 0;
+	static unsigned long long less = 0;
+	static unsigned long long ok = 0;
 
 	totalruntime += runtime_us;
 	totallatency += latency_us;
@@ -39,7 +42,33 @@ int kvmft_bd_update_latency(MigrationState *s)
 
 	total++;
 
+
+
+	if(latency_us <= EPOCH_TIME_IN_MS*1000 + 1000 && latency_us >= EPOCH_TIME_IN_MS*1000 - 1000) {
+		ok++;
+	} else if (latency_us > EPOCH_TIME_IN_MS*1000+1000) {
+		exceed++;
+	} else {
+		less++;
+	}
+
+
+
+
+
+
+	double exceed_per, less_per, ok_per;
+
 	if(total % 500 == 0) {
+		exceed_per = (double)exceed*100/total;
+		less_per = (double)less*100/total;
+		ok_per = (double)ok*100/total;
+
+
+		printf("exceed = %lf\n", exceed_per);
+		printf("less = %lf\n", less_per);
+		printf("ok = %lf\n", ok_per);
+
 		printf("ave runtime = %lld\n", totalruntime/total);
 		printf("ave trans = %lld\n", totaltrans/total);
 		printf("ave latency = %lld\n", totallatency/total);
