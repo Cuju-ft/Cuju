@@ -2999,6 +2999,7 @@ static void migrate_run(MigrationState *s)
 #ifdef CONFIG_EPOCH_OUTPUT_TRIGGER
     kvmft_output_notified = 0;
 #else
+	bd_set_timer_fire();
     kvm_shmem_start_timer();
 #endif
 }

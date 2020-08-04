@@ -133,7 +133,7 @@ bool cuju_supported(void)
 }
 
 void qmp_cuju_adjust_epoch(uint32_t epoch, Error **errp) {
-    printf("new epoch size is %u us.\n", epoch);
+//    printf("new epoch size is %u us.\n", epoch);
     epoch_time_in_us = epoch;
 
     uint32_t value = epoch_time_in_us;
@@ -1038,10 +1038,10 @@ static int kvm_start_kernel_transfer(int trans_index, int ram_fd, int conn_index
 {
     struct kvm_shmem_start_kernel_transfer req;
     int ret;
-    //int64_t start, end, tmp = 0;
+    int64_t start, end, tmp = 0;
     MigrationState *s = migrate_by_index(trans_index);
 
-//    start = time_in_us();
+    start = time_in_us();
     s->transfer_real_start_time = time_in_double();
 
     req.trans_index = trans_index;
@@ -1051,22 +1051,22 @@ static int kvm_start_kernel_transfer(int trans_index, int ram_fd, int conn_index
     req.max_conn = max_conn;
 
     do {
-/*        end = time_in_us();
+        end = time_in_us();
         {
             if (end - start > EPOCH_TIME_IN_MS*1000) {
                 printf("%s already takes %ldms %d\n", __func__, (end-start)/1000, s->dirty_pfns_len);
             }
-        }*/
+        }
         ret = kvm_vm_ioctl(kvm_state, KVM_START_KERNEL_TRANSFER, &req);
         if (ret == -EINTR)
             printf("%s interrupted\n", __func__);
         req.interrupted = 1;
-/*        tmp = time_in_us();
+        tmp = time_in_us();
         {
             if (tmp - end > EPOCH_TIME_IN_MS*1000) {
                 printf("%s ioctl takes %ldms %d\n", __func__, (tmp-end)/1000, s->dirty_pfns_len);
             }
-        }*/
+        }
     } while (ret == -EINTR);
 
     s->transfer_real_finish_time = time_in_double();

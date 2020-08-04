@@ -1614,7 +1614,7 @@ int kvm_vm_ioctl_adjust_dirty_tracking(struct kvm* kvm, int diff)
 int kvm_vm_ioctl_adjust_epoch(struct kvm* kvm, unsigned long newepoch)
 {
     kvm->vcpus[0]->epoch_time_in_us = newepoch;
-    printk("%s new epoch is %lu\n", __func__, newepoch);
+//    printk("%s new epoch is %lu\n", __func__, newepoch);
 
     return 0;
 }
