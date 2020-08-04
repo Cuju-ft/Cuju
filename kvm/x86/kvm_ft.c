@@ -41,7 +41,9 @@ static int page_transfer_offsets_off = 0;
 #endif
 
 #define LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS 1
-#define KNN_TO_GET_TRANS_RATE 0
+//#undef LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS
+#define KNN_TO_GET_TRANS_RATE 1
+#undef KNN_TO_GET_TRANS_RATE
 
 
 #define KNUM1 100
@@ -224,7 +226,7 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 
 #ifndef KNN_TO_GET_TRANS_RATE
 	long long current_dirty_byte = bd_calc_dirty_bytes(kvm, ctx, dlist);
-	int pr = get_predict_trans_rate_s(kvm, dlist->put_off, current_dirty_byte);
+	int pr = get_predict_trans_rate(kvm, dlist->put_off, current_dirty_byte);
 	if(pr > 0)
 		current_trans_rate = pr;
 	else
