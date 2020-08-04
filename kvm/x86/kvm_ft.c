@@ -43,6 +43,8 @@ static int page_transfer_offsets_off = 0;
 static int global_internal_time = 300;
 static int estimator_thread(void *arg);
 
+long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct kvmft_dirty_list *dlist);
+
 
 struct diff_and_tran_kthread_descriptor {
     struct kvm *kvm;
@@ -196,15 +198,20 @@ void kvm_shm_timer_cancel(struct kvm_vcpu *vcpu)
 	hrtimer_cancel(&vcpu->hrtimer);
 }
 
-
 static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 {
     struct kvm *kvm = vcpu->kvm;
 	struct kvmft_context *ctx;
     ctx = &kvm->ft_context;
 
+	struct kvmft_dirty_list *dlist;
+    dlist = ctx->page_nums_snapshot_k[ctx->cur_index];
+
+	long long current_dirty_byte = bd_calc_dirty_bytes(kvm, ctx, dlist);
+
 
 	int runtime = time_in_us() - kvm->current_run_start[ctx->cur_index];
+	printk("%d %ld\n", runtime, current_dirty_byte);
 	if(runtime > 5000) {
     	vcpu->hrtimer_pending = true;
     	kvm_vcpu_kick(vcpu);
@@ -3440,4 +3447,79 @@ int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
 err_free:
     kvm_shm_exit(kvm);
     return ret;
+}
+
+long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct kvmft_dirty_list *dlist)
+{
+	struct page *page1, *page2;
+    int i, j, k, real_count, total_dirty_bytes = 0;
+	int n = 11; //3 VMs
+    int p = 2;
+
+	for (i = n; i < dlist->put_off; i+=(n+p)) {
+        for(k = 0; (k < p) && (i+k < dlist->put_off); k++){
+ //
+        	real_count++;
+
+        	gfn_t gfn = dlist->pages[i+k];
+
+        	page1 = ctx->shared_pages_snapshot_pages[ctx->cur_index][i+k];
+
+        	struct task_struct *current_backup = get_cpu_var(current_task);
+        	struct task_struct *kvm_task = kvm->vcpus[0]->task;
+        	if(current_backup != kvm_task) {
+            	__this_cpu_write(current_task, kvm_task);
+        	}
+
+            pfn_t pfn = gfn_to_pfn_atomic(kvm, gfn);
+            page2 = pfn_to_page(pfn);
+
+			__this_cpu_write(current_task, current_backup);
+        	put_cpu_var(current_task);
+//////////////////////////////////////
+			int l;
+			int len = 0;
+		//for(l = 0; l < 2; l++) {
+			len = 0;
+
+        	char *page = kmap_atomic(page2);
+        	char *backup = kmap_atomic(page1) ;
+
+
+        	kernel_fpu_begin();
+        	for (j = 0; j < 4096; j += 32) {
+            	len += 32 * (!!memcmp_avx_32(backup + j, page + j));
+        	//if (memcmp_avx_32(backup + j, page + j)) { //test
+    //        	memcpy(block, page + i, 32);
+		//		real_count++;
+				//len+=32;
+        	//}
+			}
+        	kernel_fpu_end();
+
+
+        	kunmap_atomic(page);
+        	kunmap_atomic(backup);
+
+
+        	if(len == 0) {
+   //     	memcpy(block, page, 4096);
+            	len = 4096;
+        	}
+
+		//}
+        	total_dirty_bytes += (len+28);
+        }
+    }
+
+
+	if(real_count)
+	    total_dirty_bytes = (total_dirty_bytes/real_count)*dlist->put_off;
+
+
+	//kfree(block);
+
+
+	return total_dirty_bytes;
+
 }

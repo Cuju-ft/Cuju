@@ -865,11 +865,11 @@ static int kvm_extend_dirty_bitmap(struct kvm_memory_slot *memslot)
 #ifndef CONFIG_S390
     size_t array_size;
     int ret;
- 
+
     ret = shared_page_array_extend(&memslot->epoch_dirty_bitmaps);
     if (ret < 0)
         return ret;
- 
+
     ret = shared_page_array_extend(&memslot->epoch_gfn_to_put_offs);
     if (ret < 0)
         return ret;
@@ -2082,7 +2082,7 @@ int kvm_write_guest_cached(struct kvm *kvm, struct gfn_to_hva_cache *ghc,
 
     if (kvm_is_error_hva(ghc->hva))
         return -EFAULT;
-    
+
     r = kvmft_page_dirty(kvm, ghc->gpa >> PAGE_SHIFT,
                             (void *)ghc->hva, 1, NULL);
 
@@ -2610,7 +2610,11 @@ static int kvm_vm_ioctl_create_vcpu(struct kvm *kvm, u32 id)
 
 	mutex_unlock(&kvm->lock);
 	kvm_arch_vcpu_postcreate(vcpu);
-	kvm_shm_setup_vcpu_hrtimer(vcpu);
+
+	if(id == 0) {
+		vcpu->task = current;
+		kvm_shm_setup_vcpu_hrtimer(vcpu);
+	}
 
 	return r;
 
