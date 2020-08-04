@@ -556,7 +556,8 @@ struct kvm {
 	int current_trans_rate;
     struct k_rpoint **krpoint;
 	struct k_dis3 *kdis3;
-	int kindex;
+	int *krindex;
+	int *krindex_ok;
 
 };
 
