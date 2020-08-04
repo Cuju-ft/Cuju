@@ -531,6 +531,10 @@ struct kvm {
 
     DECLARE_KFIFO(trans_queue, int, KVM_MAX_MIGRATION_DESC);
     wait_queue_head_t trans_queue_event;
+
+
+	s64 current_run_start[KVM_DIRTY_BITMAP_INIT_COUNT];
+
 };
 
 #define kvm_err(fmt, ...) \

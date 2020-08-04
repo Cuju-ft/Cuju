@@ -1,4 +1,4 @@
-/* 
+/*
  * Cuju
  * (a.k.a. Fault Tolerance, Continuous Replication, or Checkpointing)
  *
@@ -20,7 +20,8 @@
 #include "qemu/main-loop.h"
 
 #define KVM_SHARE_MEM   1
-#define EPOCH_TIME_IN_MS    5
+//#define EPOCH_TIME_IN_MS    5
+#define EPOCH_TIME_IN_MS    1
 #define PAGES_PER_MS        200
 #define SHARED_DIRTY_SIZE   10000
 #define SHARED_DIRTY_WATERMARK  9600
@@ -36,7 +37,7 @@ void trans_ram_add(MigrationState *s);
 void kvm_shmem_trans_ram_bh(void *opaque);
 
 void kvm_shmem_start_ft(void);
-void kvm_shmem_stop_ft(void);  
+void kvm_shmem_stop_ft(void);
 void kvm_shmem_cancel_timer(void);
 void kvm_shmem_start_migrate_cancel(void);
 void kvm_shmem_stop_migrate_cancel(void);
@@ -74,5 +75,8 @@ void* kvm_shmem_map_pfn(unsigned long pfn, unsigned long size);
 void kvm_shmem_unmap_pfn(void *ptr, unsigned long size);
 
 int show_ft_started (void);
+
+int kvmft_bd_update_latency(MigrationState *s);
+
 
 #endif

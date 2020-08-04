@@ -171,8 +171,14 @@ int kvmft_fire_timer(struct kvm_vcpu *vcpu, int moff)
 
 void kvm_shm_start_timer(struct kvm_vcpu *vcpu)
 {
-	ktime_t ktime;
+	struct kvm *kvm = vcpu->kvm;
+    struct kvmft_context *ctx;
+    ctx = &kvm->ft_context;
 
+	kvm->current_run_start[ctx->cur_index] = time_in_us();
+
+
+	ktime_t ktime;
     ktime = ktime_set(0, vcpu->epoch_time_in_us * 1000);
     hrtimer_start(&vcpu->hrtimer, ktime, HRTIMER_MODE_REL);
 }
@@ -192,10 +198,20 @@ static enum hrtimer_restart kvm_shm_vcpu_timer_callback(
 
     spcl_kthread_notify_abandon(vcpu->kvm);
 
-    vcpu->hrtimer_pending = true;
-    kvm_vcpu_kick(vcpu);
+	struct kvm *kvm = vcpu->kvm;
+    struct kvmft_context *ctx;
+    ctx = &kvm->ft_context;
 
-    return HRTIMER_NORESTART;
+	int runtime = time_in_us() - kvm->current_run_start[ctx->cur_index];
+
+	if(runtime > 5000) {
+    	vcpu->hrtimer_pending = true;
+    	kvm_vcpu_kick(vcpu);
+
+    	return HRTIMER_NORESTART;
+	} else {
+    	return HRTIMER_RESTART;
+	}
 }
 
 // timer for triggerring ram transfer
