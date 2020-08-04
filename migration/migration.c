@@ -2419,6 +2419,8 @@ static int migrate_ft_trans_get_ready(void *opaque)
             goto backup_close;
         }
 
+		s->recv_ack1_time = time_in_double();
+
         FTPRINTF("%s slave ack1 time %lf\n", __func__,
             time_in_double() - s->transfer_finish_time);
 

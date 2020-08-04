@@ -262,6 +262,7 @@ struct MigrationState
     double transfer_finish_time;
     double transfer_real_start_time;
     double transfer_real_finish_time;
+    double recv_ack1_time;
     char time_buf[256];
     int time_buf_off;
 };

@@ -203,6 +203,7 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 	struct kvmft_context *ctx;
     ctx = &kvm->ft_context;
 
+
 	int runtime = time_in_us() - kvm->current_run_start[ctx->cur_index];
 	if(runtime > 5000) {
     	vcpu->hrtimer_pending = true;
@@ -3353,6 +3354,7 @@ int kvm_shm_init(struct kvm *kvm, struct kvm_shmem_init *info)
 
     if (kvm->vcpus[0] != NULL) {
         kvm->vcpus[0]->epoch_time_in_us = info->epoch_time_in_ms * 1000;
+		kvm->target_latency_us = kvm->vcpus[0]->epoch_time_in_us;
     }
     pages_per_ms = info->pages_per_ms;
 

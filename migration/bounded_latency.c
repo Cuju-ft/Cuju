@@ -20,6 +20,33 @@ void bd_set_timer_fire(void)
 
 int kvmft_bd_update_latency(MigrationState *s)
 {
+
+    int runtime_us = (int)((s->snapshot_start_time - s->run_real_start_time) * 1000000);
+    int latency_us = (int)((s->recv_ack1_time - s->run_real_start_time) * 1000000);
+    int trans_us = (int)((s->recv_ack1_time - s->snapshot_start_time) * 1000000);
+	int dirty_len = s->ram_len;
+
+	static unsigned long long total = 0;
+	static unsigned long long totalruntime = 0;
+	static unsigned long long totallatency = 0;
+	static unsigned long long totaltrans = 0;
+	static unsigned long long totaldirty = 0;
+
+	totalruntime += runtime_us;
+	totallatency += latency_us;
+	totaltrans   += trans_us;
+	totaldirty   += dirty_len;
+
+	total++;
+
+	if(total % 500 == 0) {
+		printf("ave runtime = %lld\n", totalruntime/total);
+		printf("ave trans = %lld\n", totaltrans/total);
+		printf("ave latency = %lld\n", totallatency/total);
+		printf("ave dirty = %lld\n", totaldirty/total);
+
+	}
+
 /*    struct kvmft_update_latency update;
 
     update.dirty_page = dirty_page;

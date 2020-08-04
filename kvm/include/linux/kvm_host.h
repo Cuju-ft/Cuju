@@ -538,6 +538,7 @@ struct kvm {
 	wait_queue_head_t calc_event;
 	int ft_kick;
 	int nextT;
+	int target_latency_us;
 
 };
 
