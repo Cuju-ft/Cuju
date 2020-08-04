@@ -39,6 +39,8 @@ static int page_transfer_offsets[3072];
 static int page_transfer_offsets_off = 0;
 #endif
 
+#define KNUM1 100
+#define KNUM4 100
 
 static int global_internal_time = 300;
 static int estimator_thread(void *arg);
@@ -207,15 +209,28 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 	struct kvmft_dirty_list *dlist;
     dlist = ctx->page_nums_snapshot_k[ctx->cur_index];
 
-	long long current_dirty_byte = bd_calc_dirty_bytes(kvm, ctx, dlist);
+//	long long current_dirty_byte = bd_calc_dirty_bytes(kvm, ctx, dlist);
+
+
+	int current_trans_rate = kvm->current_trans_rate;
+	int trans = 0;
+	if(current_trans_rate) {
+		trans = dlist->put_off*4096/current_trans_rate;
+	}
 
 
 	int runtime = time_in_us() - kvm->current_run_start[ctx->cur_index];
-	if(runtime > 5000) {
+	int latency = runtime+trans;
+
+	int tg = kvm->target_latency_us;
+
+	//take snapshot
+	if(runtime > tg-1000 || latency >= tg-500) {
     	vcpu->hrtimer_pending = true;
     	kvm_vcpu_kick(vcpu);
 		return NULL;
 	}
+
 
 	kvm->nextT = global_internal_time;
 	return vcpu;
@@ -848,6 +863,16 @@ int kvm_shm_enable(struct kvm *kvm)
 
 	kvm->ft_kick = 0;
 	kvm->nextT = 0;
+	kvm->current_trans_rate = 2000;
+
+	kvm->krpoint = kmalloc(sizeof(struct k_rpoint*)*KNUM1, GFP_KERNEL|__GFP_ZERO);
+	int i;
+	for(i = 0; i < KNUM1; i++) {
+		kvm->krpoint[i] = kmalloc(sizeof(struct k_rpoint)*KNUM4, GFP_KERNEL|__GFP_ZERO);
+	}
+	kvm->kdis3 = kmalloc(sizeof(struct k_dis3)*KNUM4, GFP_KERNEL|__GFP_ZERO);
+	kvm->kindex = 0;
+
 
     return 0;
 }
@@ -3225,6 +3250,13 @@ void kvm_shm_exit(struct kvm *kvm)
 		kvm->ft_cmp_tsk = NULL;
 	}
 
+	for(i = 0; i < KNUM1; i++) {
+		kfree(kvm->krpoint[i]);
+	}
+	kfree(kvm->krpoint);
+
+	kfree(kvm->kdis3);
+
     /*
        for (j = 0; j < 2; ++j) {
        if (shmem->dirty_bitmap_pages[j]) {
@@ -3531,6 +3563,12 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 	int latency = update->latency_us;
 	int dirty_len = update->dirty_len;
 	int dirty_pfns_len = update->dirty_pfns_len;
+
+	if(trans)
+		kvm->current_trans_rate = dirty_pfns_len*4096/trans;
+
+	printk("trans_r = %d\n", kvm->current_trans_rate);
+
 
 //	printk("runtime = %d\n", runtime);
 //	printk("trans = %d\n", trans);

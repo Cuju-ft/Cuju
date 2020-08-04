@@ -456,6 +456,18 @@ struct kvm_trackable {
 	struct page **page;
 };
 
+struct k_dis3 {
+    int index;
+    long long value;
+};
+
+struct k_rpoint {
+    long long dirty_pfns_len;
+    long long dirty_len;
+    long long trans_rate;
+};
+
+
 struct kvm {
 	spinlock_t mmu_lock;
 	struct mutex slots_lock;
@@ -541,6 +553,10 @@ struct kvm {
 	int ft_kick;
 	int nextT;
 	int target_latency_us;
+	int current_trans_rate;
+    struct k_rpoint **krpoint;
+	struct k_dis3 *kdis3;
+	int kindex;
 
 };
 
