@@ -534,6 +534,10 @@ struct kvm {
 
 
 	s64 current_run_start[KVM_DIRTY_BITMAP_INIT_COUNT];
+	struct task_struct *ft_cmp_tsk;
+	wait_queue_head_t calc_event;
+	int ft_kick;
+	int nextT;
 
 };
 

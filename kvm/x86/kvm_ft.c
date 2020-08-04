@@ -39,6 +39,11 @@ static int page_transfer_offsets[3072];
 static int page_transfer_offsets_off = 0;
 #endif
 
+
+static int global_internal_time = 300;
+static int estimator_thread(void *arg);
+
+
 struct diff_and_tran_kthread_descriptor {
     struct kvm *kvm;
     int trans_index;
@@ -191,6 +196,61 @@ void kvm_shm_timer_cancel(struct kvm_vcpu *vcpu)
 	hrtimer_cancel(&vcpu->hrtimer);
 }
 
+
+static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
+{
+    struct kvm *kvm = vcpu->kvm;
+	struct kvmft_context *ctx;
+    ctx = &kvm->ft_context;
+
+	int runtime = time_in_us() - kvm->current_run_start[ctx->cur_index];
+	if(runtime > 5000) {
+    	vcpu->hrtimer_pending = true;
+    	kvm_vcpu_kick(vcpu);
+		return NULL;
+	}
+
+	kvm->nextT = global_internal_time;
+	return vcpu;
+}
+
+static int estimator_thread(void *arg)
+{
+
+	struct kvm_vcpu *vcpu = (struct kvm_vcpu *) arg;
+	struct kvm *kvm = vcpu->kvm;
+
+	while(!kthread_should_stop()) {
+
+
+		wait_event_interruptible(kvm->calc_event, kvm->ft_kick
+				|| kthread_should_stop());
+
+
+		if(kthread_should_stop())
+			break;
+
+		struct kvm_vcpu *rvcpu;
+
+		rvcpu = bd_predic_stop(vcpu);
+
+		kvm->ft_kick = 0;
+		if(rvcpu) {
+    		ktime_t ktime = ktime_set(0, rvcpu->kvm->nextT * 1000);
+    		hrtimer_start(&rvcpu->hrtimer, ktime, HRTIMER_MODE_REL);
+		}
+
+	}
+	return 0;
+
+
+
+
+}
+
+
+
+
 static enum hrtimer_restart kvm_shm_vcpu_timer_callback(
         struct hrtimer *timer)
 {
@@ -199,19 +259,14 @@ static enum hrtimer_restart kvm_shm_vcpu_timer_callback(
     spcl_kthread_notify_abandon(vcpu->kvm);
 
 	struct kvm *kvm = vcpu->kvm;
-    struct kvmft_context *ctx;
-    ctx = &kvm->ft_context;
 
-	int runtime = time_in_us() - kvm->current_run_start[ctx->cur_index];
-
-	if(runtime > 5000) {
-    	vcpu->hrtimer_pending = true;
-    	kvm_vcpu_kick(vcpu);
-
-    	return HRTIMER_NORESTART;
-	} else {
-    	return HRTIMER_RESTART;
+	if(kvm->ft_cmp_tsk) {
+		wake_up_process(kvm->ft_cmp_tsk);
 	}
+	kvm->ft_kick = 1;
+	wake_up(&kvm->calc_event);
+
+	return HRTIMER_NORESTART;
 }
 
 // timer for triggerring ram transfer
@@ -774,6 +829,19 @@ int kvm_shm_enable(struct kvm *kvm)
     struct kvmft_context *ctx = &kvm->ft_context;
     ctx->shm_enabled = !ctx->shm_enabled;
     printk("%s shm_enabled %d\n", __func__, ctx->shm_enabled);
+
+
+	init_waitqueue_head(&kvm->calc_event);
+	kvm->ft_cmp_tsk = kthread_create(estimator_thread, kvm->vcpus[0], "estimator thread");
+	if(IS_ERR(kvm->ft_cmp_tsk)) {
+		kvm->ft_cmp_tsk = NULL;
+		return 0;
+	}
+	kthread_bind(kvm->ft_cmp_tsk, 7);
+
+	kvm->ft_kick = 0;
+	kvm->nextT = 0;
+
     return 0;
 }
 
@@ -3143,6 +3211,12 @@ void kvm_shm_exit(struct kvm *kvm)
 
 	if (kvm->trackable_list)
 		kvm_shm_free_trackable(kvm);
+
+
+	if(kvm->ft_cmp_tsk) {
+		kthread_stop(kvm->ft_cmp_tsk);
+		kvm->ft_cmp_tsk = NULL;
+	}
 
     /*
        for (j = 0; j < 2; ++j) {
