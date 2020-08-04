@@ -26,6 +26,17 @@ int kvmft_bd_update_latency(MigrationState *s)
     int trans_us = (int)((s->recv_ack1_time - s->snapshot_start_time) * 1000000);
 	int dirty_len = s->ram_len;
 
+    struct kvmft_update_latency update;
+	update.dirty_pfns_len = s->dirty_pfns_len;
+	update.dirty_len      = dirty_len;
+	update.runtime_us     = runtime_us;
+	update.trans_us       = trans_us;
+	update.latency_us     = latency_us;
+
+    int r = kvm_vm_ioctl(kvm_state, KVMFT_BD_UPDATE_LATENCY, &update);
+
+
+
 	static unsigned long long total = 0;
 	static unsigned long long totalruntime = 0;
 	static unsigned long long totallatency = 0;
@@ -89,5 +100,5 @@ int kvmft_bd_update_latency(MigrationState *s)
 	*/
 //	int runtime_us = (int)((s->snapshot_start_time - s->run_real_start_time) * 1000000);
 //	printf("runtime = %d\n", runtime_us);
-	return 0;
+	return r;
 }

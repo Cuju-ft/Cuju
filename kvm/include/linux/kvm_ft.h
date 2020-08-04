@@ -27,6 +27,7 @@ struct kvm_shmem_child;
 struct kvm_vcpu;
 struct kvm_vcpu_get_shared_all_state;
 struct kvmft_set_master_slave_sockets;
+struct kvmft_update_latency;
 
 struct kvmft_dirty_list {
     volatile __u32 put_off;     // [spcl_put_off, put_off) stores dirty pages tracked by fault
@@ -40,10 +41,10 @@ struct kvmft_dirty_list {
     __u32 pages[];
 };
 
-struct kvm_collect_log {    
+struct kvm_collect_log {
     __u32 cur_index;
     __u32 is_last;
-};  
+};
 
 struct zerocopy_callback_arg {
 	struct kvm *kvm;
@@ -81,7 +82,7 @@ struct kvmft_context {
     bool log_full;
 
     // array of (struct kvmft_dirty_list *)
-    struct kvmft_dirty_list **page_nums_snapshot_k;  
+    struct kvmft_dirty_list **page_nums_snapshot_k;
     // array of (struct page*)
     struct page **page_nums_snapshot_page;
 
@@ -89,7 +90,7 @@ struct kvmft_context {
 
     // array of
     //  [k1,k2,...,kn], kx points to a kernel page, size is shared_log_size
-    void ***shared_pages_snapshot_k;  
+    void ***shared_pages_snapshot_k;
     // array of
     //  [struct page*, struct page*, ...]
     struct page ***shared_pages_snapshot_pages;
@@ -152,6 +153,6 @@ int kvmft_vcpu_alloc_shared_all_state(struct kvm_vcpu *vcpu,
 void kvmft_gva_spcl_unprotect_page(struct kvm *kvm, unsigned long gfn);
 int kvmft_ioctl_set_master_slave_sockets(struct kvm *kvm,
     struct kvmft_set_master_slave_sockets *socks);
-
+void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *update);
 #endif
 

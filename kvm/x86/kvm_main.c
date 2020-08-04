@@ -3499,6 +3499,18 @@ out_free_irq_routing:
         r = kvmft_ioctl_set_master_slave_sockets(kvm, &socks);
         break;
     }
+    case KVMFT_BD_UPDATE_LATENCY: {
+        struct kvmft_update_latency update;
+        r = -EFAULT;
+        if (copy_from_user(&update, argp, sizeof update))
+            goto out;
+        kvmft_bd_update_latency(kvm, &update);
+
+		if (copy_to_user(argp, &update, sizeof update))
+			goto out;
+        r = 0;
+		break;
+	}
 	default:
 		r = kvm_arch_vm_ioctl(filp, ioctl, arg);
 	}

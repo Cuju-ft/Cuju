@@ -211,7 +211,6 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 
 
 	int runtime = time_in_us() - kvm->current_run_start[ctx->cur_index];
-	printk("%d %ld\n", runtime, current_dirty_byte);
 	if(runtime > 5000) {
     	vcpu->hrtimer_pending = true;
     	kvm_vcpu_kick(vcpu);
@@ -3523,3 +3522,21 @@ long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct
 	return total_dirty_bytes;
 
 }
+
+void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *update)
+{
+
+	int runtime = update->runtime_us;
+	int trans = update->trans_us;
+	int latency = update->latency_us;
+	int dirty_len = update->dirty_len;
+	int dirty_pfns_len = update->dirty_pfns_len;
+
+//	printk("runtime = %d\n", runtime);
+//	printk("trans = %d\n", trans);
+//	printk("latency = %d\n", latency);
+//	printk("dirty_len = %d\n", dirty_len);
+//	printk("dirty_pfns_len = %d\n", dirty_pfns_len);
+}
+
+

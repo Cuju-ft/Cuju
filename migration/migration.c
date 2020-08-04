@@ -2361,7 +2361,7 @@ static void kvmft_flush_output(MigrationState *s)
 	*/
 
 
-	kvmft_bd_update_latency(s);
+	assert(!kvmft_bd_update_latency(s));
 
 
 
