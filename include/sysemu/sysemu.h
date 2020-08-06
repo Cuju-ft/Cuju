@@ -41,6 +41,8 @@ int vm_stop(RunState state);
 int vm_stop_force_state(RunState state);
 void vm_start_mig(void);
 void vm_stop_mig(void);
+void query_vcpu_thread_id(void);
+
 
 typedef enum WakeupReason {
     /* Always keep QEMU_WAKEUP_REASON_NONE = 0 */

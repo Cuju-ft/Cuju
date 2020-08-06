@@ -1424,6 +1424,11 @@ struct kvmft_update_latency {
 	__u32 trans_us;
 	__u32 latency_us;
 	__u32 dirty_pfns_len;
+
+	__u32 e_runtime;
+
+	int cur_index;
+
 };
 
 

@@ -558,7 +558,11 @@ struct kvm {
 	struct k_dis3 *kdis3;
 	int *krindex;
 	int *krindex_ok;
-
+	int e_runtime[KVM_DIRTY_BITMAP_INIT_COUNT];
+	int e_trans[KVM_DIRTY_BITMAP_INIT_COUNT];
+	int bo;
+	uint64_t bo_sum;
+	uint32_t bo_c;
 };
 
 #define kvm_err(fmt, ...) \

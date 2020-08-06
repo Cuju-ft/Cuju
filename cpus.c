@@ -1517,6 +1517,17 @@ void vm_start_mig(void)
     resume_all_vcpus();
 }
 
+
+void query_vcpu_thread_id(void) {
+    CPUState *cpu;
+
+    CPU_FOREACH(cpu) {
+        printf("cocotion test vcpuid = %d\n", cpu->thread_id);
+    }
+}
+
+
+
 /* does a state transition even if the VM is already stopped,
    current state is forgotten forever */
 int vm_stop_force_state(RunState state)

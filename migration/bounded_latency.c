@@ -32,6 +32,7 @@ int kvmft_bd_update_latency(MigrationState *s)
 	update.runtime_us     = runtime_us;
 	update.trans_us       = trans_us;
 	update.latency_us     = latency_us;
+	update.cur_index      = s->cur_off;
 
     int r = kvm_vm_ioctl(kvm_state, KVMFT_BD_UPDATE_LATENCY, &update);
 
@@ -45,11 +46,20 @@ int kvmft_bd_update_latency(MigrationState *s)
 	static unsigned long long exceed = 0;
 	static unsigned long long less = 0;
 	static unsigned long long ok = 0;
+	static unsigned long long runtime_err = 0;
+	static unsigned long long last_transfer_impact_error = 0;
+	static unsigned long long total_uncompress_dirty = 0;
+
+	static int last_trans_time;
+
+	int e_runtime = update.e_runtime;
+
 
 	totalruntime += runtime_us;
 	totallatency += latency_us;
 	totaltrans   += trans_us;
 	totaldirty   += dirty_len;
+	total_uncompress_dirty += s->dirty_pfns_len*4096;
 
 	total++;
 
@@ -59,6 +69,15 @@ int kvmft_bd_update_latency(MigrationState *s)
 		ok++;
 	} else if (latency_us > EPOCH_TIME_IN_MS*1000+1000) {
 		exceed++;
+
+		latency_us-=runtime_us;
+		latency_us+=e_runtime;
+		if(latency_us <= EPOCH_TIME_IN_MS*1000 + 1000 && latency_us >= EPOCH_TIME_IN_MS*1000 - 1000) {
+			runtime_err++;
+		} else if (last_trans_time > runtime_us) {
+			last_transfer_impact_error++;
+		}
+
 	} else {
 		less++;
 	}
@@ -66,24 +85,31 @@ int kvmft_bd_update_latency(MigrationState *s)
 
 
 
+	last_trans_time = trans_us;
 
 
-	double exceed_per, less_per, ok_per;
+	double exceed_per, less_per, ok_per, runtime_err_per, last_transfer_impact_error_per;
 
 	if(total % 500 == 0) {
 		exceed_per = (double)exceed*100/total;
 		less_per = (double)less*100/total;
 		ok_per = (double)ok*100/total;
-
+		runtime_err_per = (double)runtime_err*100/total;
+		last_transfer_impact_error_per = (double)last_transfer_impact_error*100/total;
 
 		printf("exceed = %lf\n", exceed_per);
 		printf("less = %lf\n", less_per);
 		printf("ok = %lf\n", ok_per);
+		printf("runtime_err = %lf\n", runtime_err_per);
+		printf("last trans impact err = %lf\n", last_transfer_impact_error_per);
+		printf("transfer rate predic err = %lf\n", exceed_per+less_per-runtime_err_per-last_transfer_impact_error_per);
+
 
 		printf("ave runtime = %lld\n", totalruntime/total);
 		printf("ave trans = %lld\n", totaltrans/total);
 		printf("ave latency = %lld\n", totallatency/total);
 		printf("ave dirty = %lld\n", totaldirty/total);
+		printf("ave uncompress = %lld\n", total_uncompress_dirty/total);
 
 	}
 

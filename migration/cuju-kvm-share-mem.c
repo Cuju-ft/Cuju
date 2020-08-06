@@ -1102,6 +1102,12 @@ static void thread_set_realtime(void)
         printf("%s pthread_setschedparam failed\n", __func__);
         exit(-1);
     }
+
+	cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(4, &cpuset);
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
 }
 
 static void* trans_ram_conn_thread_func(void *opaque)

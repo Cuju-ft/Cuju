@@ -1324,6 +1324,7 @@ void __migrate_init(void)
 
     migration_states_current = 0;
     migration_states_count = KVM_DIRTY_BITMAP_INIT_COUNT;
+	query_vcpu_thread_id();
 }
 
 MigrationState *migrate_init(const MigrationParams *params)
