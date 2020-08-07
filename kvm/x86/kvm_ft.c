@@ -40,8 +40,8 @@ static int page_transfer_offsets[3072];
 static int page_transfer_offsets_off = 0;
 #endif
 
-#define LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS 1
-#undef LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS
+//#define LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS 1
+//#undef LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS
 #define KNN_TO_GET_TRANS_RATE 1
 //#undef KNN_TO_GET_TRANS_RATE
 
@@ -50,8 +50,16 @@ static int page_transfer_offsets_off = 0;
 //#define KNUM2 2000
 #define KNUM2 4096
 //#define KNUM3 200
-#define KNUM3 10
-#define KNUM4 2000
+//#define KNUM3 5
+//#define KNUM3 10
+//#define KNUM3 100 //current
+#define KNUM3 5
+//#define KNUM4 1000
+//#define KNUM5 2000
+//#define KNUM4 1000 //current
+//#define KNUM5 1000 //current
+#define KNUM4 50
+#define KNUM5 50
 
 static int global_internal_time = 100;
 static int estimator_thread(void *arg);
@@ -237,23 +245,29 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 //	long long current_dirty_byte = bd_calc_dirty_bytes(kvm, ctx, dlist);
 	int current_trans_rate = 0;
 	int current_dirty_byte = 0;
-#ifndef LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS
+	int e_dirty_pfns_len   = dlist->put_off;
+#ifdef LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS
 	current_trans_rate = kvm->current_trans_rate;
 #endif
 
-#ifndef KNN_TO_GET_TRANS_RATE
+#ifdef KNN_TO_GET_TRANS_RATE
 	current_dirty_byte = bd_calc_dirty_bytes(kvm, ctx, dlist);
-	int pr = get_predict_trans_rate(kvm, dlist->put_off, current_dirty_byte);
+	e_dirty_pfns_len = dlist->put_off;
+	int pr = get_predict_trans_rate(kvm, e_dirty_pfns_len, current_dirty_byte);
 	if(pr > 0)
 		current_trans_rate = pr;
 	else
 		current_trans_rate = kvm->current_trans_rate;
+
+	kvm->k_dis_value[ctx->cur_index] = kvm->tmp;
+	kvm->tmp = 0;
 #endif
 
 
 	int trans = 0;
 	if(current_trans_rate) {
-		trans = dlist->put_off*4096/current_trans_rate;
+		//trans = dlist->put_off*4096/current_trans_rate;
+		trans = e_dirty_pfns_len*4096/current_trans_rate;
 	}
 	if(trans == 0) trans = kvm->bo;
 
@@ -273,6 +287,8 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 	if(runtime > tg-1000 || latency > tg  /*|| latency+global_internal_time+(end-start) > tg*/) {
 		kvm->e_runtime[ctx->cur_index] = runtime;
 		kvm->e_trans[ctx->cur_index] = trans;
+		kvm->e_dirty_len[ctx->cur_index] = current_dirty_byte;
+		kvm->e_dirty_pfns_len[ctx->cur_index] = e_dirty_pfns_len;
     	vcpu->hrtimer_pending = true;
     	kvm_vcpu_kick(vcpu);
 		return NULL;
@@ -914,16 +930,28 @@ int kvm_shm_enable(struct kvm *kvm)
 	kvm->bo = 1000;
 	kvm->bo_sum = 1000;
 	kvm->bo_c = 0;
+	kvm->tmp = 0;
 
 	kvm->krpoint = kmalloc(sizeof(struct k_rpoint*)*KNUM1, GFP_KERNEL|__GFP_ZERO);
 	int i;
 	for(i = 0; i < KNUM1; i++) {
 		kvm->krpoint[i] = kmalloc(sizeof(struct k_rpoint)*KNUM4, GFP_KERNEL|__GFP_ZERO);
 	}
-	kvm->kdis3 = kmalloc(sizeof(struct k_dis3)*KNUM4, GFP_KERNEL|__GFP_ZERO);
+
+	kvm->krpoint2 = kmalloc(sizeof(struct k_rpoint*)*KNUM1, GFP_KERNEL|__GFP_ZERO);
+	for(i = 0; i < KNUM1; i++) {
+		kvm->krpoint2[i] = kmalloc(sizeof(struct k_rpoint)*KNUM5, GFP_KERNEL|__GFP_ZERO);
+	}
+
+
+
+
+	kvm->kdis3 = kmalloc(sizeof(struct k_dis3)*(KNUM4+KNUM5), GFP_KERNEL|__GFP_ZERO);
 
 	kvm->krindex = kmalloc(sizeof(int)*KNUM1, GFP_KERNEL|__GFP_ZERO);
 	kvm->krindex_ok = kmalloc(sizeof(int)*KNUM1, GFP_KERNEL|__GFP_ZERO);
+	kvm->krindex2 = kmalloc(sizeof(int)*KNUM1, GFP_KERNEL|__GFP_ZERO);
+	kvm->krindex_ok2 = kmalloc(sizeof(int)*KNUM1, GFP_KERNEL|__GFP_ZERO);
 
     return 0;
 }
@@ -3303,11 +3331,15 @@ void kvm_shm_exit(struct kvm *kvm)
 
 	for(i = 0; i < KNUM1; i++) {
 		kfree(kvm->krpoint[i]);
+		kfree(kvm->krpoint2[i]);
 	}
 	kfree(kvm->krpoint);
+	kfree(kvm->krpoint2);
 	kfree(kvm->kdis3);
 	kfree(kvm->krindex);
 	kfree(kvm->krindex_ok);
+	kfree(kvm->krindex2);
+	kfree(kvm->krindex_ok2);
 
     /*
        for (j = 0; j < 2; ++j) {
@@ -3617,6 +3649,10 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 	int dirty_pfns_len = update->dirty_pfns_len;
 	int curindex       = update->cur_index;
 	update->e_runtime  = kvm->e_runtime[curindex];
+	update->e_trans    = kvm->e_trans[curindex];
+	int e_latency      = update->e_runtime+kvm->e_trans[curindex];
+
+	printk("%ld\n", kvm->k_dis_value[curindex]);
 
 	if(dirty_pfns_len*4096/trans == 0 ) {
 //	if(kvm->e_trans[curindex] == 0 || dirty_len == 0) {
@@ -3657,29 +3693,44 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 		//int kr = dirty_pfns_len;
 		if(kr >= KNUM1) kr = KNUM1-1;
 		int i;
+
+	if(kvm->target_latency_us + 1000 > latency && latency > kvm->target_latency_us - 1000) {
 		for(i = 0; i < kvm->krindex[kr]; i++) {
-			if(tr == kvm->krpoint[kr][i].trans_rate) {
+			if(tr == kvm->krpoint[kr][i].trans_rate && tr!=0) {
 				kvm->krpoint[kr][i].dirty_pfns_len = dirty_pfns_len*4096;
 				kvm->krpoint[kr][i].dirty_len = dirty_len;
+//				kvm->krpoint[kr][i].dirty_len = dirty_pfns_len*4096 - dirty_len;
 			}
 		}
-
-
 		if(i == kvm->krindex[kr]) {
-		//if(dirty_pfns_len) {
 			kvm->krpoint[kr][kvm->krindex[kr]].dirty_pfns_len = dirty_pfns_len*4096;
 			kvm->krpoint[kr][kvm->krindex[kr]].dirty_len = dirty_len;
-			//if(tr == 0)	 {
-			//	kvm->krpoint[kr][kvm->krindex[kr]].trans_rate = kvm->current_trans_rate;
-			//} else {
-//				kvm->krpoint[kr][kvm->krindex[kr]].trans_rate = tr;
-			//}
+//			kvm->krpoint[kr][kvm->krindex[kr]].dirty_len = dirty_pfns_len*4096 - dirty_len;
 			kvm->krpoint[kr][kvm->krindex[kr]].trans_rate = tr;
+			printk("krindex = %d, %d, ok? %d\n", kr, kvm->krindex[kr], kvm->krindex_ok[kr]);
 			if(kvm->krindex[kr]+1 == KNUM4)
 				kvm->krindex_ok[kr] = 1;
 			kvm->krindex[kr] = (kvm->krindex[kr]+1)%KNUM4;
-		//}
 		}
+	} else {
+		for(i = 0; i < kvm->krindex2[kr]; i++) {
+			if(tr == kvm->krpoint2[kr][i].trans_rate && tr!=0) {
+				kvm->krpoint2[kr][i].dirty_pfns_len = dirty_pfns_len*4096;
+				kvm->krpoint2[kr][i].dirty_len = dirty_len;
+//				kvm->krpoint2[kr][i].dirty_len = dirty_pfns_len*4096 - dirty_len;
+			}
+		}
+		if(i == kvm->krindex2[kr]) {
+			kvm->krpoint2[kr][kvm->krindex2[kr]].dirty_pfns_len = dirty_pfns_len*4096;
+			kvm->krpoint2[kr][kvm->krindex2[kr]].dirty_len = dirty_len;
+			//kvm->krpoint2[kr][kvm->krindex2[kr]].dirty_len = dirty_pfns_len*4096 - dirty_len;
+			kvm->krpoint2[kr][kvm->krindex2[kr]].trans_rate = tr;
+			printk("krindex2 = %d, %d, ok? %d\n", kr, kvm->krindex2[kr], kvm->krindex_ok2[kr]);
+			if(kvm->krindex2[kr]+1 == KNUM5)
+				kvm->krindex_ok2[kr] = 1;
+			kvm->krindex2[kr] = (kvm->krindex2[kr]+1)%KNUM5;
+		}
+	}
 #endif
 
 //	printk("trans_r = %d\n", kvm->current_trans_rate);
@@ -3703,7 +3754,9 @@ static int compare_dis(const void *lhs, const void *rhs)
 
 long long get_predict_trans_rate(struct kvm *kvm, long long dirty_pfns_len, long long dirty_len) {
 	long long x = dirty_pfns_len*4096;
+	//long long y = dirty_len;
 	long long y = dirty_len;
+//	long long y = x - dirty_len;
 	long long mk = 0;
 //	int kr = x/KNUM2;
 	int kr = dirty_pfns_len;
@@ -3716,19 +3769,57 @@ long long get_predict_trans_rate(struct kvm *kvm, long long dirty_pfns_len, long
 			kvm->kdis3[i].index = i;
 			long long xx = kvm->krpoint[kr][i].dirty_pfns_len;
 			long long yy = kvm->krpoint[kr][i].dirty_len;
+//			kvm->kdis3[i].value = (x-xx)*(x-xx)+(y-yy)*(y-yy);
 			kvm->kdis3[i].value = (x-xx)*(x-xx)+(y-yy)*(y-yy);
-//			kvm->kdis3[i].value = (x-xx);
 			total++;
 		}
+	}
+	int offset = total;
+	if(kvm->krindex_ok2[kr] == 1) {
+		for(i = 0; i < KNUM5; i++) {
+			kvm->kdis3[i+offset].index = i+offset;
+			long long xx = kvm->krpoint2[kr][i].dirty_pfns_len;
+			long long yy = kvm->krpoint2[kr][i].dirty_len;
+//			kvm->kdis3[i+offset].value = (x-xx)*(x-xx)+(y-yy)*(y-yy);
+			kvm->kdis3[i+offset].value = (x-xx)*(x-xx)+(y-yy)*(y-yy);
+			total++;
+		}
+
+	}
+
+	if(total) {
 		sort(kvm->kdis3, total, sizeof(struct k_dis3), &compare_dis, NULL);
 
 
+//		for(i = 0; i < total; i++) {
+//			if(kvm->kdis3[i].value!=0)
+//				printk("kdis: %lld\n", kvm->kdis3[i].value);
+//		}
+
+
+
 		long long sum = 0;
-		int N = (1+KNUM3)*KNUM3/2;
+		//int N = (1+KNUM3)*KNUM3/2;
+	//	int N = 0;
+		int N = KNUM3;
 		for(i = 0; i < KNUM3; i++) {
 			int index = kvm->kdis3[i].index;
-			mk = kvm->krpoint[kr][index].trans_rate;
-			sum+=(KNUM3-i)*mk;
+			int value = kvm->kdis3[i].value;
+//			printk("@@@@!!value = %lld\n", value);
+			kvm->tmp+=value;
+			if(index >= KNUM4) {
+				mk = kvm->krpoint2[kr][index-offset].trans_rate;
+				//sum+=2*mk;
+				//N+=2;
+		//		N++;
+			} else {
+				mk = kvm->krpoint[kr][index].trans_rate;
+				//sum+=mk;
+		//		N++;
+			}
+			//sum+=(KNUM3-i)*mk;
+	//		N++;
+			sum+=mk;
 		}
 
 /*		long long sum = 0;

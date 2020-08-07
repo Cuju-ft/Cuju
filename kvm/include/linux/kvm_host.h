@@ -555,14 +555,21 @@ struct kvm {
 	int target_latency_us;
 	int current_trans_rate;
     struct k_rpoint **krpoint;
+    struct k_rpoint **krpoint2;
 	struct k_dis3 *kdis3;
 	int *krindex;
 	int *krindex_ok;
+	int *krindex2;
+	int *krindex_ok2;
 	int e_runtime[KVM_DIRTY_BITMAP_INIT_COUNT];
 	int e_trans[KVM_DIRTY_BITMAP_INIT_COUNT];
 	int bo;
 	uint64_t bo_sum;
 	uint32_t bo_c;
+	uint64_t e_dirty_len[KVM_DIRTY_BITMAP_INIT_COUNT];
+	uint64_t e_dirty_pfns_len[KVM_DIRTY_BITMAP_INIT_COUNT];
+	uint32_t k_dis_value[KVM_DIRTY_BITMAP_INIT_COUNT];
+	uint32_t tmp;
 };
 
 #define kvm_err(fmt, ...) \
