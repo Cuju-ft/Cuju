@@ -82,12 +82,14 @@ int kvmft_bd_update_latency(MigrationState *s)
 	static unsigned long long last_exceed = 0;
 	static unsigned long long last_less = 0;
 
+	int target_latency = EPOCH_TIME_IN_MS*1000;
 
 
-	if(latency_us <= EPOCH_TIME_IN_MS*1000 + 1000 && latency_us >= EPOCH_TIME_IN_MS*1000 - 1000) {
+	//if(latency_us <= target_latency + 1000 && latency_us >= target_latency - 1000) {
+	if(latency_us <= target_latency + target_latency/10 && latency_us >= target_latency - target_latency/10) {
 		ok++;
 		last_ok++;
-	} else if (latency_us > EPOCH_TIME_IN_MS*1000+1000) {
+	} else if (latency_us > target_latency+target_latency/10) {
 		exceed++;
 		last_exceed++;
 
@@ -96,7 +98,7 @@ int kvmft_bd_update_latency(MigrationState *s)
 		}
 		latency_us-=runtime_us;
 		latency_us+=e_runtime;
-		if(latency_us <= EPOCH_TIME_IN_MS*1000 + 1000 && latency_us >= EPOCH_TIME_IN_MS*1000 - 1000) {
+		if(latency_us <= target_latency + target_latency/10 && latency_us >= target_latency - target_latency/10) {
 			runtime_err++;
 		} else if (last_trans_time > runtime_us) {
 			last_transfer_impact_error++;
@@ -110,7 +112,7 @@ int kvmft_bd_update_latency(MigrationState *s)
 		}
 	}
 
-	if(update.fix_latency <= EPOCH_TIME_IN_MS*1000 + 1000 && update.fix_latency >= EPOCH_TIME_IN_MS*1000 - 1000) {
+	if(update.fix_latency <= target_latency + target_latency/10 && update.fix_latency >= target_latency - target_latency/10) {
 		total_fix_latency_ok++;
 	}
 

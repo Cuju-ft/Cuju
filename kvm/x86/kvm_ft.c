@@ -284,7 +284,8 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 	s64 end = time_in_us();
 
 	//take snapshot
-	if(runtime > tg-1000 || latency > tg  /*|| latency+global_internal_time+(end-start) > tg*/) {
+//	if(runtime > tg-1000 || latency > tg  /*|| latency+global_internal_time+(end-start) > tg*/) {
+	if(runtime > tg-tg/10 || latency > tg  /*|| latency+global_internal_time+(end-start) > tg*/) {
 		kvm->e_trans_rate[ctx->cur_index] = current_trans_rate;
 		kvm->e_runtime[ctx->cur_index] = runtime;
 		kvm->e_trans[ctx->cur_index] = trans;
@@ -3672,10 +3673,12 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 	update->fix_latency = fix_latency;
 */
 	if(trans) {
-		if(latency <= kvm->target_latency_us + 1000 && latency >= kvm->target_latency_us - 1000) {
+//		if(latency <= kvm->target_latency_us + 1000 && latency >= kvm->target_latency_us - 1000) {
+		if(latency <= kvm->target_latency_us + kvm->target_latency_us/10 && latency >= kvm->target_latency_us - kvm->target_latency_us/10) {
 			printk("============okokok====================\n");
 		}
-		else if (latency > kvm->target_latency_us + 1000) {
+		//else if (latency > kvm->target_latency_us + 1000) {
+		else if (latency > kvm->target_latency_us + kvm->target_latency_us/10) {
 			printk("============exceed====================\n");
 		}
 		else {
