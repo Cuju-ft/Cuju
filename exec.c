@@ -3830,11 +3830,11 @@ static void __assert_gfn_in_dlist(unsigned long gfn, unsigned long *gfns, int si
     for (i = 0; i < size; i++)
         if (gfn == gfns[i])
             return;
-#ifdef ft_debug_mode_enable
+//#ifdef ft_debug_mode_enable
     printf("%s can't find %lu in dlist\n", __func__, gfn);
     printf("%s due to a bug, dirty pages are out of control, FT will fail, abort..\n", __func__);
     printf("%s please notify me\n", __func__);
-#endif
+//#endif
     //abort();
 }
 
