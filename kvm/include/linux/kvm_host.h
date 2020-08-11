@@ -568,8 +568,8 @@ struct kvm {
 	uint32_t bo_c;
 	uint64_t e_dirty_len[KVM_DIRTY_BITMAP_INIT_COUNT];
 	uint64_t e_dirty_pfns_len[KVM_DIRTY_BITMAP_INIT_COUNT];
-	uint32_t k_dis_value[KVM_DIRTY_BITMAP_INIT_COUNT];
-	uint32_t tmp;
+	uint64_t k_dis_value[KVM_DIRTY_BITMAP_INIT_COUNT];
+	uint64_t tmp;
 	int e_trans_rate[KVM_DIRTY_BITMAP_INIT_COUNT];
 
 };

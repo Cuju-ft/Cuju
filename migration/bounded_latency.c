@@ -55,6 +55,8 @@ int kvmft_bd_update_latency(MigrationState *s)
 	static unsigned long long page_zero_less;
 	static unsigned long long page_zero_exceed;
 
+	static double total_dis_f = 0;
+	static unsigned long long total_dis_c = 0;
 
 	static int last_trans_time;
 
@@ -68,6 +70,12 @@ int kvmft_bd_update_latency(MigrationState *s)
 	total_uncompress_dirty += s->dirty_pfns_len*4096;
 
 	total++;
+
+
+	if(update.e_dirty_len) {
+		total_dis_f += (double)(update.kdis_value)/update.e_dirty_len;
+		total_dis_c++;
+	}
 
 
 	static unsigned long long last_ok = 0;
@@ -140,6 +148,10 @@ int kvmft_bd_update_latency(MigrationState *s)
 
 		printf("zero exceed = %lf\n", (double)page_zero_exceed*100/total);
 		printf("zero less = %lf\n", (double)page_zero_less*100/total);
+
+		if(total_dis_c) {
+			printf("dis_f = %lf\n", total_dis_f/total_dis_c);
+		}
 
 	}
 

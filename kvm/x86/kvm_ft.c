@@ -3656,6 +3656,8 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 	int e_dirty_len      = kvm->e_dirty_len[curindex];
 	int e_dirty_pfns_len = kvm->e_dirty_pfns_len[curindex];
 
+	update->e_dirty_len = e_dirty_len;
+	update->kdis_value = kvm->k_dis_value[curindex];
 //	printk("%ld\n", kvm->k_dis_value[curindex]);
 
 /*	int fix_trans_rate = get_predict_trans_rate(kvm, dirty_pfns_len, dirty_len);
@@ -3824,7 +3826,13 @@ long long get_predict_trans_rate(struct kvm *kvm, long long dirty_pfns_len, long
 			long long yy = kvm->krpoint[kr][i].dirty_len;
 //			kvm->kdis3[i].value = (x-xx)*(x-xx)+(y-yy)*(y-yy);
 			//kvm->kdis3[i].value = (x-xx)*(x-xx)+(y-yy)*(y-yy);
-			kvm->kdis3[i].value = (y-yy)*(y-yy);
+			//kvm->kdis3[i].value = (y-yy)*(y-yy);
+
+			if(y>yy)
+				kvm->kdis3[i].value = (y-yy);
+			else
+				kvm->kdis3[i].value = (yy-y);
+
 			total++;
 		}
 //	}
@@ -3837,7 +3845,14 @@ long long get_predict_trans_rate(struct kvm *kvm, long long dirty_pfns_len, long
 			long long yy = kvm->krpoint2[kr][i].dirty_len;
 //			kvm->kdis3[i+offset].value = (x-xx)*(x-xx)+(y-yy)*(y-yy);
 			//kvm->kdis3[i+offset].value = (x-xx)*(x-xx)+(y-yy)*(y-yy);
-			kvm->kdis3[i+offset].value = (y-yy)*(y-yy);
+			//kvm->kdis3[i+offset].value = (y-yy)*(y-yy);
+
+			if(y>yy)
+				kvm->kdis3[i+offset].value = (y-yy);
+			else
+				kvm->kdis3[i+offset].value = yy-y;
+
+
 			total++;
 		}
 
@@ -3878,7 +3893,7 @@ long long get_predict_trans_rate(struct kvm *kvm, long long dirty_pfns_len, long
 	//		N++;
 			sum+=mk;
 		}
-
+		kvm->tmp/=KNUM3;
 /*		long long sum = 0;
 		int N = KNUM3;
 		for(i = 0; i < KNUM3; i++) {
