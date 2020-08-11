@@ -570,6 +570,8 @@ struct kvm {
 	uint64_t e_dirty_pfns_len[KVM_DIRTY_BITMAP_INIT_COUNT];
 	uint32_t k_dis_value[KVM_DIRTY_BITMAP_INIT_COUNT];
 	uint32_t tmp;
+	int e_trans_rate[KVM_DIRTY_BITMAP_INIT_COUNT];
+
 };
 
 #define kvm_err(fmt, ...) \

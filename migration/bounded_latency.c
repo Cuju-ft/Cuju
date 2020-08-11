@@ -49,6 +49,12 @@ int kvmft_bd_update_latency(MigrationState *s)
 	static unsigned long long runtime_err = 0;
 	static unsigned long long last_transfer_impact_error = 0;
 	static unsigned long long total_uncompress_dirty = 0;
+	static unsigned long long total_fix_latency_ok = 0;
+
+	//static unsigned long long page_zero_ok;
+	static unsigned long long page_zero_less;
+	static unsigned long long page_zero_exceed;
+
 
 	static int last_trans_time;
 
@@ -64,12 +70,22 @@ int kvmft_bd_update_latency(MigrationState *s)
 	total++;
 
 
+	static unsigned long long last_ok = 0;
+	static unsigned long long last_exceed = 0;
+	static unsigned long long last_less = 0;
+
+
 
 	if(latency_us <= EPOCH_TIME_IN_MS*1000 + 1000 && latency_us >= EPOCH_TIME_IN_MS*1000 - 1000) {
 		ok++;
+		last_ok++;
 	} else if (latency_us > EPOCH_TIME_IN_MS*1000+1000) {
 		exceed++;
+		last_exceed++;
 
+		if(s->dirty_pfns_len == 0) {
+			page_zero_exceed++;
+		}
 		latency_us-=runtime_us;
 		latency_us+=e_runtime;
 		if(latency_us <= EPOCH_TIME_IN_MS*1000 + 1000 && latency_us >= EPOCH_TIME_IN_MS*1000 - 1000) {
@@ -80,8 +96,15 @@ int kvmft_bd_update_latency(MigrationState *s)
 
 	} else {
 		less++;
+		last_less++;
+		if(s->dirty_pfns_len == 0) {
+			page_zero_less++;
+		}
 	}
 
+	if(update.fix_latency <= EPOCH_TIME_IN_MS*1000 + 1000 && update.fix_latency >= EPOCH_TIME_IN_MS*1000 - 1000) {
+		total_fix_latency_ok++;
+	}
 
 
 
@@ -89,6 +112,7 @@ int kvmft_bd_update_latency(MigrationState *s)
 
 
 	double exceed_per, less_per, ok_per, runtime_err_per, last_transfer_impact_error_per;
+	double fixok;
 
 	if(total % 500 == 0) {
 		exceed_per = (double)exceed*100/total;
@@ -97,12 +121,15 @@ int kvmft_bd_update_latency(MigrationState *s)
 		runtime_err_per = (double)runtime_err*100/total;
 		last_transfer_impact_error_per = (double)last_transfer_impact_error*100/total;
 
+		fixok = (double)total_fix_latency_ok*100/total;
+
 		printf("exceed = %lf\n", exceed_per);
 		printf("less = %lf\n", less_per);
 		printf("ok = %lf\n", ok_per);
 		printf("runtime_err = %lf\n", runtime_err_per);
 		printf("last trans impact err = %lf\n", last_transfer_impact_error_per);
 		printf("transfer rate predic err = %lf\n", exceed_per+less_per-runtime_err_per-last_transfer_impact_error_per);
+		printf("fixok = %lf\n", fixok);
 
 
 		printf("ave runtime = %lld\n", totalruntime/total);
@@ -111,6 +138,16 @@ int kvmft_bd_update_latency(MigrationState *s)
 		printf("ave dirty = %lld\n", totaldirty/total);
 		printf("ave uncompress = %lld\n", total_uncompress_dirty/total);
 
+		printf("zero exceed = %lf\n", (double)page_zero_exceed*100/total);
+		printf("zero less = %lf\n", (double)page_zero_less*100/total);
+
+	}
+
+	if(total % 1000 == 0) {
+		printf("exceed = %lf\n", (double)last_exceed*100/1000);
+		printf("less = %lf\n", (double)last_less*100/1000);
+		printf("ok = %lf\n", (double)last_ok*100/1000);
+		last_exceed = last_less = last_ok = 0;
 	}
 
 /*    struct kvmft_update_latency update;
