@@ -557,6 +557,7 @@ struct kvm {
     struct k_rpoint **krpoint;
     struct k_rpoint **krpoint2;
 	struct k_dis3 *kdis3;
+	struct k_dis3 *kdis4;
 	int *krindex;
 	int *krindex_ok;
 	int *krindex2;
@@ -571,7 +572,7 @@ struct kvm {
 	uint64_t k_dis_value[KVM_DIRTY_BITMAP_INIT_COUNT];
 	uint64_t tmp;
 	int e_trans_rate[KVM_DIRTY_BITMAP_INIT_COUNT];
-
+	int alpha;
 };
 
 #define kvm_err(fmt, ...) \
