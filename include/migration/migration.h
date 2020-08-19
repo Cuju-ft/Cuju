@@ -25,17 +25,18 @@
 #include "io/channel-socket.h"
 
 #define CUJU_FT_DEV_INIT_BUF (8*1024*1024)
-#define CUJU_FT_DEV_STATE_ENTRY_SIZE 50
+#define CUJU_FT_DEV_STATE_ENTRY_SIZE 55
 
 struct CUJUFTDev
 {
     QEMUFile *ft_dev_file;
     void *ft_dev_buf;
     int ft_dev_put_off;
-    int state_entry_num;                                // number of dirtied device states
-    void *state_entries[CUJU_FT_DEV_STATE_ENTRY_SIZE];       // pointers for dirtied SaveStateEntry
-    int state_entry_begins[CUJU_FT_DEV_STATE_ENTRY_SIZE];    // beginning offsets of SaveStateEntrys in ft_dev_buf
-    int state_entry_lens[CUJU_FT_DEV_STATE_ENTRY_SIZE];
+    int state_entry_num;        // number of dirtied device states
+    void **state_entries;       // pointers for dirtied SaveStateEntry
+    int *state_entry_begins;    // beginning offsets of SaveStateEntrys in ft_dev_buf
+    int *state_entry_lens;
+    int state_entry_size;       // max number of dirtied device states entry
 };
 
 #define QEMU_VM_FILE_MAGIC           0x5145564d
