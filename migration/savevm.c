@@ -2157,10 +2157,16 @@ qemu_loadvm_section_dev(QEMUFile *f, MigrationIncomingState *mis)
     char idstr[257];
 
     ftdev.state_entry_num = (uint8_t)qemu_get_byte(f);
+    ftdev.state_entry_size = (uint8_t)qemu_get_byte(f);
 #ifdef ft_debug_mode_enable
     printf("entrynum = %d\n", ftdev.state_entry_num);
 #endif
-    assert(ftdev.state_entry_num <= CUJU_FT_DEV_STATE_ENTRY_SIZE);
+    assert(ftdev.state_entry_num <= ftdev.state_entry_size);
+    if (ftdev.state_entries == NULL) {
+        ftdev.state_entries = g_malloc(ftdev.state_entry_num * sizeof(void*));
+        ftdev.state_entry_begins = g_malloc(ftdev.state_entry_num * sizeof(int));
+        ftdev.state_entry_lens = g_malloc(ftdev.state_entry_num * sizeof(int));
+    }
 #ifdef ft_debug_mode_enable
     printf("%s num %d\n", __func__, ftdev.state_entry_num);
 #endif
@@ -2778,6 +2784,12 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
 
     cpu_synchronize_all_states();
 
+    if (ftdev->state_entries == NULL) {
+        ftdev->state_entry_size = CUJU_FT_DEV_STATE_ENTRY_SIZE;
+        ftdev->state_entries = g_malloc(CUJU_FT_DEV_STATE_ENTRY_SIZE * sizeof(void*));
+        ftdev->state_entry_begins = g_malloc(CUJU_FT_DEV_STATE_ENTRY_SIZE * sizeof(int));
+        ftdev->state_entry_lens = g_malloc(CUJU_FT_DEV_STATE_ENTRY_SIZE * sizeof(int));
+    }
     ftdev->state_entry_num = 0;
 	QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
         int dirty;
@@ -2796,7 +2808,14 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
 		if (!dirty)
             continue;
 
-        assert(ftdev->state_entry_num < CUJU_FT_DEV_STATE_ENTRY_SIZE);
+        if (ftdev->state_entry_num >= ftdev->state_entry_size) {
+            ftdev->state_entry_size += 100;
+            ftdev->state_entries = g_realloc(ftdev->state_entries, ftdev->state_entry_size * sizeof(void*));
+            ftdev->state_entry_begins = g_realloc(ftdev->state_entry_begins, ftdev->state_entry_size * sizeof(int));
+            ftdev->state_entry_lens = g_realloc(ftdev->state_entry_lens, ftdev->state_entry_size * sizeof(int));
+        }
+
+        assert(ftdev->state_entry_num < ftdev->state_entry_size);
         ftdev->state_entries[ftdev->state_entry_num] = se;
         ftdev->state_entry_begins[ftdev->state_entry_num] = ftdev->ft_dev_put_off;
 
@@ -2959,6 +2978,7 @@ void migrate_ft_trans_send_device_state_header(struct CUJUFTDev *ftdev, QEMUFile
     int i;
     qemu_put_byte(f, QEMU_VM_SECTION_DEV);
     qemu_put_byte(f, (uint8_t)ftdev->state_entry_num);
+    qemu_put_byte(f, (uint8_t)ftdev->state_entry_size);
 	#ifdef ft_debug_mode_enable
     printf("%s num %d\n", __func__, ftdev->state_entry_num);
 	#endif
