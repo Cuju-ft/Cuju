@@ -2751,7 +2751,7 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 {
     int ret, i;
     int len = 0, total = 0;
-    uint8_t **buf;
+    uint8_t *buf;
     unsigned int *gfns = dlist->pages;
 
 #ifdef PAGE_TRANSFER_TIME_MEASURE
@@ -2761,15 +2761,12 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 
 	s64 start_t = time_in_us();
 
-	buf = kmalloc(sizeof(uint8_t*)*2, GFP_KERNEL);
+//	buf = kmalloc(sizeof(uint8_t*)*2, GFP_KERNEL);
 
-//    buf = kmalloc(64 * 1024 + 8192, GFP_KERNEL);
+    buf = kmalloc(64 * 1024 + 8192, GFP_KERNEL);
     //buf = kmalloc(3 * 1024 *1024 + 8192, GFP_KERNEL);
-    buf[0] = kmalloc(4 * 1024 *1024, GFP_KERNEL);
-    buf[1] = kmalloc(4 * 1024 *1024, GFP_KERNEL);
 //    buf[2] = kmalloc(4 * 1024 *1024, GFP_KERNEL);
-//    if (!buf)
-    if (!buf[0] || !buf[1] /*|| !buf[2]*/)
+    if (!buf)
         return -ENOMEM;
 	int buf_index = 0;
 
@@ -2800,52 +2797,16 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
             continue;
 #endif
 
-		if(len < 4 * 1024*1024 - 8192) {
-		//	int ltmp = len;
-        	len += kvmft_diff_to_buf(kvm, gfn, i, buf[0] + len,
+        	len += kvmft_diff_to_buf(kvm, gfn, i, buf + len,
             	trans_index, run_serial, end);
-        	//ret = ktcp_send(sock, buf[0] + ltmp, len);
-        //	if (ret < 0)
-         //   	goto free;
-			buf0size = len;
-		} else {
-			int r = 0;
-		//	int ltmp = tmp;
-        	r = kvmft_diff_to_buf(kvm, gfn, i, buf[1] + tmp,
-            	trans_index, run_serial, end);
-        //	ret = ktcp_send(sock, buf[1] + ltmp, r);
-        //	if (ret < 0)
-         //   	goto free;
-			tmp+=r;
-			len+=r;
-		}
 
-/*
-		else if (len < 8 * 1024*1024 - 8192){
-			int r = 0;
-        	r = kvmft_diff_to_buf(kvm, gfn, i, buf[1] + tmp,
-            	trans_index, run_serial, end);
-			tmp+=r;
-			len+=r;
-		} else {
-			int r = 0;
-        	r = kvmft_diff_to_buf(kvm, gfn, i, buf[2] + tmp1,
-            	trans_index, run_serial, end);
-			tmp1+=r;
-			len+=r;
-		}*/
-		//if(len > 0) {
-		//	kvm->record_compress_t[trans_index] = time_in_us() - start_t;
-		//}
-
-//        if (len >= 64 * 1024) {
-      /*  if (len >= 8 * 1024 * 1024) {
+        if (len >= 64 * 1024) {
             ret = ktcp_send(sock, buf, len);
             if (ret < 0)
                 goto free;
             total += len;
             len = 0;
-        }*/
+        }
     }
 
 	kvm->record_compress_t[trans_index] = time_in_us() - start_t;
@@ -2853,19 +2814,8 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 //	native_wbinvd();
 
 
-	if (len > 0 && buf0size > 0) {
-        ret = ktcp_send(sock, buf[0], buf0size);
-        if (ret < 0)
-            goto free;
-        //total += len;
-        //total += buf0size;
-        ret = ktcp_send(sock, buf[1], tmp);
-        if (ret < 0)
-            goto free;
-		total+=len;
-
-	} else if (len > 0) {
-        ret = ktcp_send(sock, buf[0], len);
+	if (len > 0) {
+        ret = ktcp_send(sock, buf, len);
         if (ret < 0)
             goto free;
         total += len;
@@ -2889,9 +2839,6 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 
     ret = total;
 free:
-    kfree(buf[0]);
-    kfree(buf[1]);
-//    kfree(buf[2]);
     kfree(buf);
     return ret;
 }
