@@ -40,9 +40,9 @@ static int page_transfer_offsets[3072];
 static int page_transfer_offsets_off = 0;
 #endif
 
-//#define LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS 1
+#define LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS 1
 //#undef LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS
-#define KNN_TO_GET_TRANS_RATE 1
+//#define KNN_TO_GET_TRANS_RATE 1
 //#undef KNN_TO_GET_TRANS_RATE
 
 
@@ -66,10 +66,14 @@ static int page_transfer_offsets_off = 0;
 
 static int global_internal_time = 100;
 static int estimator_thread(void *arg);
+static unsigned long long global_c = 0;
+static unsigned long long global_c2 = 0;
+
 
 long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct kvmft_dirty_list *dlist);
 long long get_predict_trans_rate(struct kvm *kvm, long long dirty_pfns_len, long long dirty_len);
 long long get_predict_trans_rate2(struct kvm *kvm, long long dirty_pfns_len, long long dirty_len);
+void emulate_compress(struct kvm *kvm, int dirty_pfns_len);
 
 struct diff_and_tran_kthread_descriptor {
     struct kvm *kvm;
@@ -223,6 +227,16 @@ void kvm_shm_timer_cancel(struct kvm_vcpu *vcpu)
 	hrtimer_cancel(&vcpu->hrtimer);
 }
 
+static unsigned long get_random_number(void)
+{
+	unsigned long randNum;
+    int i = 0;
+
+    get_random_bytes(&randNum, sizeof(unsigned long));
+	return randNum;
+}
+
+
 static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 {
 	s64 start = time_in_us();
@@ -251,6 +265,7 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 	int current_dirty_byte = 0;
 	int e_dirty_pfns_len   = dlist->put_off;
 #ifdef LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS
+	current_dirty_byte = bd_calc_dirty_bytes(kvm, ctx, dlist);
 	current_trans_rate = kvm->current_trans_rate;
 #endif
 
@@ -270,10 +285,20 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 
 
 	int trans = 0;
-	if(current_trans_rate) {
+/*	if(current_trans_rate) {
 		//trans = dlist->put_off*4096/current_trans_rate;
-		trans = e_dirty_pfns_len*4096/current_trans_rate;
+		//trans = e_dirty_pfns_len*4096/current_trans_rate;
+		trans = current_dirty_byte/current_trans_rate;
+	}*/
+	int mr = kvm->last_send_r;
+	if(mr) {
+		trans += current_dirty_byte/mr;
 	}
+	mr = kvm->last_compress_r;
+	if(mr) {
+		trans += dlist->put_off*4096/mr;
+	}
+
 	if(trans == 0) trans = kvm->bo;
 
 	int runtime = time_in_us() - kvm->current_run_start[ctx->cur_index];
@@ -291,6 +316,18 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 	//take snapshot
 //	if(runtime > tg-1000 || latency > tg  /*|| latency+global_internal_time+(end-start) > tg*/) {
 	if(runtime > tg-tg/10 || latency > tg ) {
+
+		//unsigned long random = get_random_number();
+
+	//	if(global_c%300 == 0) {
+	//		global_c2++;
+	//	}
+		//emulate_compress(kvm, random%3000);
+		//emulate_compress(kvm, random%1024);
+		//emulate_compress(kvm, 3000);
+	//	emulate_compress(kvm, global_c2%3000);
+		global_c++;
+
 		kvm->e_trans_rate[ctx->cur_index] = current_trans_rate;
 		kvm->e_runtime[ctx->cur_index] = runtime;
 		kvm->e_trans[ctx->cur_index] = trans;
@@ -948,6 +985,14 @@ int kvm_shm_enable(struct kvm *kvm)
 	kvm->bo_c = 0;
 	kvm->tmp = 0;
 	kvm->alpha = 0;
+	kvm->last_predict_copy_and_check = 2;
+	kvm->last_send_r = 500;
+	kvm->last_compress_r = 500;
+	kvm->min_r = 0;
+	kvm->send_r_sum = 0;
+	kvm->compress_r_sum = 0;
+	kvm->send_r_count = 0;
+	kvm->compress_r_count = 0;
 
 	kvm->krpoint = kmalloc(sizeof(struct k_rpoint*)*KNUM1, GFP_KERNEL|__GFP_ZERO);
 	int i;
@@ -2607,13 +2652,16 @@ out:
 }
 
 static int __diff_to_buf(unsigned long gfn, struct page *page1,
-    struct page *page2, uint8_t *buf)
+    struct page *page2, uint8_t *buf, int give_dirty)
 {
     c16x8_header_t *header;
     uint8_t *block;
     char *backup = kmap_atomic(page1);
     char *page = kmap_atomic(page2);
     int i;
+
+
+
 
     header = (c16x8_header_t *)buf;
     block = buf + sizeof(*header);
@@ -2623,16 +2671,24 @@ static int __diff_to_buf(unsigned long gfn, struct page *page1,
 
     kernel_fpu_begin();
 
+
+	int k = 0;
     for (i = 0; i < 4096; i += 32) {
-        if (memcmp_avx_32(backup + i, page + i)) {
+       // if (memcmp_avx_32(backup + i, page + i)) {
+	   memcmp_avx_32(backup + i, page + i);
+	   //if(give_dirty == 1) {
+	   if(k%4 == 0) {
             header->h[i / 256] |= (1 << ((i % 256) / 32));
             memcpy(block, page + i, 32);
             block += 32;
-        }
+	   }
+	   k++;
+       // }
     }
 
     kernel_fpu_end();
 
+	//if(give_dirty == 1) {
     if (block == buf + sizeof(*header)) {
 		#ifdef ft_debug_mode_enable
         printk("warning: not found diff page\n");
@@ -2641,6 +2697,7 @@ static int __diff_to_buf(unsigned long gfn, struct page *page1,
         memcpy(block, page, 4096);
         block += 4096;
     }
+	//}
 
     kunmap_atomic(backup);
     kunmap_atomic(page);
@@ -2653,12 +2710,14 @@ static int __diff_to_buf(unsigned long gfn, struct page *page1,
 }
 
 static int kvmft_diff_to_buf(struct kvm *kvm, unsigned long gfn,
-    int index, uint8_t *buf, int trans_index, int run_serial)
+    int index, uint8_t *buf, int trans_index, int run_serial, int end)
 {
     struct kvmft_context *ctx = &kvm->ft_context;
     struct page *page1, *page2;
     bool check_modify = false;
     int ret;
+	int give_dirty = 0;
+	if(index < end/2) give_dirty = 1;
 
     page1 = ctx->shared_pages_snapshot_pages[trans_index][index];
     page2 = find_later_backup(kvm, gfn, trans_index, run_serial);
@@ -2668,13 +2727,13 @@ static int kvmft_diff_to_buf(struct kvm *kvm, unsigned long gfn,
         check_modify = true;
     }
 
-    ret = __diff_to_buf(gfn, page1, page2, buf);
+    ret = __diff_to_buf(gfn, page1, page2, buf, give_dirty);
 
     if (check_modify) {
         kvm_release_page_clean(page2);
         page2 = find_later_backup(kvm, gfn, trans_index, run_serial);
         if (page2 != NULL)
-            ret = __diff_to_buf(gfn, page1, page2, buf);
+            ret = __diff_to_buf(gfn, page1, page2, buf, give_dirty);
     }
 
     return ret;
@@ -2692,7 +2751,7 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 {
     int ret, i;
     int len = 0, total = 0;
-    uint8_t *buf;
+    uint8_t **buf;
     unsigned int *gfns = dlist->pages;
 
 #ifdef PAGE_TRANSFER_TIME_MEASURE
@@ -2700,14 +2759,37 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
     page_transfer_end_times_off = end;
 #endif
 
-    buf = kmalloc(64 * 1024 + 8192, GFP_KERNEL);
-    if (!buf)
+	s64 start_t = time_in_us();
+
+	buf = kmalloc(sizeof(uint8_t*)*2, GFP_KERNEL);
+
+//    buf = kmalloc(64 * 1024 + 8192, GFP_KERNEL);
+    //buf = kmalloc(3 * 1024 *1024 + 8192, GFP_KERNEL);
+    buf[0] = kmalloc(4 * 1024 *1024, GFP_KERNEL);
+    buf[1] = kmalloc(4 * 1024 *1024, GFP_KERNEL);
+//    buf[2] = kmalloc(4 * 1024 *1024, GFP_KERNEL);
+//    if (!buf)
+    if (!buf[0] || !buf[1] /*|| !buf[2]*/)
         return -ENOMEM;
+	int buf_index = 0;
+
+	//s64 start_t = time_in_us();
 
     kvmft_tcp_unnodelay(sock);
 
+	int tmp = 0;
+	int tmp1 = 0;
+	int buf0size = 0;
+	int buf1size = 0;
+
+//	native_wbinvd();
+
     for (i = start; i < end; ++i) {
         unsigned long gfn = gfns[i];
+
+//	if(i < end/2)
+//		kvm->record_compress_t[trans_index] = time_in_us() - start_t;
+
 
 #ifdef PAGE_TRANSFER_TIME_MEASURE
         page_transfer_start_times[i] = time_in_us();
@@ -2718,25 +2800,80 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
             continue;
 #endif
 
-        len += kvmft_diff_to_buf(kvm, gfn, i, buf + len,
-            trans_index, run_serial);
-        if (len >= 64 * 1024) {
+		if(len < 4 * 1024*1024 - 8192) {
+		//	int ltmp = len;
+        	len += kvmft_diff_to_buf(kvm, gfn, i, buf[0] + len,
+            	trans_index, run_serial, end);
+        	//ret = ktcp_send(sock, buf[0] + ltmp, len);
+        //	if (ret < 0)
+         //   	goto free;
+			buf0size = len;
+		} else {
+			int r = 0;
+		//	int ltmp = tmp;
+        	r = kvmft_diff_to_buf(kvm, gfn, i, buf[1] + tmp,
+            	trans_index, run_serial, end);
+        //	ret = ktcp_send(sock, buf[1] + ltmp, r);
+        //	if (ret < 0)
+         //   	goto free;
+			tmp+=r;
+			len+=r;
+		}
+
+/*
+		else if (len < 8 * 1024*1024 - 8192){
+			int r = 0;
+        	r = kvmft_diff_to_buf(kvm, gfn, i, buf[1] + tmp,
+            	trans_index, run_serial, end);
+			tmp+=r;
+			len+=r;
+		} else {
+			int r = 0;
+        	r = kvmft_diff_to_buf(kvm, gfn, i, buf[2] + tmp1,
+            	trans_index, run_serial, end);
+			tmp1+=r;
+			len+=r;
+		}*/
+		//if(len > 0) {
+		//	kvm->record_compress_t[trans_index] = time_in_us() - start_t;
+		//}
+
+//        if (len >= 64 * 1024) {
+      /*  if (len >= 8 * 1024 * 1024) {
             ret = ktcp_send(sock, buf, len);
             if (ret < 0)
                 goto free;
             total += len;
             len = 0;
-        }
+        }*/
     }
 
-    if (len > 0) {
-        ret = ktcp_send(sock, buf, len);
+	kvm->record_compress_t[trans_index] = time_in_us() - start_t;
+
+//	native_wbinvd();
+
+
+	if (len > 0 && buf0size > 0) {
+        ret = ktcp_send(sock, buf[0], buf0size);
+        if (ret < 0)
+            goto free;
+        //total += len;
+        //total += buf0size;
+        ret = ktcp_send(sock, buf[1], tmp);
+        if (ret < 0)
+            goto free;
+		total+=len;
+
+	} else if (len > 0) {
+        ret = ktcp_send(sock, buf[0], len);
         if (ret < 0)
             goto free;
         total += len;
     }
 
     kvmft_tcp_nodelay(sock);
+
+	//kvm->record_compress_t[trans_index] = time_in_us() - start_t;
 
 #ifdef PAGE_TRANSFER_TIME_MEASURE
     transfer_end_time = time_in_us();
@@ -2752,6 +2889,9 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 
     ret = total;
 free:
+    kfree(buf[0]);
+    kfree(buf[1]);
+//    kfree(buf[2]);
     kfree(buf);
     return ret;
 }
@@ -2921,9 +3061,10 @@ static int diff_and_transfer_all(struct kvm *kvm, int trans_index, int max_conn)
     clear_all_backup_transfer_bitmap(kvm, trans_index);
 #endif
 
-    if (dlist->put_off == 0)
+    if (dlist->put_off == 0) {
+		kvm->record_compress_t[trans_index] = 0;
         return 0;
-
+	}
     // wake up other diff_and_tran_kthread
     for (i = 1; i < info->nsocks; ++i)
         wake_up(&info->events[i]);
@@ -2940,8 +3081,12 @@ static int diff_and_transfer_all(struct kvm *kvm, int trans_index, int max_conn)
     notify_diff_req_list_change(kvm, trans_index);
 #endif
 
+	s64 start = time_in_us();
     len = kvmft_transfer_list(kvm, psock, dlist,
         0, count, trans_index, run_serial);
+	kvm->record_compress_t2[trans_index] = time_in_us() - start;
+
+
     if (len < 0)
         return len;
     info->trans_ret[0] = len;
@@ -3585,15 +3730,25 @@ err_free:
 
 long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct kvmft_dirty_list *dlist)
 {
+
+
+	//emulate_compress(kvm, 1000);
+
+
 	struct page *page1, *page2;
-    int i, j, k, real_count, total_dirty_bytes = 0;
+    int i, j, k, real_count, total_dirty_bytes;
 	int n = 11; //3 VMs
     int p = 2;
 
-	for (i = n; i < dlist->put_off; i+=(n+p)) {
-        for(k = 0; (k < p) && (i+k < dlist->put_off); k++){
+	real_count = total_dirty_bytes = 0;
+	k = 0;
+
+	for (i = 0; i < dlist->put_off/8; i++ ){
+//	for (i = n; i < dlist->put_off; i+=(n+p)) {
+ //       for(k = 0; (k < p) && (i+k < dlist->put_off); k++){
  //
         	real_count++;
+//			printk("@@ real_count = %d\n", real_count);
 
         	gfn_t gfn = dlist->pages[i+k];
 
@@ -3621,8 +3776,14 @@ long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct
 
 
         	kernel_fpu_begin();
+			int s = 0;
         	for (j = 0; j < 4096; j += 32) {
-            	len += 32 * (!!memcmp_avx_32(backup + j, page + j));
+            	//len += 32 * (!!memcmp_avx_32(backup + j, page + j));
+				memcmp_avx_32(backup + j, page + j);
+				if(s%4 == 0) {
+            		len += 32;
+				}
+				s++;
         	//if (memcmp_avx_32(backup + j, page + j)) { //test
     //        	memcpy(block, page + i, 32);
 		//		real_count++;
@@ -3643,20 +3804,229 @@ long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct
 
 		//}
         	total_dirty_bytes += (len+28);
-        }
+        //}
+//			printk("len = %d total_dirty_bytes = %d\n", len, total_dirty_bytes);
     }
 
+//	printk("real_count = %d total_dirty_bytes = %d put_off = %d\n", real_count, total_dirty_bytes, dlist->put_off);
 
 	if(real_count)
 	    total_dirty_bytes = (total_dirty_bytes/real_count)*dlist->put_off;
+	    //total_dirty_bytes = (total_dirty_bytes/real_count)*dlist->put_off;
+//	    total_dirty_bytes = dlist->put_off*4096/2;
+//	    total_dirty_bytes = dlist->put_off*4096/4;
 
 
 	//kfree(block);
 
-
 	return total_dirty_bytes;
 
 }
+
+//#ifndef ARCH_HAS_PREFETCH
+//#define prefetch(x) __builtin_prefetch(x)
+#define prefetch(x) __builtin_prefetch(x,0,3)
+//#endif
+
+static inline void prefetch_range(void *addr, size_t len)
+{
+//#ifdef ARCH_HAS_PREFETCH
+    char *cp;
+    char *end = addr + len;
+
+//    for (cp = addr; cp < end; cp += PREFETCH_STRIDE)
+    for (cp = addr; cp < end; cp += 64)
+        prefetch(cp);
+//#endif
+}
+
+
+
+void emulate_compress(struct kvm *kvm, int dirty_pfns_len)
+{
+//	int dirty_len      = update->dirty_len;
+//	int dirty_pfns_len = update->dirty_pfns_len;
+
+    struct kvmft_context *ctx = &kvm->ft_context;
+//    struct page *page0 = alloc_pages(GFP_KERNEL, 0);
+//    struct page **page0;
+
+//	page0 = kmalloc(sizeof(struct page *) * 2048, GFP_KERNEL | __GFP_ZERO);
+	int i, j;
+//	for(i = 0; i < 2048; i++) {
+//		page0[i] = alloc_pages(GFP_KERNEL, 0);
+//	}
+
+
+
+	struct page *page1, *page2;
+	uint8_t *buf = kmalloc(4*1024*1024, GFP_KERNEL);
+
+	int cur_index = ctx->cur_index;
+
+	kvm->record_compress_dirty_pfns[cur_index] = dirty_pfns_len;
+
+
+	struct page **test_page1;
+	test_page1 = kzalloc(sizeof(struct page *) * 3500, GFP_KERNEL);
+	for(i = 0; i < 3500; i++) {
+		test_page1[i] = alloc_pages(GFP_KERNEL, 0);
+	}
+
+	struct page **test_page2;
+	test_page2 = kzalloc(sizeof(struct page *) * 3500, GFP_KERNEL);
+	for(i = 0; i < 3500; i++) {
+		test_page2[i] = alloc_pages(GFP_KERNEL, 0);
+	}
+
+
+//	char *test_page1 = kmalloc(4*1024*1024, GFP_KERNEL);
+//	char *test_page2 = kmalloc(4*1024*1024, GFP_KERNEL);
+
+
+
+
+
+	//native_wbinvd();
+	//__flush_tlb_all();
+
+	s64 start_t = time_in_us();
+//    struct page *page1 = alloc_pages(GFP_KERNEL, 0);
+ //   struct page *page2 = alloc_pages(GFP_KERNEL, 0);
+
+//	iterate_supers(drop_pagecache_sb, NULL);
+
+	//char **backup;
+	//for(i = 0; i < 3500; i++) {
+	//	backup = kmalloc(3500*sizeof(char*), GFP_KERNEL);
+	//}
+
+	//for(i = 0; i < 3500; i++) {
+//		backup[i] = kmap_atomic(test_page[i]);
+	//	backup[i] = page_address(test_page[i]);
+	//}
+
+//	page1 = test_page[0];
+ //   backup = kmap_atomic(page1) ;
+
+//		char *backup = kmap_atomic(test_page1[0]) ;
+ //		char *page = kmap_atomic(test_page2[0]) ;
+
+//	native_wbinvd();
+
+	//prefetch_range(backup, 4096);
+	//prefetch_range(page, 4096);
+//	char *backup = kmalloc(4096, GFP_KERNEL | __GFP_ZERO);
+//	char *page = kmalloc(4096, GFP_KERNEL | __GFP_ZERO);
+
+
+//	#pragma unroll
+	for(i = 0; i < dirty_pfns_len; i ++) {
+	//prefetch_range(backup, 4096);
+	//prefetch_range(page, 4096);
+
+		//page1 = ctx->shared_pages_snapshot_pages[cur_index][i];
+		//page2 = ctx->shared_pages_snapshot_pages[(cur_index+1)%2][i];
+//		page1 = test_page1[i];
+//		page2 = test_page2[i];
+
+
+     //   char *backup = page_address(test_page1[i]) ;
+
+		char *backup = kmap_atomic(test_page1[i]) ;
+ 		char *page = kmap_atomic(test_page2[i]) ;
+
+//		prefetch_range(backup, 4096);
+//		prefetch_range(page, 4096);
+
+		//  char *page = page_address(test_page2[i]) ;
+		//char *backup = test_page1+4096*i;
+		//char *page = test_page2+4096*i;
+
+	//	clflush_cache_range(backup, 4096);
+	//	clflush_cache_range(page, 4096);
+
+     //   char *page = kmap_atomic(page2) ;
+        //for (j = 0; j < 4096; j += 32) {
+		//	backup[j]++;
+		//}
+	/*	kernel_fpu_begin();
+
+        for (j = 0; j < 4096; j += 32) {
+			len += 32 * (!!memcmp_avx_32(backup + j, page + j));
+		}
+
+		kernel_fpu_end();*/
+
+		int s = 0;
+		int len = 0;
+    	c16x8_header_t *header;
+    	header = (c16x8_header_t *)buf;
+    	uint8_t *block;
+    	block = buf + sizeof(*header);
+
+		kernel_fpu_begin();
+        	for (j = 0; j < 4096; j += 32) {
+//				__builtin_prefetch(backup+j, 0);
+//				__builtin_prefetch(page+j, 0);
+            	len += 32 * (!!memcmp_avx_32(backup + j, page + j));
+				if(s%2 == 0) {
+            		header->h[j / 256] |= (1 << ((j % 256) / 32));
+            		memcpy(block, page + j, 32);
+           // 		len += 32;
+				}
+				s++;
+			}
+        kernel_fpu_end();
+
+		kunmap_atomic(page);
+	//	clflush(backup);
+        kunmap_atomic(backup);
+
+        	//if(len == 0) {
+   //     	memcpy(block, page, 4096);
+            //	len = 4096;
+        	//}
+
+	}
+//	kunmap_atomic(page);
+	//	clflush(backup);
+  //  kunmap_atomic(backup);
+//	kfree(backup);
+//	kfree(page);
+
+	kvm->record_compress_t3[cur_index] = time_in_us()-start_t;
+/*	int t0  = kvm->record_compress_t3[cur_index];
+	if(kvm->min_r) {
+		int mt = dirty_pfns_len * 4096 / kvm->min_r ;
+
+		if(mt > t0) {
+			udelay(mt-t0);
+		}
+	}*/
+	kvm->record_compress_t4[cur_index] = time_in_us()-start_t;
+
+    //kunmap_atomic(backup);
+	kfree(buf);
+
+
+
+	for(i = 0; i < 3500; i++) {
+		__free_pages(test_page1[i], 0);
+		__free_pages(test_page2[i], 0);
+	}
+	kfree(test_page1);
+	kfree(test_page2);
+
+//	kfree(test_page1);
+//	kfree(test_page2);
+
+
+//	for(i = 0; i < 2048; i++)
+//		__free_pages(page0[i], 0);
+//		__free_pages(page0, 0);
+}
+
 
 void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *update)
 {
@@ -3699,7 +4069,7 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 	}
 */
 //	printk("%ld\n", kvm->k_dis_value[curindex]);
-
+/*
 	int fix_trans_rate;
 	fix_trans_rate = get_predict_trans_rate2(kvm, dirty_pfns_len, dirty_len);
 
@@ -3712,7 +4082,7 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 		fix_latency += update->e_runtime;
 	}
 	update->fix_latency = fix_latency;
-
+*/
 	if(trans) {
 //		if(latency <= kvm->target_latency_us + 1000 && latency >= kvm->target_latency_us - 1000) {
 		if(latency <= kvm->target_latency_us + kvm->target_latency_us/10 && latency >= kvm->target_latency_us - kvm->target_latency_us/10) {
@@ -3735,6 +4105,95 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 		printk("real trans = %d\n", trans);
 		printk("predict trans = %d\n", update->e_trans);
 		printk("alpha = %d\n", kvm->alpha);
+		printk("compress time = %d\n", kvm->record_compress_t[curindex]);
+		int predic_ct = ((dirty_pfns_len*4096)/32)*kvm->last_predict_copy_and_check/1000;
+		printk("predict compress time = %d\n", predic_ct);
+		printk("predict ct diff = %d\n", predic_ct-kvm->record_compress_t[curindex]);
+		if(((dirty_pfns_len*4096)/32))
+			kvm->last_predict_copy_and_check = kvm->record_compress_t[curindex]*1000/((dirty_pfns_len*4096)/32);
+
+
+		int rest_ct = kvm->record_compress_t[curindex];
+
+
+
+		if(rest_ct) {
+			kvm->compress_r_count++;
+			kvm->compress_r_sum+=dirty_pfns_len*4096/rest_ct;
+			//kvm->last_compress_r = dirty_pfns_len*4096/rest_ct;
+		}
+		int send_t = trans-rest_ct;
+		if(send_t) {
+			kvm->send_r_count++;
+			kvm->send_r_sum+=dirty_len/send_t;
+//			kvm->last_send_r = dirty_len/send_t;
+		}
+
+		if(kvm->compress_r_count) {
+			kvm->last_compress_r = kvm->compress_r_sum/kvm->compress_r_count;
+		}
+		if(kvm->send_r_count) {
+			kvm->last_send_r = kvm->send_r_sum/kvm->send_r_count;
+		}
+
+		if(kvm->compress_r_count == 2000) {
+			kvm->compress_r_count = 0;
+			kvm->compress_r_sum = 0;
+		}
+		if(kvm->send_r_count == 2000) {
+			kvm->send_r_count = 0;
+			kvm->send_r_sum = 0;
+		}
+
+//		update->x0 = rest_ct;
+//		update->x1 = send_t;
+		update->x0 = kvm->record_compress_dirty_pfns[curindex];
+		update->x1 = kvm->record_compress_t4[curindex];
+
+		if(kvm->record_compress_t3[curindex]) {
+		int minr = update->x0*4096 / kvm->record_compress_t3[curindex];
+		if(kvm->min_r == 0) {
+			kvm->min_r = minr;
+		} else if(minr < kvm->min_r && kvm->record_compress_t3 < 2500){
+			kvm->min_r = minr;
+		}
+		}
+		//if(global_c % 20 == 0)
+		//	kvm->min_r = 0;
+
+
+		printk("compress rate = %d\n", kvm->last_compress_r);
+		printk("send rate = %d\n", kvm->last_send_r);
+
+/*		printk("compress-copy-check = %d\n", rest_ct);
+		printk("compress-only_check = %d\n", kvm->record_compress_t2[curindex]-rest_ct);
+		printk("compress-all = %d\n", kvm->record_compress_t2[curindex]);
+		printk("compress rate = %d\n", dirty_pfns_len*4096/kvm->record_compress_t2[curindex]);
+*/
+
+/*		int elsetrans = trans-kvm->record_compress_t2[curindex];
+		printk("else trans = %d\n", elsetrans);
+		if(elsetrans) {
+			printk("else trans--> infer trans_r = %d\n", dirty_len/elsetrans);
+		}
+		int include_issue_send = trans-rest_ct;
+		update->x0 = rest_ct;
+		update->x1 = include_issue_send;
+		if(include_issue_send) {
+			printk("include issue trans_r = %d\n", dirty_len/include_issue_send);
+		}
+*/
+/*		if(rest_ct) {
+			int t = trans - rest_ct;
+			if(t) {
+				printk("last dirty trasn_r = %d\n", dirty_len/t);
+			}
+		}
+*/
+//		printk("last_send_r = %d\n", kvm->last_send_r);
+//		printk("this send_r = %d\n", dirty_len/trans);
+//		kvm->last_send_r = dirty_len/trans;
+		update->alpha = kvm->last_send_r;
 	}
 
 
@@ -3764,9 +4223,11 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 
 	int tr = 0;
 	if(trans) {
-		tr = dirty_pfns_len*4096/trans;
+/*		tr = dirty_pfns_len*4096/trans;
 		if(tr)
 			kvm->current_trans_rate = tr;
+			*/
+			kvm->current_trans_rate = kvm->last_send_r;
 	}
 
 //#ifdef LAST_TRANS_RATE_AS_CURRENT_CONTAINS_COMPRESS

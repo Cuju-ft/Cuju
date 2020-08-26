@@ -573,6 +573,20 @@ struct kvm {
 	uint64_t tmp;
 	int e_trans_rate[KVM_DIRTY_BITMAP_INIT_COUNT];
 	int alpha;
+	int record_compress_t[KVM_DIRTY_BITMAP_INIT_COUNT];
+	int record_compress_t2[KVM_DIRTY_BITMAP_INIT_COUNT];
+	int record_compress_t3[KVM_DIRTY_BITMAP_INIT_COUNT];
+	int record_compress_t4[KVM_DIRTY_BITMAP_INIT_COUNT];
+	int record_compress_dirty_pfns[KVM_DIRTY_BITMAP_INIT_COUNT];
+	int last_predict_copy_and_check;
+	int last_send_r;
+	int last_compress_r;
+	int min_r;
+	uint64_t send_r_sum;
+	uint64_t compress_r_sum;
+	uint64_t send_r_count;
+	uint64_t compress_r_count;
+
 };
 
 #define kvm_err(fmt, ...) \

@@ -51,6 +51,7 @@ int kvmft_bd_update_latency(MigrationState *s)
 	static unsigned long long total_uncompress_dirty = 0;
 	static unsigned long long total_fix_latency_ok = 0;
 	static unsigned long long total_is_right_but_too_late = 0;
+	static unsigned long long total_trans_r = 0;
 
 	static long subcount = 0;
 
@@ -97,6 +98,26 @@ int kvmft_bd_update_latency(MigrationState *s)
 
 	int target_latency = EPOCH_TIME_IN_MS*1000;
 
+
+	total_trans_r+=update.alpha;
+
+
+		FILE *pFile;
+   		char pbuf[200];
+		sprintf(pbuf, "runtime_latency_trans_rate.txt");
+    	pFile = fopen(pbuf, "a");
+    	if(pFile != NULL){
+                sprintf(pbuf, "%d %d\n", dirty_len, trans_us);
+				//if(update.x0 != 0 && update.x1 !=0)
+                //sprintf(pbuf, "%d %d %d %d %d %d\n", s->dirty_pfns_len, update.x0, s->dirty_pfns_len/update.x0, dirty_len, update.x1, dirty_len/update.x1);
+               // sprintf(pbuf, "%d %d\n", update.x0, update.x1);
+        	    fputs(pbuf, pFile);
+
+		}
+    	else
+        	printf("no profile\n");
+
+		fclose(pFile);
 
 
 
@@ -210,7 +231,9 @@ int kvmft_bd_update_latency(MigrationState *s)
 		printf("runtime_err = %lf\n", runtime_err_per);
 		printf("last trans impact err = %lf\n", last_transfer_impact_error_per);
 //		printf("transfer rate predic err = %lf\n", exceed_per+less_per-runtime_err_per-last_transfer_impact_error_per);
-		printf("too late err = %lf\n", (double)total_is_right_but_too_late*100/total);
+		printf("too late err = %lf\n", (double)total_is_right_but_too_late*100/1000);
+
+		printf("ave trans_r = %lf\n", (double)total_trans_r/1000);
 
 		total_dis_c = 0;
 		total_dis_f = 0;
@@ -221,6 +244,8 @@ int kvmft_bd_update_latency(MigrationState *s)
 		total_is_right_but_too_late = 0;
 		dirty_diff_f_total = 0;
 		subcount = 0;
+
+		total_trans_r = 0;
 	}
 
 /*    struct kvmft_update_latency update;

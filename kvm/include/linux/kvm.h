@@ -1398,6 +1398,12 @@ struct kvmft_update_latency {
     int cur_index;
     __u32 fix_latency;
     __u64 kdis_value;
+    int alpha;
+    int x0;
+    int x1;
+    int x2;
+    int x3;
+
 };
 
 
