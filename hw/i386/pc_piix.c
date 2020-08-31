@@ -60,6 +60,8 @@
 static const int ide_iobase[MAX_IDE_BUS] = { 0x1f0, 0x170 };
 static const int ide_iobase2[MAX_IDE_BUS] = { 0x3f6, 0x376 };
 static const int ide_irq[MAX_IDE_BUS] = { 14, 15 };
+//for cuju record below_4g_mem_size
+ram_addr_t cuju_below_4g_mem_size = 0xc0000000;
 
 /* PC hardware initialisation */
 static void pc_init1(MachineState *machine,
@@ -145,7 +147,7 @@ static void pc_init1(MachineState *machine,
             pcms->below_4g_mem_size = machine->ram_size;
         }
     }
-
+    cuju_below_4g_mem_size = pcms->below_4g_mem_size;
     pc_cpus_init(pcms);
 
     if (kvm_enabled() && pcmc->kvmclock_enabled) {

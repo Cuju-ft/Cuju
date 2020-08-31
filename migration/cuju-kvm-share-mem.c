@@ -1016,7 +1016,11 @@ int kvm_shmem_mark_page_dirty_range(MemoryRegion *mr, hwaddr addr,hwaddr length)
 
 		while (nextaddr <= endaddr){
 			ptr = qemu_map_ram_ptr(mr->ram_block, nextaddr);
-			kvm_shmem_mark_page_dirty(ptr, nextaddr >> TARGET_PAGE_BITS);
+            hwaddr tempaddr;
+            tempaddr = nextaddr;
+            if (nextaddr >= cuju_below_4g_mem_size && !memcmp(mr->name, "pc.ram", 6))
+                tempaddr = nextaddr - cuju_below_4g_mem_size + 0x100000000;
+			kvm_shmem_mark_page_dirty(ptr, tempaddr >> TARGET_PAGE_BITS);
 //			printf("%s %"PRIu64" gfn = %lu ptr = %"PRIu64"\n", __func__, nextaddr, nextaddr >> TARGET_PAGE_BITS, (hwaddr)ptr);
 			nextaddr = nextaddr + TARGET_PAGE_SIZE;
 		}
@@ -1408,8 +1412,8 @@ void kvm_shmem_load_ram(void *buf, int size)
 
     if (!load_bitmap) {
         size_t bitmap_size;
-        if (ram_size >= 0xe0000000)
-            bitmap_size = (0x100000000ULL + (ram_size-0xe0000000)) /
+        if (ram_size >= cuju_below_4g_mem_size)
+            bitmap_size = (0x100000000ULL + (ram_size - cuju_below_4g_mem_size)) /
                 TARGET_PAGE_SIZE / 8;
         else
             bitmap_size = ram_size / TARGET_PAGE_SIZE / 8;
