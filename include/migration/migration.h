@@ -38,7 +38,8 @@ struct CUJUFTDev
     int *state_entry_lens;
     int state_entry_size;       // max number of dirtied device states entry
 };
-
+//for cuju record below_4g_mem_size
+extern ram_addr_t cuju_below_4g_mem_size ;
 #define QEMU_VM_FILE_MAGIC           0x5145564d
 #define QEMU_VM_FILE_VERSION_COMPAT  0x00000002
 #define QEMU_VM_FILE_VERSION         0x00000003
