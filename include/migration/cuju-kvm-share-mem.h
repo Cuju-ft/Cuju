@@ -24,6 +24,7 @@
 #define PAGES_PER_MS        200
 #define SHARED_DIRTY_SIZE   10000
 #define SHARED_DIRTY_WATERMARK  9600
+//#define DLIST_TEST_MODE
 extern int migrate_cancel;
 bool cuju_supported(void);
 

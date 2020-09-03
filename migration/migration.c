@@ -2396,8 +2396,10 @@ static int migrate_ft_trans_get_ready(void *opaque)
         assert(kvmft_first_ack);
         kvmft_first_ack = false;
 
+    #ifdef DLIST_TEST_MODE
         kvmft_calc_ram_hash();
-
+    #endif
+    
         assert(s == migrate_token_owner);
         //gft_connect_internal();
         //gft_master_notify_leader_migration_done();
