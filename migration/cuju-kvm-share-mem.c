@@ -1225,7 +1225,7 @@ void kvm_shmem_send_dirty_kernel(MigrationState *s)
 	cur_off = s->cur_off;
 	put_off = kvm_vm_ioctl(kvm_state, KVM_GET_PUT_OFF, &cur_off);
 
-//#define DLIST_TEST_MODE
+
 #ifdef DLIST_TEST_MODE
   /* 
    * 1. Note that the dlist in kvm is a struct, not an array or list.
