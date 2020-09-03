@@ -296,7 +296,8 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 	}
 	mr = kvm->last_compress_r;
 	if(mr) {
-		trans += dlist->put_off*4096/mr;
+		//trans += dlist->put_off*4096/mr;
+		trans += (dlist->put_off*4096+current_dirty_byte)/mr;
 	}
 
 	if(trans == 0) trans = kvm->bo;
@@ -976,6 +977,7 @@ int kvm_shm_enable(struct kvm *kvm)
 		return 0;
 	}
 	kthread_bind(kvm->ft_cmp_tsk, 7);
+//	kthread_bind(kvm->ft_cmp_tsk, 3);
 
 	kvm->ft_kick = 0;
 	kvm->nextT = 0;
@@ -2672,18 +2674,19 @@ static int __diff_to_buf(unsigned long gfn, struct page *page1,
     kernel_fpu_begin();
 
 
-	int k = 0;
+	//int k = 0;
     for (i = 0; i < 4096; i += 32) {
-       // if (memcmp_avx_32(backup + i, page + i)) {
-	   memcmp_avx_32(backup + i, page + i);
+        if (memcmp_avx_32(backup + i, page + i)) {
+	   //memcmp_avx_32(backup + i, page + i);
 	   //if(give_dirty == 1) {
-	   if(k%4 == 0) {
+	   //if(k%2 == 0) {
+	   //if(i < 2048) {
             header->h[i / 256] |= (1 << ((i % 256) / 32));
             memcpy(block, page + i, 32);
             block += 32;
-	   }
-	   k++;
-       // }
+	   //}
+	  // k++;
+        }
     }
 
     kernel_fpu_end();
@@ -3690,9 +3693,9 @@ long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct
 	real_count = total_dirty_bytes = 0;
 	k = 0;
 
-	for (i = 0; i < dlist->put_off/8; i++ ){
-//	for (i = n; i < dlist->put_off; i+=(n+p)) {
- //       for(k = 0; (k < p) && (i+k < dlist->put_off); k++){
+//	for (i = 0; i < dlist->put_off/8; i++ ){
+	for (i = n; i < dlist->put_off; i+=(n+p)) {
+        for(k = 0; (k < p) && (i+k < dlist->put_off); k++){
  //
         	real_count++;
 //			printk("@@ real_count = %d\n", real_count);
@@ -3723,14 +3726,15 @@ long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct
 
 
         	kernel_fpu_begin();
-			int s = 0;
+		//	int s = 0;
         	for (j = 0; j < 4096; j += 32) {
-            	//len += 32 * (!!memcmp_avx_32(backup + j, page + j));
-				memcmp_avx_32(backup + j, page + j);
-				if(s%4 == 0) {
-            		len += 32;
-				}
-				s++;
+            	len += 32 * (!!memcmp_avx_32(backup + j, page + j));
+//				memcmp_avx_32(backup + j, page + j);
+				//if(s%2 == 0) {
+//				if(j <  2048) {
+ //           		len += 32;
+//				}
+		//		s++;
         	//if (memcmp_avx_32(backup + j, page + j)) { //test
     //        	memcpy(block, page + i, 32);
 		//		real_count++;
@@ -3751,7 +3755,7 @@ long long bd_calc_dirty_bytes(struct kvm *kvm, struct kvmft_context *ctx, struct
 
 		//}
         	total_dirty_bytes += (len+28);
-        //}
+        }
 //			printk("len = %d total_dirty_bytes = %d\n", len, total_dirty_bytes);
     }
 
@@ -3868,6 +3872,7 @@ void emulate_compress(struct kvm *kvm, int dirty_pfns_len)
 
 
 //	#pragma unroll
+	while(1)
 	for(i = 0; i < dirty_pfns_len; i ++) {
 	//prefetch_range(backup, 4096);
 	//prefetch_range(page, 4096);
@@ -3917,11 +3922,12 @@ void emulate_compress(struct kvm *kvm, int dirty_pfns_len)
 //				__builtin_prefetch(backup+j, 0);
 //				__builtin_prefetch(page+j, 0);
             	len += 32 * (!!memcmp_avx_32(backup + j, page + j));
-				if(s%2 == 0) {
+				//if(s%2 == 0) {
+				//if(s%25 == 0) {
             		header->h[j / 256] |= (1 << ((j % 256) / 32));
             		memcpy(block, page + j, 32);
            // 		len += 32;
-				}
+				//}
 				s++;
 			}
         kernel_fpu_end();
@@ -4050,6 +4056,7 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 		printk("real dirty len = %d\n", dirty_len);
 		printk("predict dirty len = %d\n", kvm->e_dirty_len[curindex]);
 		printk("real trans = %d\n", trans);
+		printk("real runtime = %d\n", update->runtime_us);
 		printk("predict trans = %d\n", update->e_trans);
 		printk("alpha = %d\n", kvm->alpha);
 		printk("compress time = %d\n", kvm->record_compress_t[curindex]);
@@ -4066,14 +4073,15 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 
 		if(rest_ct) {
 			kvm->compress_r_count++;
-			kvm->compress_r_sum+=dirty_pfns_len*4096/rest_ct;
+			//kvm->compress_r_sum+=dirty_pfns_len*4096/rest_ct;
+			kvm->compress_r_sum+=(dirty_pfns_len*4096+dirty_len)/rest_ct;
 			//kvm->last_compress_r = dirty_pfns_len*4096/rest_ct;
 		}
 		int send_t = trans-rest_ct;
 		if(send_t) {
 			kvm->send_r_count++;
 			kvm->send_r_sum+=dirty_len/send_t;
-//			kvm->last_send_r = dirty_len/send_t;
+			//kvm->last_send_r = dirty_len/send_t;
 		}
 
 		if(kvm->compress_r_count) {

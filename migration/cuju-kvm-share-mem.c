@@ -1106,6 +1106,7 @@ static void thread_set_realtime(void)
 	cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     CPU_SET(4, &cpuset);
+//    CPU_SET(1, &cpuset);
     pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 
 }

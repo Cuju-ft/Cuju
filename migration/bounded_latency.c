@@ -104,13 +104,19 @@ int kvmft_bd_update_latency(MigrationState *s)
 
 		FILE *pFile;
    		char pbuf[200];
-		sprintf(pbuf, "runtime_latency_trans_rate.txt");
+		if(latency_us <= target_latency + target_latency/10 && latency_us >= target_latency - target_latency/10) {
+			sprintf(pbuf, "runtime_latency_trans_rate_hit.txt");
+		} else {
+			sprintf(pbuf, "runtime_latency_trans_rate_miss.txt");
+		}
     	pFile = fopen(pbuf, "a");
-    	if(pFile != NULL){
-                sprintf(pbuf, "%d %d\n", dirty_len, trans_us);
+
+		if(pFile != NULL){
+                //sprintf(pbuf, "%d %d\n", dirty_len, trans_us);
 				//if(update.x0 != 0 && update.x1 !=0)
                 //sprintf(pbuf, "%d %d %d %d %d %d\n", s->dirty_pfns_len, update.x0, s->dirty_pfns_len/update.x0, dirty_len, update.x1, dirty_len/update.x1);
-               // sprintf(pbuf, "%d %d\n", update.x0, update.x1);
+                //sprintf(pbuf, "%d %d\n", update.x0, update.x1);
+                sprintf(pbuf, "%d %d\n", update.e_dirty_len, dirty_len);
         	    fputs(pbuf, pFile);
 
 		}
