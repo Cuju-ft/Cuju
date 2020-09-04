@@ -96,10 +96,33 @@ int kvmft_bd_update_latency(MigrationState *s)
 	static unsigned long long last_exceed = 0;
 	static unsigned long long last_less = 0;
 
+	static unsigned long long latency_fix_ok = 0;
+	static unsigned long long latency_fix_err = 0;
+
+
 	int target_latency = EPOCH_TIME_IN_MS*1000;
 
 
 	total_trans_r+=update.alpha;
+
+
+		int m1 = update.x2;
+		int m2 = update.x3;
+		int trans = 0;
+		if(m1) {
+			trans += dirty_len/m1;
+		}
+		if(m2) {
+			trans += (s->dirty_pfns_len*4096+dirty_len)/m2;
+		}
+//		int fixlatency = trans+runtime_us;
+		int fixlatency = trans+update.e_runtime;
+		if( fixlatency <= target_latency + target_latency/10 && fixlatency >= target_latency - target_latency/10) {
+			latency_fix_ok++;
+		} else {
+			latency_fix_err++;
+		}
+
 
 
 		FILE *pFile;
@@ -240,6 +263,12 @@ int kvmft_bd_update_latency(MigrationState *s)
 		printf("too late err = %lf\n", (double)total_is_right_but_too_late*100/1000);
 
 		printf("ave trans_r = %lf\n", (double)total_trans_r/1000);
+
+
+		printf("fix_latency_err = %lf\n", (double)latency_fix_err*100/1000);
+		printf("fix_latency_ok = %lf\n", (double)latency_fix_ok*100/1000);
+
+		latency_fix_ok = latency_fix_err = 0;
 
 		total_dis_c = 0;
 		total_dis_f = 0;

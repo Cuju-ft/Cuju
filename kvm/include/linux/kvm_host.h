@@ -586,6 +586,8 @@ struct kvm {
 	uint64_t compress_r_sum;
 	uint64_t send_r_count;
 	uint64_t compress_r_count;
+	int record_r0[KVM_DIRTY_BITMAP_INIT_COUNT];
+	int record_r1[KVM_DIRTY_BITMAP_INIT_COUNT];
 
 };
 

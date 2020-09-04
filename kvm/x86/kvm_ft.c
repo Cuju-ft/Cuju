@@ -290,14 +290,14 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 		//trans = e_dirty_pfns_len*4096/current_trans_rate;
 		trans = current_dirty_byte/current_trans_rate;
 	}*/
-	int mr = kvm->last_send_r;
-	if(mr) {
-		trans += current_dirty_byte/mr;
+	int mr1 = kvm->last_send_r;
+	if(mr1) {
+		trans += current_dirty_byte/mr1;
 	}
-	mr = kvm->last_compress_r;
-	if(mr) {
+	int mr2 = kvm->last_compress_r;
+	if(mr2) {
 		//trans += dlist->put_off*4096/mr;
-		trans += (dlist->put_off*4096+current_dirty_byte)/mr;
+		trans += (dlist->put_off*4096+current_dirty_byte)/mr2;
 	}
 
 	if(trans == 0) trans = kvm->bo;
@@ -329,6 +329,8 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 	//	emulate_compress(kvm, global_c2%3000);
 		global_c++;
 
+		kvm->record_r0[ctx->cur_index] = mr1;
+		kvm->record_r1[ctx->cur_index] = mr2;
 		kvm->e_trans_rate[ctx->cur_index] = current_trans_rate;
 		kvm->e_runtime[ctx->cur_index] = runtime;
 		kvm->e_trans[ctx->cur_index] = trans;
@@ -3999,6 +4001,9 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 
 	update->e_dirty_len = e_dirty_len;
 	update->kdis_value = kvm->k_dis_value[curindex];
+
+	update->x2 = kvm->record_r0[curindex];
+	update->x3 = kvm->record_r1[curindex];
 
 /*
 	if (latency > kvm->target_latency_us + kvm->target_latency_us/10) {
