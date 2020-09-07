@@ -1,22 +1,32 @@
 
 #include <linux/shared_pages_array.h>
 #include <linux/slab.h>
+#include <linux/vmalloc.h>
 
 static int shared_pages_array_alloc_single(struct shared_pages_array *spa,
                                     int index)
 {
     int order = ilog2(spa->plen);
     struct page *page;
+    unsigned long *vaddr;
 
     BUG_ON (index >= spa->array_size);
 
-    page = alloc_pages(GFP_KERNEL | __GFP_ZERO, order);
-    if (!page)
-        return -1;
+    if (order <= 10) {
+        page = alloc_pages(GFP_KERNEL | __GFP_ZERO, order);
+        if (!page)
+            return -1;
 
-    spa->pfn[index] = page_to_pfn(page);
+        spa->pfn[index] = page_to_pfn(page);
 #define pfn_to_virt(pfn)  __va((pfn) << PAGE_SHIFT)
-    spa->kaddr[index] = pfn_to_virt(page_to_pfn(page));
+        spa->kaddr[index] = pfn_to_virt(page_to_pfn(page));
+    } else {
+        vaddr = vzalloc(spa->plen * 4096);
+        if (!vaddr)
+            return -1;
+
+        spa->kaddr[index] = vaddr;
+    }
 
     return 0;
 }
@@ -87,17 +97,27 @@ void shared_pages_array_free(struct shared_pages_array *spa)
     if (spa == NULL)
         return;
     if (spa->plen) {
-        for (i = 0; i < spa->array_size; i++) {
-            struct page *page;
-            if (!spa->pfn)
-                continue;
-            if (!spa->pfn[i])
-                continue;
-            page = pfn_to_page(spa->pfn[i]);
-            if (!page)
-                continue;
-            __free_pages(page, ilog2(spa->plen));
-            spa->pfn[i] = 0;
+        if (spa->plen <= 1024) {
+            for (i = 0; i < spa->array_size; i++) {
+                struct page *page;
+                if (!spa->pfn)
+                    continue;
+                if (!spa->pfn[i])
+                    continue;
+                page = pfn_to_page(spa->pfn[i]);
+                if (!page)
+                    continue;
+                __free_pages(page, ilog2(spa->plen));
+                spa->pfn[i] = 0;
+            }
+        } else {
+            for (i = 0; i < spa->array_size; i++) {
+                if (!spa->kaddr)
+                    continue;
+                if (!spa->kaddr[i])
+                    continue;
+                vfree(spa->kaddr[i]);
+            }
         }
         spa->plen = 0;
     }
