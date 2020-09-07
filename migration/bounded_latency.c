@@ -105,6 +105,7 @@ int kvmft_bd_update_latency(MigrationState *s)
 
 	total_trans_r+=update.alpha;
 
+		int fix_b_ok = 0;
 
 		int m1 = update.x2;
 		int m2 = update.x3;
@@ -115,10 +116,14 @@ int kvmft_bd_update_latency(MigrationState *s)
 		if(m2) {
 			trans += (s->dirty_pfns_len*4096+dirty_len)/m2;
 		}
-//		int fixlatency = trans+runtime_us;
-		int fixlatency = trans+update.e_runtime;
-		if( fixlatency <= target_latency + target_latency/10 && fixlatency >= target_latency - target_latency/10) {
+		if(trans == 0) trans = e_trans;
+		int fixlatency = trans+runtime_us;
+		//int fixlatency = trans+update.e_runtime;
+//		if( fixlatency <= target_latency + target_latency/10 && fixlatency >= target_latency - target_latency/10) {
+		if( fixlatency <= latency_us + target_latency/10 && fixlatency >= latency_us - target_latency/10) {
+			//printf("fix latency = %d\n", fixlatency);
 			latency_fix_ok++;
+			fix_b_ok = 1;
 		} else {
 			latency_fix_err++;
 		}
@@ -127,7 +132,8 @@ int kvmft_bd_update_latency(MigrationState *s)
 
 		FILE *pFile;
    		char pbuf[200];
-		if(latency_us <= target_latency + target_latency/10 && latency_us >= target_latency - target_latency/10) {
+		//if(latency_us <= target_latency + target_latency/10 && latency_us >= target_latency - target_latency/10) {
+		if(fix_b_ok) {
 			sprintf(pbuf, "runtime_latency_trans_rate_hit.txt");
 		} else {
 			sprintf(pbuf, "runtime_latency_trans_rate_miss.txt");
@@ -135,13 +141,17 @@ int kvmft_bd_update_latency(MigrationState *s)
     	pFile = fopen(pbuf, "a");
 
 		if(pFile != NULL){
-                //sprintf(pbuf, "%d %d\n", dirty_len, trans_us);
+            //    sprintf(pbuf, "%d %d\n", dirty_len, trans_us);
 				//if(update.x0 != 0 && update.x1 !=0)
                 //sprintf(pbuf, "%d %d %d %d %d %d\n", s->dirty_pfns_len, update.x0, s->dirty_pfns_len/update.x0, dirty_len, update.x1, dirty_len/update.x1);
                 //sprintf(pbuf, "%d %d\n", update.x0, update.x1);
-                sprintf(pbuf, "%d %d\n", update.e_dirty_len, dirty_len);
+                //sprintf(pbuf, "%d %d\n", update.e_dirty_len, dirty_len);
+			//	if(update.x3 > 1000) {
+             //   sprintf(pbuf, "%d %d %d %d\n", update.x2, dirty_len+s->dirty_pfns_len*4096, update.x3, dirty_len);
+        	  //  fputs(pbuf, pFile);
+                sprintf(pbuf, "%d %d %d %d %d %d %d %d\n", update.x2, update.x3, dirty_len+s->dirty_pfns_len*4096,  dirty_len, e_runtime, runtime_us, trans_us, latency_us);
         	    fputs(pbuf, pFile);
-
+			//}
 		}
     	else
         	printf("no profile\n");

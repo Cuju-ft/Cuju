@@ -2656,7 +2656,7 @@ out:
 }
 
 static int __diff_to_buf(unsigned long gfn, struct page *page1,
-    struct page *page2, uint8_t *buf, int give_dirty)
+    struct page *page2, uint8_t *buf, int give_dirty/*, struct kvm*kvm*/)
 {
     c16x8_header_t *header;
     uint8_t *block;
@@ -2722,7 +2722,8 @@ static int kvmft_diff_to_buf(struct kvm *kvm, unsigned long gfn,
     bool check_modify = false;
     int ret;
 	int give_dirty = 0;
-	if(index < end/2) give_dirty = 1;
+
+	give_dirty = trans_index;
 
     page1 = ctx->shared_pages_snapshot_pages[trans_index][index];
     page2 = find_later_backup(kvm, gfn, trans_index, run_serial);
@@ -2732,7 +2733,7 @@ static int kvmft_diff_to_buf(struct kvm *kvm, unsigned long gfn,
         check_modify = true;
     }
 
-    ret = __diff_to_buf(gfn, page1, page2, buf, give_dirty);
+    ret = __diff_to_buf(gfn, page1, page2, buf, give_dirty/*, kvm*/);
 
     if (check_modify) {
         kvm_release_page_clean(page2);
@@ -4073,16 +4074,17 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 
 
 		int rest_ct = kvm->record_compress_t[curindex];
-
-
+		//update->x2 = rest_ct;
 
 		if(rest_ct) {
 			kvm->compress_r_count++;
 			//kvm->compress_r_sum+=dirty_pfns_len*4096/rest_ct;
 			kvm->compress_r_sum+=(dirty_pfns_len*4096+dirty_len)/rest_ct;
-			//kvm->last_compress_r = dirty_pfns_len*4096/rest_ct;
+			//kvm->last_compress_r = (dirty_pfns_len*4096+dirty_len)/rest_ct;
 		}
 		int send_t = trans-rest_ct;
+		//update->x3 = send_t;
+
 		if(send_t) {
 			kvm->send_r_count++;
 			kvm->send_r_sum+=dirty_len/send_t;
