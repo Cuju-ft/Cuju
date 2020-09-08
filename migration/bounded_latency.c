@@ -149,7 +149,7 @@ int kvmft_bd_update_latency(MigrationState *s)
 			//	if(update.x3 > 1000) {
              //   sprintf(pbuf, "%d %d %d %d\n", update.x2, dirty_len+s->dirty_pfns_len*4096, update.x3, dirty_len);
         	  //  fputs(pbuf, pFile);
-                sprintf(pbuf, "%d %d %d %d %d %d %d %d\n", update.x2, update.x3, dirty_len+s->dirty_pfns_len*4096,  dirty_len, e_runtime, runtime_us, trans_us, latency_us);
+                sprintf(pbuf, "%d %d %d %d %d %d %d %d %d %d %d %d\n", update.x0, update.x1, update.x2, update.x3, update.x4, update.x5, dirty_len+s->dirty_pfns_len*4096,  dirty_len, e_runtime, runtime_us, trans_us, latency_us);
         	    fputs(pbuf, pFile);
 			//}
 		}

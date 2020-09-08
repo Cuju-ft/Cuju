@@ -2766,6 +2766,9 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 #endif
 
 	s64 start_t = time_in_us();
+	s64 start_wait = time_in_us();
+	kvm->record_send_queue_av_time[trans_index] = 0;
+	kvm->record_send_queue_sum_time[trans_index] = 0;
 
 //	buf = kmalloc(sizeof(uint8_t*)*2, GFP_KERNEL);
 
@@ -2785,7 +2788,7 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 	int buf0size = 0;
 	int buf1size = 0;
 
-//	native_wbinvd();
+	int block_num = 0;
 
     for (i = start; i < end; ++i) {
         unsigned long gfn = gfns[i];
@@ -2808,6 +2811,10 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 
         if (len >= 64 * 1024) {
             ret = ktcp_send(sock, buf, len);
+			block_num++;
+			kvm->record_send_queue_sum_time[trans_index] += (time_in_us()-start_wait);
+			start_wait = time_in_us();
+
             if (ret < 0)
                 goto free;
             total += len;
@@ -2822,6 +2829,8 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 
 	if (len > 0) {
         ret = ktcp_send(sock, buf, len);
+		block_num++;
+		kvm->record_send_queue_sum_time[trans_index] += (time_in_us()-start_wait);
         if (ret < 0)
             goto free;
         total += len;
@@ -2842,6 +2851,11 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
     }
 
 #endif
+
+	if(block_num) {
+		kvm->record_send_queue_av_time[trans_index]=kvm->record_send_queue_sum_time[trans_index]/block_num;
+	}
+
 
     ret = total;
 free:
@@ -4042,6 +4056,9 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 	}
 	update->fix_latency = fix_latency;
 */
+	int real_send_r = 0;
+	int real_compress_r = 0;
+
 	if(trans) {
 //		if(latency <= kvm->target_latency_us + 1000 && latency >= kvm->target_latency_us - 1000) {
 		if(latency <= kvm->target_latency_us + kvm->target_latency_us/10 && latency >= kvm->target_latency_us - kvm->target_latency_us/10) {
@@ -4076,19 +4093,23 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 		int rest_ct = kvm->record_compress_t[curindex];
 		//update->x2 = rest_ct;
 
+
 		if(rest_ct) {
 			kvm->compress_r_count++;
 			//kvm->compress_r_sum+=dirty_pfns_len*4096/rest_ct;
 			kvm->compress_r_sum+=(dirty_pfns_len*4096+dirty_len)/rest_ct;
 			//kvm->last_compress_r = (dirty_pfns_len*4096+dirty_len)/rest_ct;
+			real_compress_r = (dirty_pfns_len*4096+dirty_len)/rest_ct;
 		}
 		int send_t = trans-rest_ct;
 		//update->x3 = send_t;
+
 
 		if(send_t) {
 			kvm->send_r_count++;
 			kvm->send_r_sum+=dirty_len/send_t;
 			//kvm->last_send_r = dirty_len/send_t;
+			real_send_r = dirty_len/send_t;
 		}
 
 		if(kvm->compress_r_count) {
@@ -4111,6 +4132,10 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 //		update->x1 = send_t;
 		update->x0 = kvm->record_compress_dirty_pfns[curindex];
 		update->x1 = kvm->record_compress_t4[curindex];
+
+		update->x0 = kvm->record_send_queue_sum_time[curindex];
+		update->x1 = kvm->record_send_queue_av_time[curindex];
+
 
 		if(kvm->record_compress_t3[curindex]) {
 		int minr = update->x0*4096 / kvm->record_compress_t3[curindex];
@@ -4157,6 +4182,10 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 //		kvm->last_send_r = dirty_len/trans;
 		update->alpha = kvm->last_send_r;
 	}
+
+
+	update->x4 = real_send_r;
+	update->x5 = real_compress_r;
 
 
 

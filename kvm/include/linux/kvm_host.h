@@ -589,6 +589,9 @@ struct kvm {
 	int record_r0[KVM_DIRTY_BITMAP_INIT_COUNT];
 	int record_r1[KVM_DIRTY_BITMAP_INIT_COUNT];
 
+	int record_send_queue_av_time[KVM_DIRTY_BITMAP_INIT_COUNT];
+	int record_send_queue_sum_time[KVM_DIRTY_BITMAP_INIT_COUNT];
+
 };
 
 #define kvm_err(fmt, ...) \

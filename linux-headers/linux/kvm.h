@@ -1438,6 +1438,8 @@ struct kvmft_update_latency {
 	int x1;
 	int x2;
 	int x3;
+	int x4;
+	int x5;
 };
 
 
