@@ -14,6 +14,8 @@
 #include <linux/mmu_context.h>
 #include <linux/sort.h>
 
+#include <linux/vmalloc.h>
+
 #define SHOW_AVERAGE_FRAG   1
 #undef SHOW_AVERAGE_FRAG
 
@@ -291,14 +293,19 @@ static struct kvm_vcpu* bd_predic_stop(struct kvm_vcpu *vcpu)
 		trans = current_dirty_byte/current_trans_rate;
 	}*/
 	int mr1 = kvm->last_send_r;
-	if(mr1) {
+	//if(mr1) {
+	if(mr1 && current_dirty_byte < 500000) {
 		trans += current_dirty_byte/mr1;
+	} else if(current_dirty_byte >= 500000){
+		trans += current_dirty_byte/1000;
 	}
 	int mr2 = kvm->last_compress_r;
 	if(mr2) {
 		//trans += dlist->put_off*4096/mr;
 		trans += (dlist->put_off*4096+current_dirty_byte)/mr2;
 	}
+
+	trans+= (current_dirty_byte/6745);
 
 	if(trans == 0) trans = kvm->bo;
 
@@ -2772,8 +2779,10 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
 
 //	buf = kmalloc(sizeof(uint8_t*)*2, GFP_KERNEL);
 
-    buf = kmalloc(64 * 1024 + 8192, GFP_KERNEL);
-    //buf = kmalloc(3 * 1024 *1024 + 8192, GFP_KERNEL);
+    //buf = kmalloc(64 * 1024 + 8192, GFP_KERNEL);
+    buf = kmalloc(4 * 1024 *1024, GFP_KERNEL);
+
+	//buf = kmalloc(3 * 1024 *1024 + 8192, GFP_KERNEL);
 //    buf[2] = kmalloc(4 * 1024 *1024, GFP_KERNEL);
     if (!buf)
         return -ENOMEM;
@@ -2809,7 +2818,7 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
         	len += kvmft_diff_to_buf(kvm, gfn, i, buf + len,
             	trans_index, run_serial, end);
 
-        if (len >= 64 * 1024) {
+/*        if (len >= 64 * 1024) {
             ret = ktcp_send(sock, buf, len);
 			block_num++;
 			kvm->record_send_queue_sum_time[trans_index] += (time_in_us()-start_wait);
@@ -2819,7 +2828,7 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
                 goto free;
             total += len;
             len = 0;
-        }
+        }*/
     }
 
 	kvm->record_compress_t[trans_index] = time_in_us() - start_t;
@@ -4092,6 +4101,7 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 
 		int rest_ct = kvm->record_compress_t[curindex];
 		//update->x2 = rest_ct;
+		int issue_t = kvm->record_send_queue_sum_time[curindex]-rest_ct;
 
 
 		if(rest_ct) {
@@ -4101,11 +4111,13 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 			//kvm->last_compress_r = (dirty_pfns_len*4096+dirty_len)/rest_ct;
 			real_compress_r = (dirty_pfns_len*4096+dirty_len)/rest_ct;
 		}
-		int send_t = trans-rest_ct;
+		//int send_t = trans-rest_ct;
+		int send_t = trans-rest_ct-issue_t;
 		//update->x3 = send_t;
 
 
-		if(send_t) {
+		//if(send_t) {
+		if(send_t && dirty_len < 500000) {
 			kvm->send_r_count++;
 			kvm->send_r_sum+=dirty_len/send_t;
 			//kvm->last_send_r = dirty_len/send_t;
@@ -4135,6 +4147,7 @@ void kvmft_bd_update_latency(struct kvm *kvm, struct kvmft_update_latency *updat
 
 		update->x0 = kvm->record_send_queue_sum_time[curindex];
 		update->x1 = kvm->record_send_queue_av_time[curindex];
+		update->x1 = issue_t;
 
 
 		if(kvm->record_compress_t3[curindex]) {
