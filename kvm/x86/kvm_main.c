@@ -3503,6 +3503,14 @@ out_free_irq_routing:
         r = kvmft_ioctl_set_master_slave_sockets(kvm, &socks);
         break;
     }
+	case KVM_PAGE_NOT_DIFF_RANGE: {
+		struct kvm_shmem_page_not_diff_range param;
+        r = -EFAULT;
+        if (copy_from_user(&param, argp, sizeof param))
+            goto out;
+        r = kvm_page_not_diff_range(kvm, param);
+        break;
+    }
 	default:
 		r = kvm_arch_vm_ioctl(filp, ioctl, arg);
 	}

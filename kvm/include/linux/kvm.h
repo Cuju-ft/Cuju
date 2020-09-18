@@ -1356,6 +1356,11 @@ struct kvm_shmem_mark_page_dirty {
 #define KVM_SHM_ADJUST_EPOCH              _IOW(KVMIO,  0xca, __u32)
 #define KVM_GET_PUT_OFF                   _IOW(KVMIO,  0xd1, int)
 #define KVM_RESET_PUT_OFF                 _IOW(KVMIO,  0xd2, int)
+struct kvm_shmem_page_not_diff_range {
+    __u32 start_gfn;
+	__u32 end_gfn;
+};
+#define KVM_PAGE_NOT_DIFF_RANGE               _IOW(KVMIO, 0xd3, struct kvm_shmem_page_not_diff_range)
 struct kvm_shmem_extend {
   // output from kvm to qemu
   unsigned long page_nums_size;

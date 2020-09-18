@@ -26,7 +26,10 @@
 
 #define CUJU_FT_DEV_INIT_BUF (8*1024*1024)
 #define CUJU_FT_DEV_STATE_ENTRY_SIZE 55
-
+//for ASYNC_INIT_MIGRATION
+//#define ASYNC_INIT_MIGRATION
+extern int delay_more_than_two_epoch;
+#define DIRTY_RATIO 10
 struct CUJUFTDev
 {
     QEMUFile *ft_dev_file;
@@ -40,6 +43,7 @@ struct CUJUFTDev
 };
 //for cuju record below_4g_mem_size
 extern ram_addr_t cuju_below_4g_mem_size ;
+
 #define QEMU_VM_FILE_MAGIC           0x5145564d
 #define QEMU_VM_FILE_VERSION_COMPAT  0x00000002
 #define QEMU_VM_FILE_VERSION         0x00000003

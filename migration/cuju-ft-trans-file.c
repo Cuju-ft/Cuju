@@ -288,7 +288,6 @@ static ssize_t cuju_ft_trans_put(void *opaque, void *buf, int size)
 
     if (!s->freeze_output && s->put_offset)
         cuju_ft_trans_flush(s);
-
     while (!s->freeze_output && offset < size) {
         len = s->put_buffer(s->opaque, (uint8_t *)buf + offset, size - offset);
 
@@ -690,7 +689,13 @@ static int cuju_ft_trans_recv(CujuQEMUFileFtTrans *s)
         if (first_commit1) {
             first_commit1 = false;
             printf("first commit\n");
+        /*Here need to be disabled in ASYNC_INIT_MIGRATION mode, because some information in pc.ram
+          is needed by the device, but these parts of the memory have not been sent at the first
+          commit, so this check needs to be disabled to avoid problems
+        */
+        #ifndef ASYNC_INIT_MIGRATION
             qemu_loadvm_dev(s->file);
+        #endif
         }
 
         break;

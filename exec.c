@@ -3872,4 +3872,51 @@ void kvmft_assert_ram_hash_and_dlist(unsigned long *gfns, int size)
     printf("%s good\n", __func__);
 //#endif
 }
+
+unsigned long find_max_ram_gfn(void){
+
+    RAMBlock *block;
+    unsigned long gfn = 0;
+
+    qemu_mutex_lock_ramlist();
+
+    QLIST_FOREACH_RCU(block, &ram_list.blocks, next) {
+        if (!memcmp(block->idstr, "pc.ram", 6)){
+			/*
+	        for (ii = 0; ii < block->used_length; ii += 4096) {
+                gfn = (unsigned long)(block->offset + ii) >> TARGET_PAGE_BITS;
+            }
+			*/
+			gfn = ((block->offset + block->used_length) >> TARGET_PAGE_BITS) - 1;
+		}
+        //printf("block->idstr = %s, block start gfn = %lu, gfn = %lu\n", block->idstr, (block->offset >> TARGET_PAGE_BITS), gfn);
+       //printf("test final gfn = %lu\n", ((block->offset + block->used_length) >> TARGET_PAGE_BITS)-1);
+    }
+
+    qemu_mutex_unlock_ramlist();
+
+    printf("ram final gfn = %lu\n", gfn);
+
+	return gfn;
+}
+
+
+
+
+void write_additional_dirty_page(unsigned long start_gfn, unsigned long end_gfn)
+{
+	int i;
+	uint8_t *ptr;
+	//printf("start_gfn = %lu, address = %p\n", start_gfn, gfn_to_hva(start_gfn));
+    unsigned long tempaddr;
+	for (i = 0; i < (end_gfn - start_gfn + 1); i++){
+        tempaddr = start_gfn + i;
+        if (start_gfn + i >= (cuju_below_4g_mem_size >> 12))
+                tempaddr = start_gfn + i - (cuju_below_4g_mem_size >> 12) + 0x100000;
+		ptr = gfn_to_hva((tempaddr));
+		kvm_shmem_mark_page_dirty(ptr, (tempaddr));
+		//printf("gfn = %lu, address = %p\n", (start_gfn + i), gfn_to_hva((start_gfn + i)));
+	}
+	//printf("start_gfn = %lu, end_gfn = %lu\n", start_gfn, (start_gfn + i)-1);
+}
 #endif

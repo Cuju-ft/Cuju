@@ -1371,7 +1371,17 @@ void qemu_savevm_state_complete_precopy(QEMUFile *f, bool iterable_only)
     json_prop_int(vmdesc, "page_size", TARGET_PAGE_SIZE);
     json_start_array(vmdesc, "devices");
     QTAILQ_FOREACH(se, &savevm_state.handlers, entry) {
-
+    /*Sending two devices is disabled here, because these devices need the memory
+      in the middle of pc.ram to initialize themselves, but if we try to send them,
+      it will take a long time for live migration. So we decided not to send these
+      two devices here, but to send them them later. This can speed up the time to
+      enter ASYNC_INIT_MIGRATION mode.
+    */
+    #ifdef ASYNC_INIT_MIGRATION
+        if ((strstr(se->idstr, "virtio-net"))||
+			(strstr(se->idstr, "virtio-blk")))
+			continue;
+    #endif
         if ((!se->ops || !se->ops->save_state) && !se->vmsd) {
             continue;
         }
@@ -2155,17 +2165,23 @@ qemu_loadvm_section_dev(QEMUFile *f, MigrationIncomingState *mis)
     uint32_t instance_id;
     SaveStateEntry *se;
     char idstr[257];
-
+    int nowsize;
     ftdev.state_entry_num = (uint8_t)qemu_get_byte(f);
-    ftdev.state_entry_size = (uint8_t)qemu_get_byte(f);
+    nowsize = (uint8_t)qemu_get_byte(f);
 #ifdef ft_debug_mode_enable
     printf("entrynum = %d\n", ftdev.state_entry_num);
 #endif
-    assert(ftdev.state_entry_num <= ftdev.state_entry_size);
+    assert(ftdev.state_entry_num <= nowsize);
     if (ftdev.state_entries == NULL) {
-        ftdev.state_entries = g_malloc(ftdev.state_entry_num * sizeof(void*));
-        ftdev.state_entry_begins = g_malloc(ftdev.state_entry_num * sizeof(int));
-        ftdev.state_entry_lens = g_malloc(ftdev.state_entry_num * sizeof(int));
+        ftdev.state_entry_size = nowsize;
+        ftdev.state_entries = g_malloc(ftdev.state_entry_size * sizeof(void*));
+        ftdev.state_entry_begins = g_malloc(ftdev.state_entry_size * sizeof(int));
+        ftdev.state_entry_lens = g_malloc(ftdev.state_entry_size * sizeof(int));
+    }else if (nowsize > ftdev.state_entry_size) {
+        ftdev.state_entry_size = nowsize;
+        ftdev.state_entries = g_realloc(ftdev.state_entries, ftdev.state_entry_size * sizeof(void*));
+        ftdev.state_entry_begins = g_realloc(ftdev.state_entry_begins, ftdev.state_entry_size * sizeof(int));
+        ftdev.state_entry_lens = g_realloc(ftdev.state_entry_lens, ftdev.state_entry_size * sizeof(int));
     }
 #ifdef ft_debug_mode_enable
     printf("%s num %d\n", __func__, ftdev.state_entry_num);
@@ -2776,8 +2792,8 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
     QJSON *vmdesc;
     SaveStateEntry *se;
     QEMUFile *f = ftdev->ft_dev_file;
- 
-    
+    static bool send_alldevice = true;
+
 	vmdesc = qjson_new();
     json_prop_int(vmdesc, "page_size", TARGET_PAGE_SIZE);
     json_start_array(vmdesc, "devices");
@@ -2798,7 +2814,11 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
             continue;
 
         dirty = kvm_shmem_trackable_dirty_test(se->opaque);
-			
+
+        if (send_alldevice){
+            dirty = 1;
+        }
+
 		if ((strstr(se->idstr, "virtio-net"))||
             (strstr(se->idstr, "virtio-blk"))||
 			(!strncmp(se->idstr, "kvmclock", 8))||
@@ -2844,6 +2864,9 @@ int qemu_savevm_trans_complete_precopy_advanced(struct CUJUFTDev *ftdev, int mor
 		#endif
     }
 
+    if (send_alldevice){
+        send_alldevice = false;
+    }
     if (!more)
         qemu_put_byte(f, QEMU_VM_EOF);
 

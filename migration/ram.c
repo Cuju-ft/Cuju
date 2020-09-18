@@ -1340,7 +1340,12 @@ static int ram_find_and_save_block(QEMUFile *f, bool last_stage,
     if (!pss.block) {
         pss.block = QLIST_FIRST_RCU(&ram_list.blocks);
     }
-
+#ifdef ASYNC_INIT_MIGRATION
+    if (strcmp(pss.block->idstr, "pc.ram") == 0 && ((pss.block->offset + pss.offset) >> TARGET_PAGE_BITS) >= 256) {
+        pss.offset = 0;
+        pss.block = QLIST_NEXT_RCU(pss.block, next);
+    }
+#endif
     do {
         again = true;
         found = get_queued_page(ms, &pss, &dirty_ram_abs);
