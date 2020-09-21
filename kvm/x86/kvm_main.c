@@ -2203,6 +2203,11 @@ int kvm_write_guest_offset_cached(struct kvm *kvm, struct gfn_to_hva_cache *ghc,
 	if (kvm_is_error_hva(ghc->hva))
         return -EFAULT;
 	// Cuju End	
+       if (offset == 0) {
+		r = kvmft_page_dirty(kvm, gpa >> PAGE_SHIFT, (void __user *)ghc->hva, 1, NULL);
+		if (r < 0)
+			return r;
+       }
 
 	if (unlikely(!ghc->memslot))
 		return kvm_write_guest(kvm, gpa, data, len);

@@ -4024,6 +4024,16 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 
 	MMU_WARN_ON(!VALID_PAGE(vcpu->arch.mmu.root_hpa));
 
+        // Cuju Begin
+	if (kvm_shm_is_enabled(vcpu->kvm)){
+		hva = gfn_to_hva(vcpu->kvm, gfn);
+		if (!kvm_is_error_hva(hva)) {
+			//If this hva is valid, this case is write protect page fault, we can backup page and mark dirty
+			kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
+		}
+	}
+	// Cuju End
+
 	if (page_fault_handle_page_track(vcpu, error_code, gfn))
 		return RET_PF_EMULATE;
 
@@ -4073,16 +4083,6 @@ static int tdp_page_fault(struct kvm_vcpu *vcpu, gva_t gpa, u32 error_code,
 
 	if (handle_abnormal_pfn(vcpu, 0, gfn, pfn, ACC_ALL, &r))
 		return r;
-
-	// Cuju Begin
-	if (kvm_shm_is_enabled(vcpu->kvm)){
-		hva = gfn_to_hva(vcpu->kvm, gfn);
-		if (!kvm_is_error_hva(hva)) {
-			//If this hva is valid, this case is write protect page fault, we can backup page and mark dirty
-			kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);
-		}
-	}
-	// Cuju End
 
 	spin_lock(&vcpu->kvm->mmu_lock);
 	if (mmu_notifier_retry(vcpu->kvm, mmu_seq))
