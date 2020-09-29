@@ -1097,7 +1097,7 @@ int __kvm_set_memory_region(struct kvm *kvm,
 	}
 
 	/* Allocate page dirty bitmap if needed */
-	if ((new.flags & KVM_MEM_LOG_DIRTY_PAGES) && !new.dirty_bitmap) {
+	if ((new.id >= KVM_USER_MEM_SLOTS || (new.flags & KVM_MEM_LOG_DIRTY_PAGES)) && !new.dirty_bitmap) {
 		if (kvm_create_dirty_bitmap(&new) < 0)
 			goto out_free;
 		bitmap_created = true;
