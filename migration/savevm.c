@@ -2155,17 +2155,24 @@ qemu_loadvm_section_dev(QEMUFile *f, MigrationIncomingState *mis)
     uint32_t instance_id;
     SaveStateEntry *se;
     char idstr[257];
+    int nowsize;
 
     ftdev.state_entry_num = (uint8_t)qemu_get_byte(f);
-    ftdev.state_entry_size = (uint8_t)qemu_get_byte(f);
+    nowsize = (uint8_t)qemu_get_byte(f);
 #ifdef ft_debug_mode_enable
     printf("entrynum = %d\n", ftdev.state_entry_num);
 #endif
-    assert(ftdev.state_entry_num <= ftdev.state_entry_size);
+    assert(ftdev.state_entry_num <= nowsize);
     if (ftdev.state_entries == NULL) {
-        ftdev.state_entries = g_malloc(ftdev.state_entry_num * sizeof(void*));
-        ftdev.state_entry_begins = g_malloc(ftdev.state_entry_num * sizeof(int));
-        ftdev.state_entry_lens = g_malloc(ftdev.state_entry_num * sizeof(int));
+        ftdev.state_entry_size = nowsize;
+        ftdev.state_entries = g_malloc(ftdev.state_entry_size * sizeof(void*));
+        ftdev.state_entry_begins = g_malloc(ftdev.state_entry_size * sizeof(int));
+        ftdev.state_entry_lens = g_malloc(ftdev.state_entry_size * sizeof(int));
+    } else if (nowsize > ftdev.state_entry_size) {
+        ftdev.state_entry_size = nowsize;
+        ftdev.state_entries = g_realloc(ftdev.state_entries, ftdev.state_entry_size * sizeof(void*));
+        ftdev.state_entry_begins = g_realloc(ftdev.state_entry_begins, ftdev.state_entry_size * sizeof(int));
+        ftdev.state_entry_lens = g_realloc(ftdev.state_entry_lens, ftdev.state_entry_size * sizeof(int));
     }
 #ifdef ft_debug_mode_enable
     printf("%s num %d\n", __func__, ftdev.state_entry_num);
