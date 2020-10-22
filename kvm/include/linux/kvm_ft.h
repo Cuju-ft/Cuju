@@ -28,7 +28,7 @@ struct kvm_shmem_child;
 struct kvm_vcpu;
 struct kvm_vcpu_get_shared_all_state;
 struct kvmft_set_master_slave_sockets;
-
+struct kvm_shmem_page_not_diff_range;
 struct kvmft_dirty_list {
     volatile __u32 put_off;     // [spcl_put_off, put_off) stores dirty pages tracked by fault
     __u32 dirty_stop_num;
@@ -38,6 +38,8 @@ struct kvmft_dirty_list {
     __u32 *gva_spcl_pages;
 
     __u32 *spcl_bitmap;         // if set, the speculated page corresponding in pages is dirty
+    __u32 not_diff_start;
+    __u32 not_diff_end;
     __u32 pages[];
 };
 
@@ -155,5 +157,7 @@ int kvmft_vcpu_alloc_shared_all_state(struct kvm_vcpu *vcpu,
 void kvmft_gva_spcl_unprotect_page(struct kvm *kvm, unsigned long gfn);
 int kvmft_ioctl_set_master_slave_sockets(struct kvm *kvm,
     struct kvmft_set_master_slave_sockets *socks);
+
+int kvm_page_not_diff_range(struct kvm *kvm, struct kvm_shmem_page_not_diff_range range);
 
 #endif

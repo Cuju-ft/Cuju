@@ -1515,6 +1515,13 @@ struct cur_off_and_i {
   int i;
 };
 #define KVM_GET_ITH_DLIST_ELEMENT         _IOW(KVMIO,  0xdc, struct cur_off_and_i)
+
+
+struct kvm_shmem_page_not_diff_range {
+    __u32 start_gfn;
+	__u32 end_gfn;
+};
+#define KVM_PAGE_NOT_DIFF_RANGE               _IOW(KVMIO, 0xde, struct kvm_shmem_page_not_diff_range)
 // Cuju End
 
 #define KVM_DEV_ASSIGN_ENABLE_IOMMU	(1 << 0)
