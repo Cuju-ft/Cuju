@@ -58,6 +58,11 @@ void kvmft_assert_ram_hash_and_dlist(unsigned long *gfns, int size);
 void kvmft_update_epoch_flush_time(double time_s);
 void kvmft_update_epoch_flush_time_linear(double time_s);
 
+void write_additional_dirty_page(unsigned long start_gfn, unsigned long end_gfn);
+unsigned long find_max_ram_gfn(void);
+int kvmft_page_not_diff_range(unsigned long  start_page, unsigned long  end_page);
+
+
 void *kvm_shmem_alloc_trackable(unsigned int size);
 void kvm_shmem_free_trackable(void *ptr);
 void kvm_shmem_vmstate_register_callback(void *opaque);

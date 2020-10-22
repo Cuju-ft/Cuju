@@ -39,6 +39,7 @@ static int page_transfer_offsets[3072];
 static int page_transfer_offsets_off = 0;
 #endif
 
+static struct kvm_shmem_page_not_diff_range not_diff_range;
 struct diff_and_tran_kthread_descriptor {
     struct kvm *kvm;
     int trans_index;
@@ -2393,6 +2394,18 @@ out:
     return ret;
 }
 
+
+int kvm_page_not_diff_range(struct kvm *kvm, struct kvm_shmem_page_not_diff_range range)
+{
+    struct kvmft_context *ctx;
+    struct kvmft_dirty_list *dlist;
+    struct kvm_shmem_page_not_diff_range *not_diff_page;
+    ctx = &kvm->ft_context;
+    dlist = ctx->page_nums_snapshot_k[ctx->cur_index];
+    dlist->not_diff_start = range.start_gfn;
+    dlist->not_diff_end = range.end_gfn;
+    return 1;
+}
 static int __diff_to_buf(unsigned long gfn, struct page *page1,
     struct page *page2, uint8_t *buf)
 {
@@ -2407,26 +2420,31 @@ static int __diff_to_buf(unsigned long gfn, struct page *page1,
 
     header->gfn = gfn << 12 | 1;
     memset(header->h, 0, sizeof(header->h));
-
-    kernel_fpu_begin();
-
-    for (i = 0; i < 4096; i += 32) {
-        if (memcmp_avx_32(backup + i, page + i)) {
-            header->h[i / 256] |= (1 << ((i % 256) / 32));
-            memcpy(block, page + i, 32);
-            block += 32;
-        }
-    }
-
-    kernel_fpu_end();
-
-    if (block == buf + sizeof(*header)) {
-		#ifdef ft_debug_mode_enable
-        printk("warning: not found diff page\n");
-		#endif
+    if (gfn >= not_diff_range.start_gfn && gfn <= not_diff_range.end_gfn){
         memset(header->h, 0xff, 16 * sizeof(__u8));
         memcpy(block, page, 4096);
         block += 4096;
+    } else {
+        kernel_fpu_begin();
+
+        for (i = 0; i < 4096; i += 32) {
+            if (memcmp_avx_32(backup + i, page + i)) {
+                header->h[i / 256] |= (1 << ((i % 256) / 32));
+                memcpy(block, page + i, 32);
+                block += 32;
+            }
+        }
+
+        kernel_fpu_end();
+
+        if (block == buf + sizeof(*header)) {
+            #ifdef ft_debug_mode_enable
+            printk("warning: not found diff page\n");
+            #endif
+            memset(header->h, 0xff, 16 * sizeof(__u8));
+            memcpy(block, page, 4096);
+            block += 4096;
+        }
     }
 
     kunmap_atomic(backup);
@@ -2481,7 +2499,9 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
     int len = 0, total = 0;
     uint8_t *buf;
     unsigned int *gfns = dlist->pages;
-
+    not_diff_range.start_gfn = dlist->not_diff_start;
+    not_diff_range.end_gfn = dlist->not_diff_end;
+    //printk("%s not_diff_range page not diff range %ld to %ld \n", __func__, not_diff_range.start_gfn, not_diff_range.end_gfn);
 #ifdef PAGE_TRANSFER_TIME_MEASURE
     transfer_start_time = time_in_us();
     page_transfer_end_times_off = end;
@@ -2540,6 +2560,8 @@ static int kvmft_transfer_list(struct kvm *kvm, struct socket *sock,
     ret = total;
 free:
     kfree(buf);
+    dlist->not_diff_start = 0;
+    dlist->not_diff_end = 0;
     return ret;
 }
 

@@ -14,6 +14,8 @@ struct kvmft_dirty_list {
     __u32 *spcl_pages;
 
     __u32 *spcl_bitmap;
+    __u32 not_diff_start;
+    __u32 not_diff_end;
     __u32 pages[];
 };
 
