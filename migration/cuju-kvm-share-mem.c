@@ -998,6 +998,21 @@ int kvmft_write_protect_dirty_pages(int cur_index)
     return kvm_vm_ioctl(kvm_state, KVM_FT_WRITE_PROTECT_DIRTY, &cindex);
 }
 
+int kvmft_page_not_diff_range(unsigned long  start_page, unsigned long  end_page)
+{
+    struct kvm_shmem_page_not_diff_range param;
+    unsigned long tempaddr;
+    tempaddr = start_page;
+    if (start_page >= (cuju_below_4g_mem_size >> 12))
+        tempaddr = start_page - (cuju_below_4g_mem_size >> 12) + 0x100000;
+    param.start_gfn = (__u32)tempaddr;
+    tempaddr = end_page;
+    if (end_page >= (cuju_below_4g_mem_size >> 12))
+        tempaddr = end_page - (cuju_below_4g_mem_size >> 12) + 0x100000;
+    param.end_gfn = (__u32)tempaddr;
+    return kvm_vm_ioctl(kvm_state, KVM_PAGE_NOT_DIFF_RANGE, &param);
+}
+
 int kvm_shm_clear_dirty_bitmap(int cur_index)
 {
     __u32 cindex = cur_index;
@@ -1077,6 +1092,13 @@ static int kvm_start_kernel_transfer(int trans_index, int ram_fd, int conn_index
         {
             if (tmp - end > EPOCH_TIME_IN_MS*1000) {
                 printf("%s ioctl takes %ldms %d\n", __func__, (tmp-end)/1000, s->dirty_pfns_len);
+            }
+            if (tmp - end > 2 * EPOCH_TIME_IN_MS*1000) {
+                if(delay_more_than_two_epoch < DIRTY_RATIO - 1){
+                    delay_more_than_two_epoch ++;
+                }
+            } else if (delay_more_than_two_epoch > 0 ){
+                delay_more_than_two_epoch --;
             }
         }
     } while (ret == -EINTR);

@@ -51,6 +51,25 @@ static unsigned long trans_serial = 0;
 static unsigned long run_serial = 0;
 static int last_enter = 0;
 bool backup_die = false;
+
+//for ASYNC_INIT_MIGRATION
+static unsigned long current_trans_gfn = 0;
+static unsigned long pc_ram_end = 0;
+static bool async_init_migration_mode = false;
+/*This is the maximum number of pages sent in ASYNC_INIT_MIGRATION mode in an epoch.
+  It will decrease when the sending time is delayed, and recover when there is no delay.
+  Since the backup side cannot receive such a large number of data packets in a short time,
+  the system will cause delay. Therefore, if your system cannot accept the delay,
+  you can set the number lower (this will extend the time of ASYNC_INIT_MIGRATION mode), EX: 500.
+  On the contrary, if your system can accept the delay, you can set the number higher,
+  which will reduce the time of ASYNC_INIT_MIGRATION mode, EX: 2000.*/
+#define ASYNC_INIT_MIGRATION_DIRTY_PAGE_NUM 1000
+int delay_more_than_two_epoch = 0;
+#ifdef ASYNC_INIT_MIGRATION
+    static bool start_async_init_migration = false;
+    static int dirty_page_num = ASYNC_INIT_MIGRATION_DIRTY_PAGE_NUM;
+#endif
+
 #ifdef DEBUG_MIGRATION
 #define DPRINTF(fmt, ...) \
     do { printf("migration: " fmt, ## __VA_ARGS__); } while (0)
@@ -2391,6 +2410,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
             printf("%s sender receive ACK failed.\n", __func__);
             goto error_out;
         }
+
         migrate_set_ft_state(s, CUJU_FT_TRANSACTION_PRE_RUN);
         kvmft_first_ack = true;
         assert(kvmft_first_ack);
@@ -2577,6 +2597,10 @@ static void *migration_thread(void *opaque)
 		printf("Start system memory backup\n");
 		migration_completion(s, current_active_state,
                &old_vm_running, &start_time);
+    #ifdef ASYNC_INIT_MIGRATION
+		pc_ram_end = find_max_ram_gfn();
+    #endif
+
 	}
 
     while (s->state == MIGRATION_STATUS_ACTIVE ||
@@ -3006,10 +3030,28 @@ static void migrate_timer(void *opaque)
     MigrationState *s = opaque;
 
     assert(s == migrate_get_current());
+#ifdef ASYNC_INIT_MIGRATION
+    if (!start_async_init_migration){
+        async_init_migration_mode = true;
+        start_async_init_migration = true;
 
+        /*Since some devices need some guest VM informations (such as rom size)
+        to initialize at the end of live migration,but these informations are stored in "pc.ram"
+        (which we hope to send them later). Therefore, we first send pc.ram gfn 0-256
+        (the location where the information is stored), and then send other parts
+        in the ASYNC_INIT_MIGRATION part, so that the device obtains the correct value first
+        while delaying the sending of pc.ram.*/
+        //pc_ram_end = 190;
+        current_trans_gfn = 256;
+    }
+#endif
 #ifndef ft_debug_mode_enable
     if ((trans_serial & 0x03f) == 0) {
-        printf("\n%s tick %lu\n", __func__, trans_serial);
+        if (!async_init_migration_mode){
+            printf("\n%s tick %lu\n", __func__, trans_serial);
+        } else {
+            printf("\nAsynchronous transfer of the memory pages %lu %% \n", current_trans_gfn * 100 / pc_ram_end);
+        }
     }
 #else
     printf("\n%s %p(%d) runstage(ms) %d\n", __func__, s, migrate_get_index(s),
@@ -3023,6 +3065,21 @@ static void migrate_timer(void *opaque)
     qemu_mutex_lock_iothread();
     vm_stop_mig();
     qemu_iohandler_ft_pause(true);
+
+#ifdef ASYNC_INIT_MIGRATION
+	if (async_init_migration_mode){
+        dirty_page_num = ASYNC_INIT_MIGRATION_DIRTY_PAGE_NUM * (DIRTY_RATIO - delay_more_than_two_epoch) /DIRTY_RATIO;
+        if (current_trans_gfn < (pc_ram_end - dirty_page_num)){
+            write_additional_dirty_page(current_trans_gfn, current_trans_gfn + dirty_page_num);
+            kvmft_page_not_diff_range(current_trans_gfn, current_trans_gfn + dirty_page_num);
+            current_trans_gfn = current_trans_gfn + dirty_page_num;
+        } else {
+            write_additional_dirty_page(current_trans_gfn, pc_ram_end);
+            kvmft_page_not_diff_range(current_trans_gfn, pc_ram_end);
+            async_init_migration_mode = false;
+        }
+	}
+#endif
 
     s->flush_vs_commit1 = false;
     s->transfer_start_time = time_in_double();
