@@ -3912,7 +3912,7 @@ void write_additional_dirty_page(unsigned long start_gfn, unsigned long end_gfn)
 	for (i = 0; i < (end_gfn - start_gfn + 1); i++){
         tempaddr = start_gfn + i;
         if (start_gfn + i >= (cuju_below_4g_mem_size >> 12))
-                tempaddr = start_gfn + i - (cuju_below_4g_mem_size >> 12) + 0x100000;
+            tempaddr = start_gfn + i - (cuju_below_4g_mem_size >> 12) + 0x100000;
 		ptr = gfn_to_hva((tempaddr));
 		kvm_shmem_mark_page_dirty(ptr, (tempaddr));
 		//printf("gfn = %lu, address = %p\n", (start_gfn + i), gfn_to_hva((start_gfn + i)));
