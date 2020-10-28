@@ -2966,7 +2966,6 @@ void *address_space_map(AddressSpace *as,
     hwaddr len = *plen;
     hwaddr done = 0;
     hwaddr l, xlat, base;
-	hwaddr page;
     MemoryRegion *mr, *this_mr;
     void *ptr;
 
@@ -3007,11 +3006,8 @@ void *address_space_map(AddressSpace *as,
 
     for (;;) {
         // for CUJU-FT
-		page = addr & TARGET_PAGE_MASK;
         if (is_write) {
-            hwaddr tlen = 1;
-            kvm_shmem_mark_page_dirty(qemu_ram_ptr_length(mr->ram_block, base + done, &tlen),
-                                     page >> TARGET_PAGE_BITS);
+            kvm_shmem_mark_page_dirty_range(mr, base, l);
             //assert(!r);
         }
         len -= l;
