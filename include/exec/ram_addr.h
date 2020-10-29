@@ -281,7 +281,7 @@ static inline void cpu_physical_memory_set_dirty_range(ram_addr_t start,
     base = page - offset;
     while (page < end) {
         unsigned long next = MIN(end, base + DIRTY_MEMORY_BLOCK_SIZE);
-
+        //printf("%s qemu_gfn=%lu, next=%lu, end=%lu\n", __func__, page, next, end);
         if (likely(mask & (1 << DIRTY_MEMORY_MIGRATION))) {
             bitmap_set_atomic(blocks[DIRTY_MEMORY_MIGRATION]->blocks[idx],
                               offset, next - page);
