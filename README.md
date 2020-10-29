@@ -28,21 +28,15 @@ For more information see: https://cuju-ft.github.io/cuju-web/home.html
 
 - Open the Intel virtualization support (VT-x) in your bios.
 - Install OS in all nodes:
-    - [ubuntu-mate-16.04.5-desktop-amd64.iso (Ubuntu 16.04.5)](http://ftp.ubuntu-tw.org/mirror/ubuntu-cdimage/ubuntu-mate/releases/16.04.5/release/ubuntu-mate-16.04.5-desktop-amd64.iso) - **recommend**
-    - [ubuntu-mate-18.04.1-desktop-amd64.iso (Ubuntu 18.04.1)](http://ftp.ubuntu-tw.org/mirror/ubuntu-cdimage/ubuntu-mate/releases/18.04.1/release/ubuntu-mate-18.04.1-desktop-amd64.iso)
+    - [ubuntu-18.04.5-server-amd64.iso (Ubuntu 18.04.1)](http://ftp.ubuntu-tw.org/mirror/ubuntu-cdimage/ubuntu/releases/18.04/release/ubuntu-18.04.5-server-amd64.iso)
 - Install related packages in all nodes
 ```
  $ sudo apt-get update
  $ sudo apt-get install ssh vim gcc make gdb fakeroot build-essential \
 kernel-package libncurses5 libncurses5-dev zlib1g-dev \
 libglib2.0-dev qemu xorg bridge-utils openvpn libelf-dev \
-libssl-dev libpixman-1-dev nfs-common git
+libssl-dev libpixman-1-dev nfs-common git tigervnc-viewer
 
- # Ubuntu 16
- $ sudo apt-get install vncviewer
-
- # Ubuntu 18
- $ sudo apt-get install tigervnc-viewer
 ```
 - Set up the bridge and network environment 
     - You can follow our recommended topology to set up the network environment 
@@ -138,11 +132,21 @@ $ sudo mount -t nfs 192.168.11.1:/home/[your username]/nfsfolder /mnt/nfs
 ```
 ## Build Cuju
 ---
+* Install the appropriate version of the kernel for Cuju
+
+```
+$ sudo apt-get install linux-image-4.15.0-29-generic
+$ sudo apt-get install linux-headers-4.15.0-29-generic
+
+```
+
 * Clone Cuju on your NFS folder from Github
+
 ```
 $ cd /mnt/nfs
 $ git clone https://github.com/Cuju-ft/Cuju.git
 ```
+
 * Configure & Compile Cuju-ft
 
 ```
@@ -161,18 +165,6 @@ $ make clean
 $ make -j8
 $ ./reinsmodkvm.sh
 ```
-P.S.
->`*1` If you meet `error: incompatible type for argument 5 of '__get_user_pages_unlocked'`, you can use this patch:
->```
->$ cd Cuju
->$ patch -p1 < ./patch/__get_user_pages_unlocked.patch
->```
->
->`*2` If you meet `error: implicit declaration of function 'use_eager_fpu' [-werror=implicit-function-declaration]`, you can use this patch:
->```
->$ cd Cuju
->$ patch -p1 < ./patch/use_eager_fpu.patch
->```
 
 Execute Cuju
 -------
@@ -182,7 +174,7 @@ $ cd /mnt/nfs/Cuju/kvm
 $ ./reinsmodkvm.sh
 ```
 
-* Boot VM (on Primary Host)
+* Boot VM (on Primary Host, /mnt/nfs/Cuju)
 * ```runvm.sh```
 
 ```
@@ -207,7 +199,7 @@ $ vncviewer :5900 &
 
 The default `account/password` is `root/root` if you use we provide guest image
 
-* Start Receiver (on Backup Host)
+* Start Receiver (on Backup Host, /mnt/nfs/Cuju)
 * ```recv.sh```
 
 ```
