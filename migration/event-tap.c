@@ -528,6 +528,8 @@ static void event_tap_net_flush(EventTapNetReq *net_req)
     if (net_req->vlan_needed) {
         vc = net_hub_find_client_by_name(net_req->vlan_id,
                                            net_req->device_name);
+        if (vc == 0x0)
+            vc = qemu_find_netdev_cuju(net_req->device_name);
     } else {
         vc = qemu_find_netdev(net_req->device_name);
     }

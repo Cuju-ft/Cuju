@@ -121,6 +121,7 @@ struct SocketReadState {
 int net_fill_rstate(SocketReadState *rs, const uint8_t *buf, int size);
 char *qemu_mac_strdup_printf(const uint8_t *macaddr);
 NetClientState *qemu_find_netdev(const char *id);
+NetClientState *qemu_find_netdev_cuju(const char *id);
 int qemu_find_net_clients_except(const char *id, NetClientState **ncs,
                                  NetClientDriver type, int max);
 NetClientState *qemu_new_net_client(NetClientInfo *info,
