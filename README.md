@@ -27,14 +27,24 @@ For more information see: https://cuju-ft.github.io/cuju-web/home.html
 ![](https://i.imgur.com/38d0kzJ.png)
 
 - Open the Intel virtualization support (VT-x) in your bios.
-- Install OS in all nodes: [Ubuntu-16.04-desktop-amd64.iso (Ubuntu 16.04.0)](https://drive.google.com/file/d/0B9au9R9FzSWKUjRZclBXbXB0eEk/view)
+- Install OS in all nodes: (pick 1 of 2)
+    - [Ubuntu-16.04-desktop-amd64.iso (Ubuntu 16.04.0)](https://drive.google.com/file/d/0B9au9R9FzSWKUjRZclBXbXB0eEk/view)
+    - [ubuntu-18.04.1-live-server-amd64.iso (Ubuntu 18.04.1)](http://old-releases.ubuntu.com/releases/18.04.1/ubuntu-18.04.1-live-server-amd64.iso)
 - Install related packages in all nodes
 ```
  $ sudo apt-get update
+
+ubuntu-16:
  $ sudo apt-get install ssh vim gcc make gdb fakeroot build-essential \
 kernel-package libncurses5 libncurses5-dev zlib1g-dev \
 libglib2.0-dev qemu xorg bridge-utils openvpn vncviewer \
 libssl-dev libpixman-1-dev nfs-common git
+
+ubuntu-18:
+ $ sudo apt-get install ssh vim gcc make gdb fakeroot build-essential \
+kernel-package libncurses5 libncurses5-dev zlib1g-dev \
+libglib2.0-dev qemu xorg bridge-utils openvpn libelf-dev \
+libssl-dev libpixman-1-dev nfs-common git tigervnc-viewer
 ```
 - Set up the bridge and network environment 
     - You can follow our recommended topology to set up the network environment 
@@ -130,6 +140,11 @@ $ sudo mount -t nfs 192.168.11.1:/home/[your username]/nfsfolder /mnt/nfs
 ```
 ## Build Cuju
 ---
+* Install the appropriate version of the kernel for Cuju (only on ubuntu-18)
+```
+$ sudo apt-get install linux-image-4.15.0-29-generic
+$ sudo apt-get install linux-headers-4.15.0-29-generic
+```
 * Clone Cuju on your NFS folder from Github
 ```
 $ cd /mnt/nfs
@@ -174,7 +189,7 @@ $ cd /mnt/nfs/Cuju/kvm
 $ ./reinsmodkvm.sh
 ```
 
-* Boot VM (on Primary Host)
+* Boot VM (on Primary Host, /mnt/nfs/Cuju)
 * ```runvm.sh```
 
 ```
@@ -199,7 +214,7 @@ $ vncviewer :5900 &
 
 The default `account/password` is `root/root` if you use we provide guest image
 
-* Start Receiver (on Backup Host)
+* Start Receiver (on Backup Host, /mnt/nfs/Cuju)
 * ```recv.sh```
 
 ```
@@ -225,8 +240,13 @@ chmod +x ./tmp.sh
 * After VM boot and Receiver ready, you can execute following script to enter FT mode
 * ```ftmode.sh```
 ```
+ubuntu-16:
 sudo echo "migrate_set_capability cuju-ft on" | sudo nc -U /home/[your username]/vm1.monitor
 sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -U /home/[your username]/vm1.monitor
+
+ubuntu-18:
+sudo echo "migrate_set_capability cuju-ft on" | sudo nc -w 1 -U /home/[your username]/vm1.monitor
+sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -w 1 -U /home/[your username]/vm1.monitor
 ```
 You need to change the ip address and port (`tcp:192.168.111.2:4441`) for your environment, this is Backup Host's IP
 And change the monitor path (`/home/[your username]/vm1.monitor`) for your environment
