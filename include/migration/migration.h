@@ -495,5 +495,4 @@ void dirty_page_tracking_logs_commit(MigrationState *s);
 unsigned int dirty_page_tracking_logs_max(int bound_ms);
 
 void kvmft_tick_func(void);
-
 #endif

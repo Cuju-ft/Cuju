@@ -46,6 +46,8 @@
 #include "hw/virtio/virtio-blk.h"
 #include <sys/time.h>
 #include <signal.h>
+#include "migration/ft_watchdog.h"
+
 //#define DEBUG_MIGRATION
 static unsigned long trans_serial = 0;
 static unsigned long run_serial = 0;
@@ -1445,7 +1447,8 @@ MigrationState *migrate_init(const MigrationParams *params)
     alloc_ft_dev(s2);
 
     migrate_set_ft_state(s2, CUJU_FT_TRANSACTION_PRE_RUN);
-
+    re_set_ft_timer();
+    
     return s;
 }
 
@@ -2182,6 +2185,8 @@ static void migrate_fd_get_notify(void *opaque)
     MigrationState *s = opaque;
     Error *local_err = NULL;
 
+    //printf("[%s] FD:%d\n", __func__, s->fd);
+
     qemu_file_get_notify(s->file);
 
     if (qemu_file_get_error(s->file) && qemu_file_get_error(s->file) != -EAGAIN) {
@@ -2404,6 +2409,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
         kvm_shmem_stop_migrate_cancel();
         f->check = false;
         f->cancel = false;
+        f->wdgt_check = false;
         backup_die = false;
         printf("%s recv ack, index %d\n", __func__, s->cur_off);
         if ((ret = qemu_ft_trans_recv_ack(s->file)) < 0) {
@@ -2540,6 +2546,8 @@ static void ft_setup_migrate_state(MigrationState *s, int index)
     qemu_bh_set_mig_survive(s->flush_bh, true);
 
     qemu_set_fd_handler(s->fd, migrate_fd_get_notify, NULL, s);
+    //qemu_set_fd_handler(s->fd, CUJU_IO_HANDLER_KEEP, migrate_fd_put_notify, s);
+
     qemu_set_fd_survive_ft_pause(s->fd, true);
 }
 
@@ -2969,6 +2977,8 @@ void *cuju_process_incoming_thread(void *opaque)
 
     cuju_ft_mode = CUJU_FT_TRANSACTION_RECV;
 
+    re_set_ft_timer();
+
     qemu_mutex_init(&cuju_load_mutex);
     qemu_cond_init(&cuju_load_cond);
 
@@ -3066,6 +3076,8 @@ static void migrate_timer(void *opaque)
     vm_stop_mig();
     qemu_iohandler_ft_pause(true);
 
+    wdgt_snapshot();
+
 #ifdef ASYNC_INIT_MIGRATION
 	if (async_init_migration_mode){
         dirty_page_num = ASYNC_INIT_MIGRATION_DIRTY_PAGE_NUM * (DIRTY_RATIO - delay_more_than_two_epoch) /DIRTY_RATIO;
@@ -3104,6 +3116,7 @@ static void migrate_timer(void *opaque)
     kvm_shmem_trackable_dirty_reset();
     migrate_ft_trans_send_device_state_header(s->ft_dev, s->file);
     qemu_put_buffer(s->file, s->ft_dev->ft_dev_buf, s->ft_dev->ft_dev_put_off);
+
 #ifdef ft_debug_mode_enable
     printf("device len: %d\n", s->ft_dev->ft_dev_put_off);
 #endif

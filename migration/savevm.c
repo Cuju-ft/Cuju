@@ -2782,7 +2782,7 @@ void qemu_file_get_notify(void *opaque)
 {
     QEMUFile *f = opaque;
     int ret;
-
+    /* cuju_ft_trans_get_buffer */
     ret = f->ops->get_buffer(f->opaque, f->buf, 0, 0);
     if (ret < 0)
         f->last_error = ret;

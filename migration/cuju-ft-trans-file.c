@@ -33,6 +33,14 @@
 #include "io/channel-socket.h"
 #include <linux/kvm.h>
 #include "migration/migration.h"
+#include "migration/ft_watchdog.h"
+
+//#define ft_debug_mode_enable    1
+
+#define TIMEVAL_TO_DOUBLE(tv)   ((tv).tv_sec + \
+                                ((double)(tv).tv_usec) / 1000000)
+#define TIMEVAL_TO_US(tv)   ((tv).tv_sec * 1000000 + (tv).tv_usec)
+
 
 static QemuMutex *cuju_buf_desc_mutex = NULL;
 static QemuCond *cuju_buf_desc_cond = NULL;
@@ -110,7 +118,7 @@ void cuju_ft_trans_flush_buf_desc(void *opaque)
         offset = desc->off;
         while (offset < desc->size) {
             ssize_t ret;
-
+            /* migrate_fd_put_buffer */
             ret = s->put_buffer(s->opaque, desc->buf + offset, desc->size - offset);
             if (ret == -EAGAIN || ret == -EWOULDBLOCK) {
                 //desc->off = offset;
@@ -332,7 +340,7 @@ int cuju_ft_trans_send_header(CujuQEMUFileFtTrans *s,
         ++hdr_idx;
 
 #ifdef ft_debug_mode_enable
-    if (state != QEMU_VM_TRANSACTION_CONTINUE) {
+    if (state != CUJU_QEMU_VM_TRANSACTION_CONTINUE) {
         printf("%s (%8d) %d %d\n", __func__, hdr_idx, state, payload_len);
     }
 #endif
@@ -447,6 +455,8 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
     int ret;
     char *buf = (char *)&s->header + s->header_offset;
     static int hdr_idx = 0;
+    uint8_t wdgt_check = 0;
+    uint8_t mig_cancel_check = 0;
 
     ret = cuju_ft_trans_fill_buffer(s, buf, sizeof(CujuFtTransHdr) - s->header_offset);
     if (ret < 0) {
@@ -464,17 +474,23 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
     if (s->header_offset == sizeof(CujuFtTransHdr)) {
         ++hdr_idx;
 #ifdef ft_debug_mode_enable
-        if (s->header.cmd != QEMU_VM_TRANSACTION_CONTINUE) {
+        if (s->header.cmd != CUJU_QEMU_VM_TRANSACTION_CONTINUE) {
             printf("%s (%8d) %d %d\n", __func__, s->header.seq, s->header.cmd,
                 (int)s->header.payload_len);
         }
 #endif
 
+        mig_cancel_check = (s->header.cmd & 0x8000)?1:0;
+        wdgt_check = (s->header.cmd & 0x4000)?1:0;
+        s->header.cmd = s->header.cmd & 0x3FFF;
+        
+        //printf("[%s] MigCancel:%d Wdgt:%d\n", __func__, mig_cancel_check, wdgt_check);
+        
         if (s->header.cmd == CUJU_QEMU_VM_TRANSACTION_COMMIT1)
             s->ram_buf_expect = s->header.payload_len;
-        else if (s->header.cmd == (1<<CUJU_FT_ALIVE_HEADER|CUJU_QEMU_VM_TRANSACTION_ACK1))
+        else if (mig_cancel_check)
         {
-            //printf("recv CUJU_QEMU_VM_TRANSACTION_ALIVE\n");
+            printf("recv CUJU_QEMU_VM_TRANSACTION_ALIVE\n");
             uninit_time();
             s->header.cmd = CUJU_QEMU_VM_TRANSACTION_ACK1;
             s->state = CUJU_QEMU_VM_TRANSACTION_ACK1;
@@ -482,6 +498,10 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
             s->ft_serial = s->header.serial;
             s->cancel = true;
             goto out;
+        }
+        else if (wdgt_check) {
+            //printf("recv watch dog timer from backup\n");
+            reset_ft_timer_count();
         }
         if (s->header.magic != CUJU_FT_HDR_MAGIC) {
             error_report("recv header magic wrong: %x\n", s->header.magic);
@@ -584,6 +604,7 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
 {
     int ret = 0;
     static unsigned long ft_serial = 1;
+    uint16_t header_cmd = 0;
 
     qemu_mutex_lock(&cuju_load_mutex);
     while (cuju_is_load == 1)
@@ -601,8 +622,14 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
         /*
             if backup receive checkalive header then s->check = 1 and the ACK1 header would set leftmost bit to be 1.   
             so s->check<<CUJU_FT_ALIVE_HEADER equal to 1<<15.
-        */   
-        ret = cuju_ft_trans_send_header(s,s->check<<CUJU_FT_ALIVE_HEADER|CUJU_QEMU_VM_TRANSACTION_ACK1, 0);
+        */
+        header_cmd = ((s->check << CUJU_FT_ALIVE_HEADER) | 
+                      (s->wdgt_check << CUJU_FT_WDGT_HEADER) | 
+                      CUJU_QEMU_VM_TRANSACTION_ACK1);
+        
+        //printf("[%s] CMD: %02x\n", __func__, header_cmd);
+
+        ret = cuju_ft_trans_send_header(s, header_cmd, 0);
         if(s->check)
         {
             //printf("Ack1 + alive header\n");           
@@ -712,6 +739,12 @@ static int cuju_ft_trans_recv(CujuQEMUFileFtTrans *s)
             //printf("recv CHECKALIVE\n");
             s->check = true;
         break;
+    case CUJU_QEMU_VM_TRANSACTION_CHECK_WDGT:
+            //printf("recv CHECK_WDGT\n");
+            reset_ft_timer_count();
+            s->wdgt_check = TRUE;
+        break;
+
     default:
         error_report("unknown QEMU_VM_TRANSACTION_STATE %d\n", ret);
         s->has_error = CUJU_FT_TRANS_ERR_STATE_INVALID;
@@ -847,6 +880,7 @@ static int cuju_ft_trans_close(void *opaque)
         qemu_announce_self();
 
         cuju_ft_mode = CUJU_FT_TRANSACTION_HANDOVER;
+        delete_ft_timer();
         vm_start();
         printf("%s vm_started.\n", __func__);
     }

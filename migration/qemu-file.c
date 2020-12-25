@@ -155,6 +155,8 @@ void qemu_fflush(QEMUFile *f)
 
     if (f->iovcnt > 0) {
         expect = iov_size(f->iov, f->iovcnt);
+
+        /* cuju_ft_dev_writev_buffer */ 
         ret = f->ops->writev_buffer(f->opaque, f->iov, f->iovcnt, f->pos);
     }
 

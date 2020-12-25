@@ -27,6 +27,8 @@
 #include "qemu/help_option.h"
 #include "qemu/uuid.h"
 
+#include "migration/ft_watchdog.h"
+
 #ifdef CONFIG_SECCOMP
 #include "sysemu/seccomp.h"
 #endif
@@ -4705,6 +4707,7 @@ int main(int argc, char **argv, char **envp)
     } else if (autostart) {
         vm_start();
     }
+    start_ft_timer();
 
     os_setup_post();
 
