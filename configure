@@ -6040,9 +6040,19 @@ case "$target_name" in
       \( "$target_name" = "x86_64" -a "$cpu" = "x32"   \) -o \
       \( "$target_name" = "i386"   -a "$cpu" = "x32" \) \) ; then
       echo "CONFIG_KVM=y" >> $config_target_mak
+      kernel_ver=$(uname -r | cut -f2 -d.)
       if test "$vhost_net" = "yes" ; then
         echo "CONFIG_VHOST_NET=y" >> $config_target_mak
         echo "CONFIG_VHOST_NET_TEST_$target_name=y" >> $config_host_mak
+      fi
+      if test "$kernel_ver" -lt 15 ; then
+        symlink "$source_path/linux-headers/linux/kvm-4.4.h" "$source_path/linux-headers/linux/kvm.h"
+        symlink "$source_path/linux-headers/linux/kvm_para-4.4.h" "$source_path/linux-headers/linux/kvm_para.h"
+        symlink "$source_path/kvm-4.4" "$source_path/kvm"
+      else
+        symlink "$source_path/linux-headers/linux/kvm-4.15.h" "$source_path/linux-headers/linux/kvm.h"
+        symlink "$source_path/linux-headers/linux/kvm_para-4.15.h" "$source_path/linux-headers/linux/kvm_para.h"
+        symlink "$source_path/kvm-4.15" "$source_path/kvm"
       fi
     fi
 esac

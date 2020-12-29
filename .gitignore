@@ -126,4 +126,9 @@ Module.symvers
 Modules.symvers
 Module.markers
 .tmp_versions
-
+/kvm
+/kvm-4.15/.cache.mk
+/kvm-4.15/x86/*-safe
+/kvm-4.15/x86/*-detected
+/linux-headers/linux/kvm.h
+/linux-headers/linux/kvm_para.h

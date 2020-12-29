@@ -1246,8 +1246,8 @@ void kvm_shmem_send_dirty_kernel(MigrationState *s)
 	int put_off;
 	cur_off = s->cur_off;
 	put_off = kvm_vm_ioctl(kvm_state, KVM_GET_PUT_OFF, &cur_off);
-
-
+	//TODO kvmft_assert_ram_hash_and_dlist function should be moved to kernel space
+    //kvmft_assert_ram_hash_and_dlist(dlist->pages, dlist->put_off);
 #ifdef DLIST_TEST_MODE
   /* 
    * 1. Note that the dlist in kvm is a struct, not an array or list.
