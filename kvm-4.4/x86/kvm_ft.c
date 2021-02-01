@@ -1133,9 +1133,9 @@ int kvm_shm_report_trackable(struct kvm *kvm,
 	pmd_t *pmd;
 	pte_t *pte;
 
-	printk("%s %d\n", __func__, __LINE__);
+	/*printk("%s %d\n", __func__, __LINE__);
 	if (t->trackable_count > KVM_SHM_REPORT_TRACKABLE_COUNT)
-		return -EINVAL;
+		return -EINVAL;*/
 
 	printk("%s %d\n", __func__, __LINE__);
 	if (t->trackable_count <= 0)
@@ -1150,6 +1150,22 @@ int kvm_shm_report_trackable(struct kvm *kvm,
 								GFP_KERNEL | __GFP_ZERO);
 	if (!kvm->trackable_list)
 		return -ENOMEM;
+
+    printk("%s %d\n", __func__, __LINE__);    
+    void **tempptrs = t->ptrs;
+    t->ptrs = kmalloc(sizeof(void *) * t->trackable_count, GFP_KERNEL | __GFP_ZERO);
+    if (_copy_from_user(&t->ptrs[0], tempptrs, sizeof(void *) * t->trackable_count)){
+        printk("%s copy_from_user ptrs error\n", __func__);
+        ret = -EINVAL;
+        goto err_out;
+    }
+    __u32 *tempsizes = t->sizes;
+    t->sizes = kmalloc(sizeof(__u32) * t->trackable_count, GFP_KERNEL | __GFP_ZERO);
+    if (__copy_from_user(&t->sizes[0], tempsizes, sizeof(__u32) * t->trackable_count)){
+        printk("%s copy_from_user size error\n", __func__);
+        ret = -EINVAL;
+        goto err_out;
+    }
 
 	printk("%s %d\n", __func__, __LINE__);
 	for (i = 0; i < t->trackable_count; ++i) {
@@ -1238,7 +1254,12 @@ err_out:
 int kvm_shm_collect_trackable_dirty(struct kvm *kvm,
 									void * __user bitmap)
 {
-	static char bm[KVM_SHM_REPORT_TRACKABLE_COUNT/8] = {0};
+    static char *bm;
+    if (kvm->trackable_list_len % 64 != 0){
+        bm = kmalloc(sizeof(char) * ((((kvm->trackable_list_len / 64) + 1) * 64) / 8), GFP_KERNEL | __GFP_ZERO);
+    } else {
+        bm = kmalloc(sizeof(char) * (kvm->trackable_list_len / 8), GFP_KERNEL | __GFP_ZERO);
+    }
 	int i, j, bytes, count = 0;
 	unsigned long addr;
 	for (i = 0; i < kvm->trackable_list_len; ++i) {
@@ -1255,10 +1276,10 @@ int kvm_shm_collect_trackable_dirty(struct kvm *kvm,
             addr += 4096;
 		}
 		if (dirty) {
-			set_bit(i, (long *)bm);
+			set_bit(i, (unsigned long *)bm);
 			++count;
 		} else {
-			clear_bit(i, (long *)bm);
+			clear_bit(i, (unsigned long *)bm);
 		}
 	}
 

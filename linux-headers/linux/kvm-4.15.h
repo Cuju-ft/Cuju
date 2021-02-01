@@ -1370,8 +1370,8 @@ struct kvm_shmem_child {
 #define KVM_SHM_REPORT_TRACKABLE_COUNT  64  // multiple of 8
 struct kvm_shmem_report_trackable {
     __u32 trackable_count;
-    void *ptrs[KVM_SHM_REPORT_TRACKABLE_COUNT];
-    __u32 sizes[KVM_SHM_REPORT_TRACKABLE_COUNT];
+	void **ptrs;
+    __u32 *sizes;
 };
 #define KVM_SHM_REPORT_TRACKABLE  _IOW(KVMIO, 0xc3, struct kvm_shmem_report_trackable)
 #define KVM_SHM_COLLECT_TRACKABLE_DIRTY _IOW(KVMIO, 0xc4, void *)

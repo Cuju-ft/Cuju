@@ -850,8 +850,8 @@ void unregister_savevm(DeviceState *dev, const char *idstr, void *opaque)
     }
 }
 
-char vmstate_register_buffer[4096*2] = {0};
-int vmstate_register_buffer_len = 0;
+//char vmstate_register_buffer[4096*2] = {0};
+//int vmstate_register_buffer_len = 0;
 
 int vmstate_register_with_alias_id(DeviceState *dev, int instance_id,
                                    const VMStateDescription *vmsd,
@@ -865,7 +865,7 @@ int vmstate_register_with_alias_id(DeviceState *dev, int instance_id,
     printf("%s %s %p\n", __func__, vmsd->name, opaque);
 #endif
     if (strncmp(vmsd->name, "kvmclock", 8) != 0 && strncmp(vmsd->name, "hpet", 4) != 0) {
-        vmstate_register_buffer_len += sprintf(vmstate_register_buffer + vmstate_register_buffer_len, "%s %p %s\n", __func__, opaque, vmsd->name);
+        //vmstate_register_buffer_len += sprintf(vmstate_register_buffer + vmstate_register_buffer_len, "%s %p %s\n", __func__, opaque, vmsd->name);
 #ifdef ft_debug_mode_enable
         printf("%s kvm_shmem_vmstate_register_callback %s\n", __func__, vmsd->name);
 #endif

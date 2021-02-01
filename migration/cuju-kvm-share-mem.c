@@ -770,7 +770,7 @@ static QemuMutex trackable_ptrs_mutex;
 
 static int trackable_number = 0;
 static int trackable_array_len = TRACKABLE_ARRAY_LEN;
-static char trackable_bitmap[KVM_SHM_REPORT_TRACKABLE_COUNT/8];
+static char *trackable_bitmap;
 
 
 void *kvm_shmem_alloc_trackable(unsigned int size)
@@ -785,6 +785,11 @@ void *kvm_shmem_alloc_trackable(unsigned int size)
     } else if (count >= trackable_array_len) {
         trackable_array_len *= 2;
         trackable_ptrs = g_realloc(trackable_ptrs , trackable_array_len * sizeof(struct trackable_ptr));
+        for (i = count; i < trackable_array_len ; i++){
+            trackable_ptrs[i].ptr = NULL;
+            trackable_ptrs[i].size = 0;
+            trackable_ptrs[i].registered = 0;
+        }
     }
 
 	// kvm won't compile on blk_server, so..
@@ -922,12 +927,16 @@ void kvm_shmem_sortup_trackable(void)
             }
         }
     }
-
-	if (trackable_number > 64) {
+    if (trackable_number % 64 != 0){
+        trackable_bitmap = g_malloc0(sizeof(char) * ((((trackable_number / 64) + 1) * 64) / 8));
+    } else {
+        trackable_bitmap = g_malloc0(sizeof(char) * (trackable_number / 8));
+    }
+	/*if (trackable_number > 64) {
 		printf("%s trackable_number exceed 64 bit, create a larger bitmap.\n",
 					__func__);
 		exit(-1);
-	}
+	}*/
         assert(!kvm_shmem_report_trackable());
     }
 }
@@ -938,6 +947,8 @@ int kvm_shmem_report_trackable(void)
 	int i;
 
 	report.trackable_count = trackable_number;
+    report.ptrs = g_malloc0(sizeof(void *) * trackable_number);
+    report.sizes = g_malloc0(sizeof(__u32) * trackable_number);
 	for (i = 0; i < trackable_number; ++i) {
 		report.ptrs[i] = trackable_ptrs[i].ptr;
 		report.sizes[i] = trackable_ptrs[i].size;
