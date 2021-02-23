@@ -59,6 +59,8 @@ enum CUJU_FT_MODE {
     CUJU_FT_TRANSACTION_RUN,
 };
 
+#define CUJU_FT_TRANSACTION_START CUJU_FT_TRANSACTION_RUN
+
 extern enum CUJU_FT_MODE cuju_ft_mode;
 
 typedef ssize_t (CujuFtTransPutBufferFunc)(void *opaque, const void *data, size_t size);

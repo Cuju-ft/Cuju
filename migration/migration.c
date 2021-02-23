@@ -2712,6 +2712,7 @@ static void *migration_thread(void *opaque)
 
 		//memory_global_dirty_log_start();  //For debug
         kvm_shmem_start_ft();
+        cuju_ft_mode = CUJU_FT_TRANSACTION_START;
 
 		migrate_token_owner = migrate_by_index(0);
 

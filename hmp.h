@@ -143,4 +143,11 @@ void hmp_cuju_adjust_epoch(Monitor *mon, const QDict *qdict);
 void hmp_cuju_ft_started(Monitor *mon, const QDict *qdict);
 void hmp_cuju_ft_mode(Monitor *mon, const QDict *qdict);
 
+void hmp_cuju_wdt_remote(Monitor *mon, const QDict *qdict);
+void hmp_cuju_wdt_local(Monitor *mon, const QDict *qdict);
+void hmp_cuju_wdt_third(Monitor *mon, const QDict *qdict);
+void hmp_cuju_wdt_set_timer_sec(Monitor *mon, const QDict *qdict);
+void hmp_cuju_wdt_set_timer_milisec(Monitor *mon, const QDict *qdict);
+void hmp_cuju_wdt_reset_timer_run(Monitor *mon, const QDict *qdict);
+
 #endif

@@ -1860,6 +1860,93 @@ STEXI
 cancel the current VM fault tolerance.
 ETEXI
 
+    {
+        .name       = "cuju-wdt-remote",
+        .args_type  = "remote:s",
+        .params     = "remote",
+        .help       = "set cuju wdt remote host ip",
+        .cmd        = hmp_cuju_wdt_remote,
+    },
+
+STEXI
+@item cuju-wdt-remote
+@findex cuju-wdt-remote
+set cuju wdt remote host ip.
+ETEXI
+
+    {
+        .name       = "cuju-wdt-local",
+        .args_type  = "local:s",
+        .params     = "local",
+        .help       = "set cuju wdt local host ip",
+        .cmd        = hmp_cuju_wdt_local,
+    },
+
+STEXI
+@item cuju-wdt-local
+@findex cuju-wdt-local
+set cuju wdt local host ip.
+ETEXI
+
+    {
+        .name       = "cuju-wdt-third",
+        .args_type  = "third:s",
+        .params     = "third",
+        .help       = "set cuju wdt third party ip",
+        .cmd        = hmp_cuju_wdt_third,
+    },
+
+STEXI
+@item cuju-wdt-third
+@findex cuju-wdt-third
+set cuju wdt third party host ip.
+ETEXI
+
+
+    {
+        .name       = "cuju-wdt-set-timer-sec",
+        .args_type  = "sec:i",
+        .params     = "sec",
+        .help       = "set cuju wdt second ",
+        .cmd        = hmp_cuju_wdt_set_timer_sec,
+    },
+
+STEXI
+@item cuju-wdt-set-timer-sec @var{sec}
+@findex cuju-wdt-set-timer-sec @var{sec} 
+set cuju wdt second.
+ETEXI
+
+    {
+        .name       = "cuju-wdt-set-timer-mili",
+        .args_type  = "mili:i",
+        .params     = "mili",
+        .help       = "set cuju wdt mili second ",
+        .cmd        = hmp_cuju_wdt_set_timer_milisec,
+    },
+
+STEXI
+@item cuju-wdt-set-timer-milisec @var{mili}
+@findex cuju-wdt-set-timer-milisec @var{mili} 
+set cuju wdt mili second.
+ETEXI
+
+
+     {
+        .name       = "cuju-reset-timer-run",
+        .args_type  = "",
+        .params     = "",
+        .help       = "After set new timer using cuju-reset-timer-run to reset it",
+        .cmd        = hmp_cuju_wdt_reset_timer_run,
+    },
+
+STEXI
+@item cuju-reset-timer-run
+@findex cuju-reset-timer-run
+After set new timer using cuju-reset-timer-run to reset it.
+ETEXI
+
+
 STEXI
 @end table
 ETEXI

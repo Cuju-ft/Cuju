@@ -39,6 +39,7 @@
 #include "hw/intc/intc.h"
 #include "migration/cuju-kvm-share-mem.h"
 #include "migration/cuju-ft-trans-file.h"
+#include "migration/ft_watchdog.h"
 
 #ifdef CONFIG_SPICE
 #include <spice/enums.h>
@@ -2618,3 +2619,62 @@ void hmp_cuju_ft_mode(Monitor *mon, const QDict *qdict)
     return;
 }
 
+void hmp_cuju_wdt_remote(Monitor *mon, const QDict *qdict)
+{    
+    const char *name = qdict_get_str(qdict, "remote");
+    monitor_printf(mon, "remote: %s\n", name);
+    cuju_wdt_remote(name);
+
+    return;
+}
+
+void hmp_cuju_wdt_local(Monitor *mon, const QDict *qdict)
+{
+    const char *name = qdict_get_str(qdict, "local");
+    monitor_printf(mon, "local: %s\n", name);
+    cuju_wdt_local(name);
+
+    return;
+}
+
+void hmp_cuju_wdt_third(Monitor *mon, const QDict *qdict)
+{
+    const char *name = qdict_get_str(qdict, "third");
+    monitor_printf(mon, "third: %s\n", name);    
+    cuju_wdt_third(name);
+    
+    return;
+}
+
+void hmp_cuju_wdt_set_timer_sec(Monitor *mon, const QDict *qdict)
+{
+    uint32_t sec = qdict_get_try_int(qdict, "sec", -1);    
+  
+    monitor_printf(mon, "sec: %u\n", sec);    
+
+    cuju_wdt_set_timer_sec(sec);
+
+    return;
+}
+
+void hmp_cuju_wdt_set_timer_milisec(Monitor *mon, const QDict *qdict)
+{
+    uint32_t mili = qdict_get_try_int(qdict, "mili", -1);    
+  
+    if (mili >= 1000) {
+        monitor_printf(mon, "mili is more than 1000 (%u). \nPlease change it less than 1000\n", mili); 
+    }
+    else {
+        monitor_printf(mon, "mili: %u\n", mili); 
+    }
+
+    cuju_wdt_set_timer_milisec(mili);  
+
+    return;
+}
+
+void hmp_cuju_wdt_reset_timer_run(Monitor *mon, const QDict *qdict)
+{
+    re_set_ft_timer();
+    return;
+}

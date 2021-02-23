@@ -8,4 +8,12 @@ void reset_ft_timer_count(void);
 
 void wdgt_snapshot(void);
 
+void cuju_wdt_remote (const char * string);
+void cuju_wdt_local (const char * string);
+void cuju_wdt_third (const char * string);
+void reset_ip_string (char ** target, const char* string);
+
+void cuju_wdt_set_timer_sec (uint32_t sec);
+void cuju_wdt_set_timer_milisec (uint16_t mili);
+
 #endif
