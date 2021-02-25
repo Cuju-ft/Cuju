@@ -16,4 +16,6 @@ void reset_ip_string (char ** target, const char* string);
 void cuju_wdt_set_timer_sec (uint32_t sec);
 void cuju_wdt_set_timer_milisec (uint16_t mili);
 
+void cuju_wdt_on_off(bool state);
+
 #endif

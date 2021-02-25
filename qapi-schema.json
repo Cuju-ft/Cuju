@@ -596,7 +596,7 @@
 ##
 { 'enum': 'MigrationCapability',
   'data': ['xbzrle', 'rdma-pin-all', 'auto-converge', 'zero-blocks',
-           'compress', 'events', 'postcopy-ram', 'x-colo', 'cuju-ft'] }
+           'compress', 'events', 'postcopy-ram', 'x-colo', 'cuju-ft', 'cuju-wdt'] }
 
 ##
 # @MigrationCapabilityStatus:

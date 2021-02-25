@@ -1050,6 +1050,9 @@ void qmp_migrate_set_capabilities(MigrationCapabilityStatusList *params,
                 continue;
             }
         }
+        if (cap->value->capability == MIGRATION_CAPABILITY_CUJU_WDT) {
+            cuju_wdt_on_off(cap->value->state);
+        }        
         s->enabled_capabilities[cap->value->capability] = cap->value->state;
     }
 
@@ -1447,7 +1450,6 @@ MigrationState *migrate_init(const MigrationParams *params)
     alloc_ft_dev(s2);
 
     migrate_set_ft_state(s2, CUJU_FT_TRANSACTION_PRE_RUN);
-    re_set_ft_timer();
     
     return s;
 }
@@ -1594,6 +1596,21 @@ void qmp_cuju_migrate_cancel(Error **errp)
     }
     signal( SIGALRM, trigger_cuju_migrate_cancel );
        
+}
+
+void qmp_cuju_migrate_cancel_fast(Error **errp)
+{
+    //printf("in qmp_cuju_migrate_cancel\n");
+    MigrationState *s = migrate_get_current();
+    MigrationState *s1 = migrate_get_next(s);
+    cuju_ft_trans_send_header(s->file->opaque, CUJU_QEMU_VM_TRANSACTION_CHECKALIVE, 0);  
+    cuju_ft_trans_send_header(s1->file->opaque, CUJU_QEMU_VM_TRANSACTION_CHECKALIVE, 0);  
+    CujuQEMUFileFtTrans *f = s->file->opaque;
+    CujuQEMUFileFtTrans *f1 = s1->file->opaque;
+    kvm_shmem_start_migrate_cancel();
+    f->check = true;
+    f1->check = true;
+    trigger_cuju_migrate_cancel(0);       
 }
 
 void qmp_migrate_set_cache_size(int64_t value, Error **errp)
@@ -2713,6 +2730,7 @@ static void *migration_thread(void *opaque)
 		//memory_global_dirty_log_start();  //For debug
         kvm_shmem_start_ft();
         cuju_ft_mode = CUJU_FT_TRANSACTION_START;
+        re_set_ft_timer();
 
 		migrate_token_owner = migrate_by_index(0);
 
