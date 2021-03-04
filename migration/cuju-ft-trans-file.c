@@ -300,6 +300,8 @@ static ssize_t cuju_ft_trans_put(void *opaque, void *buf, int size)
         len = s->put_buffer(s->opaque, (uint8_t *)buf + offset, size - offset);
 
         if (len == -EAGAIN || len == -EWOULDBLOCK) {
+
+            printf("[%s] put_buffer len == -EAGAIN | -EWOULDBLOCK (%zu)\n", __func__, len);
             continue;
             //trace_cuju_ft_trans_freeze_output();
             //s->freeze_output = 1;
@@ -356,6 +358,7 @@ int cuju_ft_trans_send_header(CujuQEMUFileFtTrans *s,
 
     ret = cuju_ft_trans_put(s, hdr, sizeof(*hdr));
     if (ret < 0) {
+        printf("[%s] send header failed (%d)\n", __func__, ret);
         error_report("send header failed\n");
         s->has_error = CUJU_FT_TRANS_ERR_SEND_HDR;
     }
@@ -456,6 +459,7 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
     char *buf = (char *)&s->header + s->header_offset;
     static int hdr_idx = 0;
     uint8_t wdgt_check = 0;
+    uint8_t wdgt_out_check = 0;
     uint8_t mig_cancel_check = 0;
 
     ret = cuju_ft_trans_fill_buffer(s, buf, sizeof(CujuFtTransHdr) - s->header_offset);
@@ -482,7 +486,8 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
 
         mig_cancel_check = (s->header.cmd & 0x8000)?1:0;
         wdgt_check = (s->header.cmd & 0x4000)?1:0;
-        s->header.cmd = s->header.cmd & 0x3FFF;
+        wdgt_out_check = (s->header.cmd & 0x2000)?1:0;
+        s->header.cmd = s->header.cmd & 0x1FFF;
         
         //printf("[%s] MigCancel:%d Wdgt:%d\n", __func__, mig_cancel_check, wdgt_check);
         
@@ -503,6 +508,10 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
             //printf("recv watch dog timer from backup\n");
             reset_ft_timer_count();
         }
+        else if (wdgt_out_check) {
+            printf("backup side run outside check\n");
+        }
+
         if (s->header.magic != CUJU_FT_HDR_MAGIC) {
             error_report("recv header magic wrong: %x\n", s->header.magic);
             s->has_error = CUJU_FT_TRANS_ERR_RECV_HDR;
@@ -625,9 +634,10 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
         */
         header_cmd = ((s->check << CUJU_FT_ALIVE_HEADER) | 
                       (s->wdgt_check << CUJU_FT_WDGT_HEADER) | 
+                      //(get_fail_idx_once() << CUJU_FT_WDGT_OUT_HEADER) |
                       CUJU_QEMU_VM_TRANSACTION_ACK1);
         
-        //printf("[%s] CMD: %02x\n", __func__, header_cmd);
+        //printf("[%s] CMD: %04x\n", __func__, header_cmd);
 
         ret = cuju_ft_trans_send_header(s, header_cmd, 0);
         if(s->check)
@@ -744,7 +754,14 @@ static int cuju_ft_trans_recv(CujuQEMUFileFtTrans *s)
             reset_ft_timer_count();
             s->wdgt_check = TRUE;
         break;
-
+    case CUJU_QEMU_VM_TRANSACTION_CHECK_WDGT_OUT:
+            printf("recv CHECK_WDGT OUT\n");
+            /* code for CUJU_QEMU_VM_TRANSACTION_CHECK_WDGT */
+            reset_ft_timer_count();
+            s->wdgt_check = TRUE;
+            /* code for CUJU_QEMU_VM_TRANSACTION_CHECK_WDGT_OUT */
+            backup_test_outside();
+        break;
     default:
         error_report("unknown QEMU_VM_TRANSACTION_STATE %d\n", ret);
         s->has_error = CUJU_FT_TRANS_ERR_STATE_INVALID;

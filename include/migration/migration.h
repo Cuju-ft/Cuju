@@ -495,4 +495,7 @@ void dirty_page_tracking_logs_commit(MigrationState *s);
 unsigned int dirty_page_tracking_logs_max(int bound_ms);
 
 void kvmft_tick_func(void);
+void set_send_commit_timer (void);
+void reset_send_commit_timer (void);
+void cuju_migrate_cancel_wdt_fast (int a);
 #endif

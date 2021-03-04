@@ -197,6 +197,7 @@ int migrate_get_index(MigrationState *s);
 static void migrate_run(MigrationState *s);
 
 int qio_ft_sock_fd = 0;
+struct itimerval send_commit_timer;
 
 // At the time setting up FT, current will pointer to 2nd MigrationState.
 static int migration_states_current;
@@ -251,7 +252,6 @@ static void trigger_cuju_migrate_cancel(int a)
     MigrationState *s = migrate_get_current();
     //printf("cuju_migrate_cancel...\n");
     cuju_migrate_cancel_discon(s);
-    
 }
 
 static inline double time_in_double(void)
@@ -1598,7 +1598,7 @@ void qmp_cuju_migrate_cancel(Error **errp)
        
 }
 
-void qmp_cuju_migrate_cancel_fast(Error **errp)
+void cuju_migrate_cancel_wdt_fast (int a)
 {
     //printf("in qmp_cuju_migrate_cancel\n");
     MigrationState *s = migrate_get_current();
@@ -2350,6 +2350,8 @@ static void send_commit1(MigrationState *s)
     //printf(s->time_buf);
     s->time_buf_off = 0;
 
+    //set_send_commit_timer();
+
     FTPRINTF("\n%s %d (%lf) send commmit1\n", __func__, migrate_get_index(s), time_in_double());
 }
 
@@ -2458,7 +2460,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
             printf("%s sender receive ACK1 failed.\n", __func__);
             goto backup_close;
         }
-
+        //reset_send_commit_timer();
         FTPRINTF("%s slave ack1 time %lf\n", __func__,
             time_in_double() - s->transfer_finish_time);
 
@@ -3184,3 +3186,30 @@ void kvmft_tick_func(void)
 
     ft_tick_func();
 }
+
+void reset_send_commit_timer (void)
+{
+    send_commit_timer.it_interval.tv_usec = 0;
+    send_commit_timer.it_interval.tv_sec = 0;
+    send_commit_timer.it_value.tv_usec = 0;
+    send_commit_timer.it_value.tv_sec = 0;
+
+    if(setitimer(ITIMER_REAL, &send_commit_timer, NULL) < 0){
+        printf("[%s] error.\n", __func__);
+        return;
+    }
+} 
+
+void set_send_commit_timer (void)
+{
+    send_commit_timer.it_interval.tv_usec = 0;
+    send_commit_timer.it_interval.tv_sec = 2;
+    send_commit_timer.it_value.tv_usec = 0;
+    send_commit_timer.it_value.tv_sec = 2;
+
+    if(setitimer(ITIMER_REAL, &send_commit_timer, NULL) < 0){
+        printf("[%s] error.\n", __func__);
+        return;
+    }
+    signal(SIGALRM, cuju_migrate_cancel_wdt_fast);
+} 
