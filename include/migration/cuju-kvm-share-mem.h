@@ -80,5 +80,6 @@ void* kvm_shmem_map_pfn(unsigned long pfn, unsigned long size);
 void kvm_shmem_unmap_pfn(void *ptr, unsigned long size);
 
 int show_ft_started (void);
+uint32_t get_epoch_us (void);
 
 #endif

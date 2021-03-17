@@ -488,8 +488,11 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
         wdgt_check = (s->header.cmd & 0x4000)?1:0;
         wdgt_out_check = (s->header.cmd & 0x2000)?1:0;
         s->header.cmd = s->header.cmd & 0x1FFF;
-        
-        //printf("[%s] MigCancel:%d Wdgt:%d\n", __func__, mig_cancel_check, wdgt_check);
+
+        if (cuju_ft_mode >= CUJU_FT_TRANSACTION_FLUSH_OUTPUT) {
+            printf("[%s] MigCancel:%d Wdgt:%d wdgt_out:%d\n", 
+                   __func__, mig_cancel_check, wdgt_check, wdgt_out_check);
+        }
         
         if (s->header.cmd == CUJU_QEMU_VM_TRANSACTION_COMMIT1)
             s->ram_buf_expect = s->header.payload_len;
@@ -504,12 +507,15 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
             s->cancel = true;
             goto out;
         }
-        else if (wdgt_check) {
-            //printf("recv watch dog timer from backup\n");
+        
+        if (wdgt_check) {
+            printf("recv watch dog timer from backup\n");
             reset_ft_timer_count();
         }
-        else if (wdgt_out_check) {
-            printf("backup side run outside check\n");
+        
+        if (wdgt_out_check) {
+            printf("backup side run outside check fail\n");
+            primary_test_outside();
         }
 
         if (s->header.magic != CUJU_FT_HDR_MAGIC) {
@@ -614,6 +620,7 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
     int ret = 0;
     static unsigned long ft_serial = 1;
     uint16_t header_cmd = 0;
+    uint8_t backup_out_idx = 0;
 
     qemu_mutex_lock(&cuju_load_mutex);
     while (cuju_is_load == 1)
@@ -626,18 +633,20 @@ static int cuju_ft_trans_try_load(CujuQEMUFileFtTrans *s)
         printf("%s %p->ft_serial = %ld/%ld ready %d\n", __func__, s, s->ft_serial, ft_serial, cuju_ft_trans_load_ready(s));
     }
 #endif
-
+ 
     while (s->ft_serial == ft_serial && cuju_ft_trans_load_ready(s)) {   
         /*
             if backup receive checkalive header then s->check = 1 and the ACK1 header would set leftmost bit to be 1.   
             so s->check<<CUJU_FT_ALIVE_HEADER equal to 1<<15.
         */
+        backup_out_idx = get_fail_idx_once_backup();
         header_cmd = ((s->check << CUJU_FT_ALIVE_HEADER) | 
                       (s->wdgt_check << CUJU_FT_WDGT_HEADER) | 
-                      //(get_fail_idx_once() << CUJU_FT_WDGT_OUT_HEADER) |
+                      (backup_out_idx << CUJU_FT_WDGT_OUT_HEADER) |
                       CUJU_QEMU_VM_TRANSACTION_ACK1);
-        
-        //printf("[%s] CMD: %04x\n", __func__, header_cmd);
+                      
+        if (backup_out_idx)
+            printf("[%s] CMD: %04x\n", __func__, header_cmd);
 
         ret = cuju_ft_trans_send_header(s, header_cmd, 0);
         if(s->check)

@@ -7,6 +7,7 @@ void re_set_ft_timer(void);
 void reset_ft_timer_count(void);
 void reset_ft_timer_out_count(void);
 uint8_t get_fail_idx_once (void);
+uint8_t get_fail_idx_once_backup (void);
 
 void wdgt_snapshot(void);
 
@@ -20,5 +21,9 @@ void cuju_wdt_set_timer_milisec (uint16_t mili);
 
 void cuju_wdt_on_off(bool state);
 void backup_test_outside (void);
+void primary_test_outside (void);
 
+void start_out_timer (void);
+void start_outside_thread (void);
+void outside_thread_join (void);
 #endif

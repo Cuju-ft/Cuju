@@ -2239,7 +2239,7 @@ static void cuju_migrate_cancel_discon(void *opaque)
     qemu_set_fd_handler(s1->fd, NULL, NULL, NULL);
     close(s1->fd);
     s1->fd = -1;
-
+ 
     qemu_iohandler_ft_pause(true);
     kvm_shmem_cancel_timer();
     kvm_shm_clear_dirty_bitmap(0);
@@ -2247,6 +2247,8 @@ static void cuju_migrate_cancel_discon(void *opaque)
     kvm_shmem_stop_ft();
     qemu_iohandler_ft_pause(false);    
     
+    cuju_ft_mode = CUJU_FT_OFF; 
+
     vm_start_mig();
     vm_start();
 
@@ -2270,6 +2272,7 @@ static void cuju_migrate_cancel_con(void *opaque)
     
     if(last_enter)
     {
+        cuju_ft_mode = CUJU_FT_OFF; 
         last_enter = 0;
         vm_start_mig();
         vm_start();
@@ -2349,8 +2352,6 @@ static void send_commit1(MigrationState *s)
     s->time_buf_off += sprintf(s->time_buf+s->time_buf_off, "\t%4d\n", s->dirty_pfns_len);
     //printf(s->time_buf);
     s->time_buf_off = 0;
-
-    //set_send_commit_timer();
 
     FTPRINTF("\n%s %d (%lf) send commmit1\n", __func__, migrate_get_index(s), time_in_double());
 }
@@ -2460,7 +2461,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
             printf("%s sender receive ACK1 failed.\n", __func__);
             goto backup_close;
         }
-        //reset_send_commit_timer();
+
         FTPRINTF("%s slave ack1 time %lf\n", __func__,
             time_in_double() - s->transfer_finish_time);
 

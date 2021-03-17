@@ -1596,3 +1596,8 @@ int show_ft_started (void)
 {
 	return ft_started;
 }
+
+uint32_t get_epoch_us (void)
+{
+    return epoch_time_in_us;
+}

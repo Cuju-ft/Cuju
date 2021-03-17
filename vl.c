@@ -4723,6 +4723,8 @@ int main(int argc, char **argv, char **envp)
 #endif
 	printf("VM init finished\n");
 
+    start_outside_thread();
+    
     main_loop();
     replay_disable_events();
     iothread_stop_all();
