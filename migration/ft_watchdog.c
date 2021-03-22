@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 
-#define DEBUG_FT_WDT
+//#define DEBUG_FT_WDT
 #ifdef DEBUG_FT_WDT
 #define WDT_PRINTF(fmt, ...) \
     do { printf("Cuju WDT: " fmt, ## __VA_ARGS__); } while (0)
@@ -403,15 +403,20 @@ void backup_test_outside (void)
     }
 }
 
-void primary_test_outside (void)
+uint8_t primary_test_outside (void)
 {
     printf("[%s] Start ping outside test\n", __func__);
     if (!system_ping(remote_outside_host)) {
         /* test ok */
         printf("[%s] ping remote outside pass\n", __func__);
         printf("[%s] back to NoFT\n", __func__);
-        qmp_cuju_migrate_cancel(NULL);
+        qmp_cuju_migrate_cancel_and_flush(NULL);
+
+        //cuju_migrate_cancel_fast(0);
+        //cuju_migrate_cancel_con();
+        
         delete_ft_timer();
+        return 1;
     }
     else {
         /* test ok */
@@ -423,63 +428,19 @@ void primary_test_outside (void)
         qmp_quit(NULL);
 #endif    
     }
+
+    return 0;
 }
 
-#if 0
+
 static void OutsideSignHandler(int iSignNo){
     if (iSignNo == SIGUSR1) {
         WDT_PRINTF("Capture sign no : SIGUSR1\n"); 
     } else if (SIGALRM == iSignNo) {
         //WDT_PRINTF("Capture sign no : SIGALRM\n"); 
+        printf("[%s] Capture sign no : SIGALRM\n", __func__); 
         ft_timer_out_count++;
-#if 0                
-        if (cuju_ft_mode >= CUJU_FT_TRANSACTION_FLUSH_OUTPUT) {
-            //printf("[Primary OUT] Ping outside Count:%08x\n", ft_timer_out_count);
-            /* every 2 time run once */
-            if (ft_timer_out_count && 0x1 == 0x1) {
-                printf("[Primary OUT] Start ping outside test\n");
-                if (!system_ping(remote_outside_host)) {
-                    printf("[Primary OUT] ping remote IP outside pass\n");
-                    ft_timer_out_fail_count = 0;
-                }
-                else {
-                    printf("[Primary OUT] ping remote IP outside failed\n");
-                    ft_timer_out_fail_count++;
-                }
-                /* fail too many times */
-                if (ft_timer_out_fail_count > ft_timer_out_count_max) {
-                    printf("[Primary OUT] Test remote IP outside failed\n");
-                    primary_out_fail_idx = 1;
-                }
-
-            }
-        }
-#endif 
-#if 0
-        if (cuju_ft_mode == CUJU_FT_TRANSACTION_RECV) {
-            ft_timer_out_count++;
-
-            //printf("[Backup OUT] Ping outside Count:%08x\n", ft_timer_out_count);
-            /* every 2 time run once */
-            if (ft_timer_out_count && 0x1 == 0x1) {            
-                printf("[Backup OUT] Start ping outside test\n");
-                if (!system_ping(remote_outside_host)) {
-                    printf("[Backup OUT] ping remote IP outside pass\n");
-                    ft_timer_out_fail_count = 0;
-                }
-                else {
-                    printf("[Backup OUT] ping remote IP outside failed\n");
-                    ft_timer_out_fail_count++;
-                }
-                /* fail too many times */
-                if (ft_timer_out_fail_count > ft_timer_out_count_max) {
-                    printf("[Backup OUT] Test remote IP outside failed\n");
-                    backup_out_fail_idx = 1;
-                }
-            }          
-        }
-#endif
-
+        trigger_cuju_migrate_cancel_flush(0);
     }
     else{
         printf("Capture sign no:%d\n", iSignNo); 
@@ -492,6 +453,8 @@ void start_out_timer (void)
     struct itimerspec ts;  
     int ret;  
     
+    printf("SET Out Timer\n");
+
     evp.sigev_value.sival_ptr = &outside_timer;  
     evp.sigev_notify = SIGEV_SIGNAL;  
     evp.sigev_signo = SIGALRM;
@@ -506,52 +469,89 @@ void start_out_timer (void)
         perror("timer_create");
     }     
 
+#if 1
     WDT_PRINTF("Set Timer varible\n");
-    
-#if 0    
+
     ts.it_interval.tv_sec = 0;
     ts.it_interval.tv_nsec = 0;  
     ts.it_value.tv_sec = 0;
     ts.it_value.tv_nsec = 0;    
-#else
-    ts.it_interval.tv_sec = timer_second;
-    ts.it_interval.tv_nsec = timer_milisec*FT_WTDG_UNIT;  
-    ts.it_value.tv_sec = timer_second;
-    ts.it_value.tv_nsec = timer_milisec*FT_WTDG_UNIT;  
-#endif 
+ 
     /* default start function */
     if (capa_cuju_enable) {
         WDT_PRINTF("Start Timer\n");
         ft_timer_out_count = 0;
-        ret = timer_settime(timer, 0, &ts, NULL);  
+        ret = timer_settime(outside_timer, 0, &ts, NULL);  
         if(ret) {
             perror("timer_settime"); 
         } 
     }
+#endif    
 }
+
+void re_set_out_ft_timer (void)
+{
+    struct itimerspec ts;  
+    int ret;  
+
+    if (FT_WTDG_TIME_MS_PREFIX >= 1000)
+        printf("warning timer interval ms unit more than 1 sec\n");
+
+    ts.it_interval.tv_sec = 0;
+    ts.it_interval.tv_nsec = 0;  
+    ts.it_value.tv_sec = 0;
+    ts.it_value.tv_nsec = 0;  
+
+    printf("RE-SET Out Timer\n");
+    ret = timer_settime(outside_timer, 0, &ts, NULL);  
+    if(ret) {
+        perror("timer_settime"); 
+    }
+}
+
+void delete_out_ft_timer (void)
+{
+    //struct itimerspec ts;  
+    //int ret;  
+
+    //ts.it_interval.tv_sec = 0;
+    //ts.it_interval.tv_nsec = 0;  
+    //ts.it_value.tv_sec = 0;
+    //ts.it_value.tv_nsec = 0;  
+    
+    printf("[%s] Cancel Timer\n", __func__);
+
+#if 0
+    ret = timer_settime(outside_timer, 0, &ts, NULL);  
+    if(ret) {
+        perror("timer_settime"); 
+    } 
 #endif
+
+    timer_delete(outside_timer);
+}
 
 static void *outside_timer_func(void *opaque) 
 {
     while (1) {
 #if 1        
         if (cuju_ft_mode >= CUJU_FT_TRANSACTION_FLUSH_OUTPUT) {
-            printf("[Primary OUT] Ping outside Count:%08x  cuju_ft_mode:%d\n", 
-                   ft_timer_out_count, cuju_ft_mode);
+            //printf("[Primary OUT] Ping outside Count:%08x  cuju_ft_mode:%d\n", 
+            //       ft_timer_out_count, cuju_ft_mode);
             ft_timer_out_count++;
             if (ft_timer_out_count && 0x1 == 0x1) {
-                //printf("[Primary OUT] Start ping outside test\n");
+                ////printf("[Primary OUT] Start ping outside test\n");
                 if (!system_ping(remote_outside_host)) {
-                    printf("[Primary OUT] ping remote IP outside pass\n");
+                    //printf("[Primary OUT] ping remote IP outside pass\n");
                     ft_timer_out_fail_count = 0;
                 }
                 else {
-                    printf("[Primary OUT] ping remote IP outside failed\n");
+                    //printf("[Primary OUT] ping remote IP outside failed\n");
                     ft_timer_out_fail_count++;
                 }
 
                 if (ft_timer_out_fail_count > ft_timer_out_count_max) {
-                    printf("[Primary OUT] Test remote IP outside failed\n");
+                    //printf("[Primary OUT] Test remote IP outside failed\n");
                     primary_out_fail_idx = 1;
                 }
 
@@ -562,22 +562,22 @@ static void *outside_timer_func(void *opaque)
         if (cuju_ft_mode == CUJU_FT_TRANSACTION_RECV) {
             ft_timer_out_count++;
 
-            printf("[Backup OUT] Ping outside Count:%08x  cuju_ft_mode:%d\n", 
-                   ft_timer_out_count, cuju_ft_mode);
+            //printf("[Backup OUT] Ping outside Count:%08x  cuju_ft_mode:%d\n", 
+            //       ft_timer_out_count, cuju_ft_mode);
             /* every 2 time run once */
             if (ft_timer_out_count && 0x1 == 0x1) {            
-                //printf("[Backup OUT] Start ping outside test\n");
+                ////printf("[Backup OUT] Start ping outside test\n");
                 if (!system_ping(remote_outside_host)) {
-                    printf("[Backup OUT] ping remote IP outside pass\n");
+                    //printf("[Backup OUT] ping remote IP outside pass\n");
                     ft_timer_out_fail_count = 0;
                 }
                 else {
-                    printf("[Backup OUT] ping remote IP outside failed\n");
+                    //printf("[Backup OUT] ping remote IP outside failed\n");
                     ft_timer_out_fail_count++;
                 }
                 /* fail too many times */
                 if (ft_timer_out_fail_count > ft_timer_out_count_max) {
-                    printf("[Backup OUT] Test remote IP outside failed\n");
+                    //printf("[Backup OUT] Test remote IP outside failed\n");
                     backup_out_fail_idx = 1;
                 }
             }          

@@ -48,6 +48,12 @@
 #include <signal.h>
 #include "migration/ft_watchdog.h"
 
+
+uint8_t in_timer = 0; /* for cuju_migrate_cancel_fast only enter once  */
+static void kvmft_flush_output(MigrationState *s);
+static void cuju_migrate_cancel_flush(void *opaque);
+static void kvmft_only_flush_output(MigrationState *s);
+
 //#define DEBUG_MIGRATION
 static unsigned long trans_serial = 0;
 static unsigned long run_serial = 0;
@@ -248,11 +254,17 @@ static MigrationState *migrate_get_next(MigrationState *s)
 const struct linger nolinger = { .l_onoff = 1, .l_linger = 1 };
 static void trigger_cuju_migrate_cancel(int a)
 {
-
     MigrationState *s = migrate_get_current();
-    //printf("cuju_migrate_cancel...\n");
+    printf("[%s] enter\n", __func__);
     cuju_migrate_cancel_discon(s);
 }
+
+void trigger_cuju_migrate_cancel_flush(int a)
+{
+    MigrationState *s = migrate_get_current();
+    printf("[%s] enter\n", __func__);
+    cuju_migrate_cancel_flush((void*)s);
+}    
 
 static inline double time_in_double(void)
 {
@@ -1598,9 +1610,42 @@ void qmp_cuju_migrate_cancel(Error **errp)
        
 }
 
-void cuju_migrate_cancel_wdt_fast (int a)
+void qmp_cuju_migrate_cancel_and_flush(Error **errp)
 {
-    //printf("in qmp_cuju_migrate_cancel\n");
+    MigrationState *s = migrate_get_current();
+    MigrationState *s1 = migrate_get_next(s);
+    CujuQEMUFileFtTrans *f = s->file->opaque;
+    CujuQEMUFileFtTrans *f1 = s1->file->opaque;    
+
+    //printf("[%s] enter\n", __func__);   
+   
+    cuju_ft_trans_send_header(s->file->opaque, CUJU_QEMU_VM_TRANSACTION_CHECKALIVE, 0);  
+    cuju_ft_trans_send_header(s1->file->opaque, CUJU_QEMU_VM_TRANSACTION_CHECKALIVE, 0);  
+
+    kvm_shmem_start_migrate_cancel();
+    f->check = true;
+    f1->check = true;
+
+#if 0
+#if 1    
+    start_out_timer();
+    //re_set_out_ft_timer();
+#else 
+    trigger_cuju_migrate_cancel_flush(0);
+#endif
+#endif 
+
+    //printf("[%s] exit\n", __func__);   
+}
+
+void cuju_migrate_cancel_fast (int a)
+{
+    //printf("[%s] enter\n", __func__);
+
+    if (in_timer)
+    	return; 
+    in_timer++;  
+    
     MigrationState *s = migrate_get_current();
     MigrationState *s1 = migrate_get_next(s);
     cuju_ft_trans_send_header(s->file->opaque, CUJU_QEMU_VM_TRANSACTION_CHECKALIVE, 0);  
@@ -1610,7 +1655,28 @@ void cuju_migrate_cancel_wdt_fast (int a)
     kvm_shmem_start_migrate_cancel();
     f->check = true;
     f1->check = true;
-    trigger_cuju_migrate_cancel(0);       
+    trigger_cuju_migrate_cancel_flush(0);       
+    //reset_send_commit_timer();
+    
+    //printf("[%s] exit\n", __func__);
+}
+
+void cuju_migrate_cancel_wdt_fast (int a)
+{
+    //printf("[%s] enter\n", __func__);
+    MigrationState *s = migrate_get_current();
+    MigrationState *s1 = migrate_get_next(s);
+    cuju_ft_trans_send_header(s->file->opaque, CUJU_QEMU_VM_TRANSACTION_CHECKALIVE, 0);  
+    cuju_ft_trans_send_header(s1->file->opaque, CUJU_QEMU_VM_TRANSACTION_CHECKALIVE, 0);  
+    CujuQEMUFileFtTrans *f = s->file->opaque;
+    CujuQEMUFileFtTrans *f1 = s1->file->opaque;
+    kvm_shmem_start_migrate_cancel();
+    f->check = true;
+    f1->check = true;
+    //trigger_cuju_migrate_cancel(0);       
+    trigger_cuju_migrate_cancel_flush(0);  
+
+    //printf("[%s] exit\n", __func__);     
 }
 
 void qmp_migrate_set_cache_size(int64_t value, Error **errp)
@@ -2208,12 +2274,12 @@ static void migrate_fd_get_notify(void *opaque)
 
     if (qemu_file_get_error(s->file) && qemu_file_get_error(s->file) != -EAGAIN) {
         CujuQEMUFileFtTrans *f = s->file->opaque;
-        if(f->check || backup_die)
-        {
+        if(f->check || backup_die) {
+            printf("[%s] check:%d backup_die:%d\n", __func__, f->check, backup_die);
             cuju_migrate_cancel_con(s);            
         }
-        else
-        {
+        else {
+            printf("[%s] Error!!! check:%d backup_die:%d\n", __func__, f->check, backup_die);
             qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
             cuju_ft_mode = CUJU_FT_ERROR;
             qemu_savevm_state_cancel(s->file);
@@ -2227,13 +2293,14 @@ static void cuju_migrate_cancel_discon(void *opaque)
 {
     MigrationState *s = migrate_get_current();
     MigrationState *s1 = migrate_get_next(s);
+
+    printf("[%s] enter\n", __func__);
+
     setsockopt(s->fd, SOL_SOCKET, SO_LINGER,(struct linger *) &nolinger, sizeof(struct linger));
     setsockopt(s1->fd, SOL_SOCKET, SO_LINGER,(struct linger *) &nolinger, sizeof(struct linger));
     
     qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
     close(s->fd);
-    trans_serial=0;
-    run_serial = 0;
     s->fd = -1;
 
     qemu_set_fd_handler(s1->fd, NULL, NULL, NULL);
@@ -2248,18 +2315,62 @@ static void cuju_migrate_cancel_discon(void *opaque)
     qemu_iohandler_ft_pause(false);    
     
     cuju_ft_mode = CUJU_FT_OFF; 
+    trans_serial=0;
+    run_serial = 0;
+    vm_start_mig();
+    vm_start();
+
+    printf("[%s] exit\n", __func__);
+}
+
+static void cuju_migrate_cancel_flush(void *opaque)
+{
+    MigrationState *s = migrate_get_current();
+    MigrationState *s1 = migrate_get_next(s);
+
+    printf("[%s] enter\n", __func__);
+
+    setsockopt(s->fd, SOL_SOCKET, SO_LINGER,(struct linger *) &nolinger, sizeof(struct linger));
+    setsockopt(s1->fd, SOL_SOCKET, SO_LINGER,(struct linger *) &nolinger, sizeof(struct linger));
+    
+    qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
+    close(s->fd);
+    s->fd = -1;
+
+    qemu_set_fd_handler(s1->fd, NULL, NULL, NULL);
+    close(s1->fd);
+    s1->fd = -1;
+
+    kvmft_only_flush_output(s);
+    kvmft_only_flush_output(s1);
+
+    qemu_iohandler_ft_pause(true);
+    kvm_shmem_cancel_timer();
+    kvm_shm_clear_dirty_bitmap(0);
+    kvm_shm_clear_dirty_bitmap(1);
+    kvm_shmem_stop_ft();
+    qemu_iohandler_ft_pause(false);    
+    
+    uninit_time();
+
+    trans_serial=0;
+    run_serial = 0;
+    cuju_ft_mode = CUJU_FT_OFF; 
 
     vm_start_mig();
     vm_start();
 
+    printf("[%s] exit\n", __func__);
 }
+
 static void cuju_migrate_cancel_con(void *opaque)
 {
     MigrationState *s = opaque;
+
+    printf("[%s] enter\n", __func__);
+
     qemu_set_fd_handler(s->fd, NULL, NULL, NULL);
     close(s->fd);
-    trans_serial=0;
-    run_serial = 0;
     s->fd = -1;
 
     qemu_iohandler_ft_pause(true);
@@ -2273,14 +2384,17 @@ static void cuju_migrate_cancel_con(void *opaque)
     if(last_enter)
     {
         cuju_ft_mode = CUJU_FT_OFF; 
+        trans_serial=0;
+        run_serial = 0;
         last_enter = 0;
         vm_start_mig();
         vm_start();
-        
+        printf("[%s] exit\n", __func__);
     }
     else
     {
         last_enter = 1;
+        printf("[%s] exit and not last\n", __func__);
     }
     
 }
@@ -2411,6 +2525,22 @@ static void kvmft_flush_output(MigrationState *s)
     s->ft_event_tap_net_list = event_tap_net_list_new();
 }
 
+static void kvmft_only_flush_output(MigrationState *s)
+{
+	/* TODO blk server
+    if (kvm_blk_session)
+        kvm_blk_epoch_commit(kvm_blk_session);
+	*/
+
+    virtio_blk_commit_temp_list(s->virtio_blk_temp_list);
+    s->virtio_blk_temp_list = NULL;
+    s->net_list_empty = event_tap_net_list_empty(s->ft_event_tap_net_list);
+
+    event_tap_unregister();
+
+    //event_tap_flush_net_list(s->ft_event_tap_net_list, NULL, s);
+    //s->ft_event_tap_net_list = event_tap_net_list_new();
+}
 
 // NOTE: don't send content in this function
 static int migrate_ft_trans_get_ready(void *opaque)
@@ -2712,6 +2842,9 @@ static void *migration_thread(void *opaque)
     if(enable_cuju) {
 
 		printf("start cuju process\n");
+        in_timer = 0;
+        //delete_out_ft_timer();
+
 		ft_setup_migrate_state(s, 0);
         ft_setup_migrate_state(s2, 1);
 
@@ -3027,7 +3160,7 @@ static void migrate_run(MigrationState *s)
     }
     if(f->cancel)
     {    
-        //printf("in migrate_run and start cancel\n");
+        printf("[%s] start cancel\n", __func__);
         migrate_token_owner->file->last_error = -1;
         cuju_migrate_cancel_con(s);
     }

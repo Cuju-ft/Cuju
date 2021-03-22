@@ -217,5 +217,5 @@ extern QemuCond cuju_load_cond;
 void cuju_socket_set_nodelay(int fd);
 void cuju_socket_unset_nodelay(int fd);
 void cuju_socket_set_quickack(int fd);
-
+void uninit_time(void);
 #endif

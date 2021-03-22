@@ -615,12 +615,15 @@ int event_tap_flush(void* cb, void *opaque)
     do {
         ret = event_tap_flush_one();
     } while (ret == 0);
-    if(!(f->check || backup_die))
-    {
+    
+    if(!(f->check || backup_die)) {
         if (pending_bdrv_request == 0) {
-            bdrv_request_flush_cb(opaque);
+            if (opaque != NULL) {
+                bdrv_request_flush_cb(opaque);
+	    }
         }
     }
+
     return ret;
 }
 

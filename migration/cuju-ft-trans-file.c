@@ -59,7 +59,7 @@ static CujuQEMUFileFtTrans **cuju_ft_trans;
 static int cuju_ft_trans_count;
 static int cuju_ft_trans_current_index;
 
-static void uninit_time(void)  
+void uninit_time(void)  
 {
     struct itimerval t;  
     t.it_value.tv_sec = 0;  
@@ -131,8 +131,9 @@ void cuju_ft_trans_flush_buf_desc(void *opaque)
                     offset += desc->size - offset;
                     break;
                 }
+                printf("[%s]ret = %zu\n", __func__, ret);
                 error_report("error flushing data, %s\n", strerror(errno));
-                printf("%s %p + %lu\n", __func__, desc->buf, offset);
+                printf("%s %p + %zu\n", __func__, desc->buf, offset);
                 s->has_error = CUJU_FT_TRANS_ERR_FLUSH;
                 abort();
                 return;
@@ -489,11 +490,12 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
         wdgt_out_check = (s->header.cmd & 0x2000)?1:0;
         s->header.cmd = s->header.cmd & 0x1FFF;
 
+#if 0
         if (cuju_ft_mode >= CUJU_FT_TRANSACTION_FLUSH_OUTPUT) {
             printf("[%s] MigCancel:%d Wdgt:%d wdgt_out:%d\n", 
                    __func__, mig_cancel_check, wdgt_check, wdgt_out_check);
         }
-        
+#endif        
         if (s->header.cmd == CUJU_QEMU_VM_TRANSACTION_COMMIT1)
             s->ram_buf_expect = s->header.payload_len;
         else if (mig_cancel_check)
@@ -509,12 +511,17 @@ static int cuju_ft_trans_recv_header(CujuQEMUFileFtTrans *s)
         }
         
         if (wdgt_check) {
-            printf("recv watch dog timer from backup\n");
+            //printf("recv watch dog timer from backup\n");
             reset_ft_timer_count();
         }
         
         if (wdgt_out_check) {
             printf("backup side run outside check fail\n");
+            s->header.cmd = CUJU_QEMU_VM_TRANSACTION_ACK1;
+            s->state = CUJU_QEMU_VM_TRANSACTION_ACK1;
+            s->header_offset = 0;
+            s->ft_serial = s->header.serial;
+            s->cancel = true;
             primary_test_outside();
         }
 

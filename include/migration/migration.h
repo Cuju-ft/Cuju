@@ -498,4 +498,7 @@ void kvmft_tick_func(void);
 void set_send_commit_timer (void);
 void reset_send_commit_timer (void);
 void cuju_migrate_cancel_wdt_fast (int a);
+void cuju_migrate_cancel_fast (int a);
+void qmp_cuju_migrate_cancel_and_flush(Error **errp);
+void trigger_cuju_migrate_cancel_flush(int a);
 #endif

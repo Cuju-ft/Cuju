@@ -21,9 +21,11 @@ void cuju_wdt_set_timer_milisec (uint16_t mili);
 
 void cuju_wdt_on_off(bool state);
 void backup_test_outside (void);
-void primary_test_outside (void);
+uint8_t primary_test_outside (void);
 
 void start_out_timer (void);
+void re_set_out_ft_timer (void);
+void delete_out_ft_timer(void);
 void start_outside_thread (void);
 void outside_thread_join (void);
 #endif
