@@ -154,7 +154,7 @@ $ git clone https://github.com/Cuju-ft/Cuju.git
 
 ```
 $ cd Cuju
-$ ./configure --enable-cuju --enable-kvm --disable-pie --target-list=x86_64-softmmu
+$ ./configure --enable-cuju --enable-kvm --disable-pie --disable-xen --target-list=x86_64-softmmu
 $ make clean
 $ make -j8
 ```
