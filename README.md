@@ -241,11 +241,9 @@ chmod +x ./tmp.sh
 * ```ftmode.sh```
 ```
 ubuntu-16:
-sudo echo "migrate_set_capability cuju-ft on" | sudo nc -U /home/[your username]/vm1.monitor
 sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -U /home/[your username]/vm1.monitor
 
 ubuntu-18:
-sudo echo "migrate_set_capability cuju-ft on" | sudo nc -w 1 -U /home/[your username]/vm1.monitor
 sudo echo "migrate -c tcp:192.168.111.2:4441" | sudo nc -w 1 -U /home/[your username]/vm1.monitor
 ```
 You need to change the ip address and port (`tcp:192.168.111.2:4441`) for your environment, this is Backup Host's IP
