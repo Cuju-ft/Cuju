@@ -757,7 +757,7 @@ int kvm_shm_flip_sharing(struct kvm *kvm, __u32 cur_index, __u32 run_serial)
 int kvm_shm_enable(struct kvm *kvm)
 {
     struct kvmft_context *ctx = &kvm->ft_context;
-    ctx->shm_enabled = !ctx->shm_enabled;
+    ctx->shm_enabled = 1;
     printk("%s shm_enabled %d\n", __func__, ctx->shm_enabled);
     return 0;
 }
