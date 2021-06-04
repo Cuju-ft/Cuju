@@ -51,7 +51,7 @@ static unsigned long trans_serial = 0;
 static unsigned long run_serial = 0;
 static int last_enter = 0;
 bool backup_die = false;
-
+static bool before_epoch0 = false;
 //for ASYNC_INIT_MIGRATION
 static unsigned long current_trans_gfn = 0;
 static unsigned long pc_ram_end = 0;
@@ -2709,6 +2709,8 @@ static void *migration_thread(void *opaque)
 		//memory_global_dirty_log_start();  //For debug
         kvm_shmem_start_ft();
 
+        before_epoch0 = false;
+        assert(!kvm_shmem_flip_sharing(0));
 		migrate_token_owner = migrate_by_index(0);
 
 		//TODO find io thread fd
@@ -3005,8 +3007,11 @@ static void migrate_run(MigrationState *s)
     }
     migrate_set_ft_state(s, CUJU_FT_TRANSACTION_RUN);
     s->run_serial = ++run_serial;
-
-    kvmft_reset_put_off(s);
+    if (before_epoch0){
+        kvmft_reset_put_off(s);
+    } else {
+        before_epoch0 = true;
+    }
     assert(!kvm_shmem_flip_sharing(s->cur_off));
 
     migrate_schedule(s);
