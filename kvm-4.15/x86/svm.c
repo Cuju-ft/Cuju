@@ -71,6 +71,7 @@
 #include <linux/amd-iommu.h>
 #include <linux/hashtable.h>
 #include <linux/frame.h>
+#include <linux/irq.h>
 
 #include <asm/apic.h>
 #include <asm/perf_event.h>

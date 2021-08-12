@@ -142,8 +142,8 @@ $ sudo mount -t nfs 192.168.11.1:/home/[your username]/nfsfolder /mnt/nfs
 ---
 * Install the appropriate version of the kernel for Cuju (only on ubuntu-18)
 ```
-$ sudo apt-get install linux-image-4.15.0-29-generic
-$ sudo apt-get install linux-headers-4.15.0-29-generic
+$ sudo apt-get install linux-image-4.15.0-153-generic
+$ sudo apt-get install linux-headers-4.15.0-153-generic
 ```
 * Clone Cuju on your NFS folder from Github
 ```
