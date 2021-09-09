@@ -2399,6 +2399,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
     CujuQEMUFileFtTrans *f = s->file->opaque;
     static bool kvmft_first_ack = true;
     int ret = -1;
+    Error *local_err = NULL;
 
     if (!qemu_ft_trans_is_sender(s->file))
         return 0;
@@ -2463,6 +2464,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
 
     default:
         printf("%s unexpected (%d) state %d\n", __func__, migrate_get_index(s), s->ft_state);
+        error_setg(&local_err, "%s unexpected (%d) state %d\n", __func__, migrate_get_index(s), s->ft_state);
         goto error_out;
     }
 
@@ -2472,7 +2474,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
 error_out:
     cuju_ft_mode = CUJU_FT_ERROR;
     qemu_savevm_state_cancel(s->file);
-    Error *local_err = NULL;
+    s->to_dst_file = NULL;
     migrate_fd_error(s, local_err);
     event_tap_unregister();
 backup_close:
