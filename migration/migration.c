@@ -184,6 +184,7 @@ enum CUJU_FT_MODE cuju_ft_mode = CUJU_FT_OFF;
 #define TIMEVAL_TO_US(tv)   ((tv).tv_sec * 1000000 + (tv).tv_usec)
 
 static MigrationState *migrate_token_owner;
+static QemuMutex migrate_token_owner_mutex;
 
 /* protect ft_mode */
 static QemuMutex ft_mutex;
@@ -2398,6 +2399,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
     CujuQEMUFileFtTrans *f = s->file->opaque;
     static bool kvmft_first_ack = true;
     int ret = -1;
+    Error *local_err = NULL;
 
     if (!qemu_ft_trans_is_sender(s->file))
         return 0;
@@ -2424,7 +2426,9 @@ static int migrate_ft_trans_get_ready(void *opaque)
         kvmft_calc_ram_hash();
     #endif
     
+        qemu_mutex_lock(&migrate_token_owner_mutex);
         assert(s == migrate_token_owner);
+        qemu_mutex_unlock(&migrate_token_owner_mutex);
         //gft_connect_internal();
         //gft_master_notify_leader_migration_done();
         //group_ft_wait_all.s = s;
@@ -2460,6 +2464,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
 
     default:
         printf("%s unexpected (%d) state %d\n", __func__, migrate_get_index(s), s->ft_state);
+        error_setg(&local_err, "%s unexpected (%d) state %d\n", __func__, migrate_get_index(s), s->ft_state);
         goto error_out;
     }
 
@@ -2469,7 +2474,7 @@ static int migrate_ft_trans_get_ready(void *opaque)
 error_out:
     cuju_ft_mode = CUJU_FT_ERROR;
     qemu_savevm_state_cancel(s->file);
-    Error *local_err = NULL;
+    s->to_dst_file = NULL;
     migrate_fd_error(s, local_err);
     event_tap_unregister();
 backup_close:
@@ -2688,6 +2693,9 @@ static void *migration_thread(void *opaque)
     if(enable_cuju) {
 
 		printf("start cuju process\n");
+        // lock until init migrate_token_owner complete
+        qemu_mutex_init(&migrate_token_owner_mutex);
+        qemu_mutex_lock(&migrate_token_owner_mutex);
 		ft_setup_migrate_state(s, 0);
         ft_setup_migrate_state(s2, 1);
 
@@ -2712,6 +2720,7 @@ static void *migration_thread(void *opaque)
         before_epoch0 = false;
         assert(!kvm_shmem_flip_sharing(0));
 		migrate_token_owner = migrate_by_index(0);
+        qemu_mutex_unlock(&migrate_token_owner_mutex);
 
 		//TODO find io thread fd
 		//extern int io_thread_fd;
