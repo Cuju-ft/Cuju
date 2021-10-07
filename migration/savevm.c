@@ -1378,9 +1378,11 @@ void qemu_savevm_state_complete_precopy(QEMUFile *f, bool iterable_only)
       enter ASYNC_INIT_MIGRATION mode.
     */
     #ifdef ASYNC_INIT_MIGRATION
-        if ((strstr(se->idstr, "virtio-net"))||
-			(strstr(se->idstr, "virtio-blk")))
-			continue;
+        if(migrate_cuju_enabled()){
+            if ((strstr(se->idstr, "virtio-net"))||
+                (strstr(se->idstr, "virtio-blk")))
+                continue;
+        }
     #endif
         if ((!se->ops || !se->ops->save_state) && !se->vmsd) {
             continue;
