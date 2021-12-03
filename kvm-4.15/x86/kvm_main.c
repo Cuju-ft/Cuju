@@ -445,13 +445,13 @@ static int kvm_mmu_notifier_clear_flush_young(struct mmu_notifier *mn,
 	int young, idx;
 
 	idx = srcu_read_lock(&kvm->srcu);
-	//spin_lock(&kvm->mmu_lock);	// Cuju
+	spin_lock(&kvm->mmu_lock);	// Cuju
 
 	young = kvm_age_hva(kvm, start, end);
 	if (young)
 		kvm_flush_remote_tlbs(kvm);
 
-	//spin_unlock(&kvm->mmu_lock);	// Cuju
+	spin_unlock(&kvm->mmu_lock);	// Cuju
 	srcu_read_unlock(&kvm->srcu, idx);
 
 	return young;
