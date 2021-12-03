@@ -1895,8 +1895,8 @@ static void do_kvm_cpu_synchronize_state(CPUState *cpu, run_on_cpu_data arg)
 void kvm_cpu_synchronize_state(CPUState *cpu)
 {
     if (!cpu->kvm_vcpu_dirty) {
-        //run_on_cpu(cpu, do_kvm_cpu_synchronize_state, RUN_ON_CPU_NULL);
-		do_kvm_cpu_synchronize_state(cpu, RUN_ON_CPU_NULL);
+        run_on_cpu(cpu, do_kvm_cpu_synchronize_state, RUN_ON_CPU_NULL);
+		//do_kvm_cpu_synchronize_state(cpu, RUN_ON_CPU_NULL);
     }
 }
 
