@@ -2840,6 +2840,7 @@ static int set_spte(struct kvm_vcpu *vcpu, u64 *sptep,
 	u64 spte = 0;
 	int ret = 0;
 	struct kvm_mmu_page *sp;
+	unsigned long hva;  // Cuju
 
 	if (set_mmio_spte(vcpu, sptep, gfn, pfn, pte_access))
 		return 0;
@@ -2915,6 +2916,8 @@ static int set_spte(struct kvm_vcpu *vcpu, u64 *sptep,
 	}
 
 	if (pte_access & ACC_WRITE_MASK) {
+		hva = gfn_to_hva(vcpu->kvm, gfn);  // Cuju
+		kvmft_page_dirty(vcpu->kvm, gfn, (void *)hva, 1, NULL);  // Cuju
 		kvm_vcpu_mark_page_dirty(vcpu, gfn);
 		spte |= spte_shadow_dirty_mask(spte);
 	}
