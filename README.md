@@ -29,7 +29,7 @@ For more information see: https://cuju-ft.github.io/cuju-web/home.html
 - Open the Intel virtualization support (VT-x) in your bios.
 - Install OS in all nodes: (pick 1 of 2)
     - [Ubuntu-16.04-desktop-amd64.iso (Ubuntu 16.04.0)](https://drive.google.com/file/d/0B9au9R9FzSWKUjRZclBXbXB0eEk/view)
-    - [ubuntu-18.04.1-live-server-amd64.iso (Ubuntu 18.04.1)](http://old-releases.ubuntu.com/releases/18.04.1/ubuntu-18.04.1-live-server-amd64.iso)
+    - [ubuntu-18.04.1-live-server-amd64.iso (Ubuntu 18.04.5)](https://old-releases.ubuntu.com/releases/18.04.5/ubuntu-18.04.5-desktop-amd64.iso)
 - Install related packages in all nodes
 ```
  $ sudo apt-get update
